@@ -1,0 +1,25 @@
+
+#####
+source /broad/software/scripts/useuse
+use OpenblasR
+#####
+
+moddir=$1
+modtag=$2
+valdir=$3
+valtag=$4
+
+chrom=$SGE_TASK_ID
+
+prefix="$valdir/chrom${chrom}.${valtag}"
+
+echo $prefix
+
+M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
+N=`zcat $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
+
+echo "chr$chrom N=$N M=$M"
+
+zcat $prefix.dosage.gz | ./gliab $N $M $moddir/$modtag.adjbetahat.chrom$chrom.txt > $valdir/$modtag.predY.chrom$chrom.txt 
+
+

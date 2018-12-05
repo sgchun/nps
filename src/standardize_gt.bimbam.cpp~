@@ -1,0 +1,240 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <cassert>
+#include <cmath>
+#include <limits>
+#include <cstdint>
+
+using namespace std;
+
+/**
+ * Convert genotypes in the BIMBIM dosage format to standardized genotypes with mean
+ * of 0 and variance of 1. 
+ *
+ * The standardized genotypes are stored in binary files (.stdgt). These binary
+ * files are platform-dependent and not intended for transfer between 
+ * little-endian (Intel, AMD CPUs) and big-endian(e.g. ARM) systems, or
+ * between 32-bit and 64-bit architectures.
+ * 
+ * Input parameters:
+ * Number of individuals (N)
+ * Number of markers (M)
+ * Prefix to output file
+ */
+
+// compile 
+// g++ -O2 -std=c++0x -o stdgt standardize_gt.bimbam.cpp
+
+
+int main(int argc, char *argv[]) {
+
+  // cout << numeric_limits<double>::is_iec559 << endl; 
+  // cout << sizeof(double) << endl;
+
+  assert(numeric_limits<double>::is_iec559);
+
+  if (argc != 4) {
+
+    cerr << "Usage: " << argv[0] << " <N> <M> <outprefix>" 
+	 << endl; 
+
+    return 1; 
+  }
+
+  int N = atoi(argv[1]);
+  int M = atoi(argv[2]);
+  char *outprefix = argv[3];
+
+  assert(N > 0);
+  assert(M > 0);
+
+
+  int i = 0;			// snp index
+  string line;			// line buffer
+
+
+  // Allocate space for standardized genotypes 
+  double *stdgt = NULL; 	// length N
+
+  stdgt = new double[N];
+
+
+  // Allocate output buffer
+  char *buffer = NULL; 
+
+  buffer = new char[ N * sizeof(double) ]; 
+
+  // Stack buffer for SNPID;
+  char snpID[128];
+
+  // open output files
+  ofstream meandosfile; 
+  ofstream stdgtfile; 
+
+  // meandosage OS in a text write mode 
+  meandosfile.open(string(outprefix) + ".meandos", ios::out);
+
+  if (!meandosfile.is_open()) {
+
+    cerr << "Cannot create " << outprefix << ".meandos" << endl; 
+
+    return 1;
+  }
+  
+  // header
+  meandosfile << "SNPID" << "\t" << "MAF" << endl; 
+
+  // stdgt OS in a binary write mode 
+  stdgtfile.open(string(outprefix) + ".stdgt", ios::out | ios::binary);
+
+  if (!stdgtfile.is_open()) {
+
+    cerr << "Cannot create " << outprefix << ".stdgt" << endl; 
+
+    return 1; 
+  }
+
+
+  int j = 0; 			// individual index
+
+  // Read genotype file from stdin
+  // header (ignore)
+  getline(cin, line);
+
+  while (getline(cin, line)) {
+
+    /*
+    if (i % 1000 == 0) {
+      cerr << "Marker " << i << " out of " << M << endl; 
+    }
+    */
+
+    const char *cstr_pt;
+    const char *line_cstr = line.c_str(); 
+
+    // Marker info: first 6 fields 
+    // chromosome SNPID rsid position alleleA alleleB
+    cstr_pt = strchr(line_cstr, ' ');
+    cstr_pt++; 
+
+
+    // col #2 is SNPID
+    const char *next_delim_pt = strchr(cstr_pt, ' ');
+
+    int len_SNPID = next_delim_pt - cstr_pt;
+
+    assert(len_SNPID < 128);
+
+    memcpy(snpID, cstr_pt, len_SNPID); 
+
+    snpID[len_SNPID] = '\0';
+
+    meandosfile << snpID << "\t"; 
+
+
+    // Skip next 4 columns
+    cstr_pt = next_delim_pt;
+
+    for (int k = 0; k < 4; k++) {
+      
+      cstr_pt = strchr(cstr_pt + 1, ' '); 
+
+    }
+
+    cstr_pt++; 			// skip whitespace
+
+
+    // Read genotypes (dosages)
+    j = 0; 			// individual index
+    char *next_tok = (char *) cstr_pt;
+
+    while (*next_tok != '\0') {
+
+      // allele dosage
+      stdgt[j] = strtod(cstr_pt, &next_tok); 
+
+      /* 
+      if (j < 10 || j > (N - 10)) {
+	cerr << stdgt[j] << endl; 
+      }
+      */
+      
+      j++;
+      cstr_pt = (const char *) next_tok;
+      
+    }
+
+    assert(j == N);
+
+
+    // Calculate the mean
+    long double mean = 0; 
+
+    for (j = 0; j < N; j++) {
+      
+      mean += stdgt[j]; 
+
+    }
+
+    mean = mean / N; 		// 2 x AF
+
+
+    // Center allele dosage
+    for (j = 0; j < N; j++) {
+      stdgt[j] -= (double) mean;
+    }
+
+
+    // Divide by standard deviation
+
+    long double af_i = mean / 2; 
+    long double sd_i = sqrt(2 * af_i * (1 - af_i));
+
+    // only if the SNP is not monomorphic
+    if (af_i > 0 && af_i < 1) {
+
+      for (j = 0; j < N; j++) {
+
+	stdgt[j] = (double) ((long double) stdgt[j] / sd_i); 
+
+      }
+
+    } else {
+
+      // stdgt_i[j] = 0 for all j
+      
+      cerr << "warning: monomorphic site: " << i + 1 << ": AF = " << af_i 
+	   << endl;
+      
+      // do nothing
+    }
+
+    // Dump mean dosage
+    meandosfile << af_i << endl; 
+
+    // Dump stdgt
+    memcpy(buffer, stdgt, N * sizeof(double));
+
+    stdgtfile.write(buffer, N * sizeof(double));
+
+
+    // Next marker
+    i++; 
+  }
+
+  assert(i == M);
+
+  // Close files
+  meandosfile.close();
+  stdgtfile.close();
+
+  // Free up memory space
+  delete buffer; 
+  delete stdgt; 
+
+  return 0; 
+}

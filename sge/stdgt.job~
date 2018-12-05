@@ -1,0 +1,18 @@
+simdir=$1
+outtag=$2
+N=$3
+chrom=$SGE_TASK_ID
+
+
+prefix="$simdir/chrom${chrom}.maf_0.05.${outtag}"
+
+echo $prefix
+
+M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
+
+echo "N=$N M=$M"
+
+zcat $prefix.dosage.gz | ./stdgt $N $M $prefix
+    
+gzip $prefix.stdgt
+    
