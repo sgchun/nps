@@ -1,0 +1,1 @@
+Rscript npsR/nps_back2snpeff.R $1 $LSB_JOBINDEX $2 > $1/log/nps_back2snpeff.Rout.$2.$LSB_JOBINDEX
