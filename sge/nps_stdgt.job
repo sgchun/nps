@@ -1,0 +1,18 @@
+dir=$1
+datasetName=$2
+N=$3
+chrom=$SGE_TASK_ID
+
+
+prefix="$dir/chrom${chrom}.${datasetName}"
+
+echo $prefix
+
+M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
+
+echo "N=$N M=$M"
+
+zcat $prefix.dosage.gz | ./stdgt $N $M $prefix
+    
+gzip -f $prefix.stdgt
+    

@@ -1,0 +1,1 @@
+Rscript npsR/nps_back2snpeff.R $1 $SGE_TASK_ID $2 > $1/log/nps_back2snpeff.Rout.$2.$SGE_TASK_ID
