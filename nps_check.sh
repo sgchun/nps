@@ -17,6 +17,7 @@ if [ $# -eq 0 ]; then
 fi
 
 step=$1
+status=0
 
 if [ $step == "stdgt" ]; then
     echo "Verifying nps_stdgt:"
@@ -36,28 +37,34 @@ if [ $step == "stdgt" ]; then
 
 	if [ ! -s $filepre.meandos ]; then
 	    echo "FAIL: .meandos missing"
-	    exit 1
+	    status=1
+	    continue
 	fi
 
 	if [ ! -s $filepre.snpinfo ]; then
 	    echo "FAIL: .snpinfo missing"
-	    exit 1
+	    status=1
+	    continue
 	fi
 
 	if [ ! -s $filepre.stdgt.gz ]; then
 	    echo "FAIL: .stdgt.gz missing"
-	    exit 1
+	    status=1
+	    continue
 	fi
 
 	gzip -t $filepre.stdgt.gz 
 	
 	if [ $? != 0 ]; then 
 	    echo "FAIL: .stdgt.gz broken"
-	    exit 1
+	    status=1
+	    continue
 	fi
 
 	echo "OK"
     done
+    
+    exit $status
 
 elif [ $step == "init" ]; then
 
@@ -72,7 +79,7 @@ elif [ $step == "init" ]; then
 
     if [ ! -f $workdir/args.RDS ]; then
 	echo "FAIL"
-	exit
+	exit 1
     fi
     
     ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"VERSION\"]]);"`
@@ -83,7 +90,7 @@ elif [ $step == "init" ]; then
 
     if [ ! -d $workdir/log ]; then
 	echo "FAIL"
-	exit
+	exit 1
     fi
 
     echo "OK"
@@ -113,18 +120,24 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	if [ ! -f $logfile ]; then
 	    echo "FAIL (missing)"
-	    exit 1
+	    status=1
+	    continue
 	fi
 	
 	last=`tail -n 1 $logfile`
 
 	if [ "$last" != "Done" ]; then
 	    echo "FAIL (incomplete)"
-	    exit 1
+	    status=1
+	    continue
 	fi
 
 	echo "OK"
     done
+
+    if [ $status != 0 ]; then
+	exit $status
+    fi
 
     if [ $step == "prune" ]; then
 	
@@ -235,7 +248,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	    if [ ! -s $trPT ]; then
 		echo "FAIL (missing)"
-		exit 1
+		status=1
+		continue
 	    fi
 
 	    dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));"`
@@ -243,6 +257,10 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	    echo "OK ($dim)"
 	done
+
+	if [ $status != 0 ]; then
+	    exit $status
+	fi
 	
 	echo -n "Checking timestamp ..."
 	if [ $winshift == 0 ]; then 
@@ -276,7 +294,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	    if [ ! -s $snpeff ]; then
 		echo "FAIL (missing)"
-		exit 1
+		status=1
+		continue
 	    fi
 
 	    M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
@@ -284,11 +303,16 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	    if [ $M1 != $M2 ]; then
 		echo "FAIL (marker count mismatch: $M1 != $M2)"
-		exit 1
+		status=1
+		continue
 	    fi
 
 	    echo "OK"
 	done
+
+	if [ $status != 0 ]; then 
+	    exit $status
+	fi
 	
 	echo -n "Checking timestamp ..."
 
@@ -412,5 +436,5 @@ else
     exit 1
 fi
 
-exit 0
+exit $status
 
