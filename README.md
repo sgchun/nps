@@ -5,7 +5,7 @@ NPS is a non-parametric polygenic risk prediction algorithm described in Chun et
 
 ## How to install
 
-1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/) R-v3.0 or later is required to run NPS. Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). Since the most time-consuming steps in NPS are matrix manipulations, this can significantly reduce the running time of NPS.  
+1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/). R-3.0 or later is required to run NPS. Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). Since the most time-consuming steps in NPS are matrix manipulations, this can significantly reduce the running time of NPS. 
 
 2. (Optional) NPS relies on R modules, **pROC** and **DescTools**, to calculate the AUC and Nagelkerke's R2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R2 will not be reported. To enable this feature, please install these packages by running the following on command line: 
 
@@ -22,20 +22,22 @@ $ cd nps-1.0.0/
 $ make
 ```
 
-4. We recommend to run NPS with computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see **sge** and **lsf** directories and provided examples below. You may still need to modify the provided job scripts, for example, to load necessary modules. Note that some steps are memory-intensive or take long computing time; you may need to request resources to your job scheduler. 
+4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples below. You may still need to modify the provided job scripts, for example, to load necessary modules. 
 
-5. (Optional) We provide sample SGE job scripts to prepare UK Biobank data for an NPS training cohort. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). Our scripts use [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Altough these scripts are tailored for UK Biobank data, they are equally applicable to other genetic data in .bgen file format. 
+5. (Optional) We provide sample SGE job scripts to prepare UK Biobank data for an NPS training cohort. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). Our scripts use [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/).  
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
-1. GWAS summary statistics 
+
+1. GWAS summary statistics. 
+
 This is a tab-delimited text file. NPS requires the following seven columns, and the rest of columns will be ignored. 
-- chr: chromosome starts with "chr." The current version of NPS expects only chromosomes 1-22.
+- chr: chromosome starts with "chr." NPS expects only chromosomes 1-22.
 - pos: base positions of SNP
 - ref and alt: reference and alternative alleles of a SNP. NPS do not accept InDels or tri-allelic SNPs. There should not be duplicated SNPs in the file. 
 - reffreq: allele frequency of reference allele
 - pval: p-value of association
-- effalt: estimated **per-allele** effect size of alternative allele. For case/control GWAS, log(OR) can be used for this.  
+- effalt: estimated **per-allele** effect size of alternative allele. For case/control GWAS, log(OR) can be used for this. NPS will convert this relative to standardized genotypes using **reffreq** data.  
 
 ```
 chr	pos	ref	alt	reffreq	pval	effalt
@@ -50,6 +52,7 @@ chr1	832318	G	A	0.2797	0.4102	0.002304
 chr1	836924	G	A	0.7958	0.6591	-0.001374
 ```
 2. Training genotypes (imputed allelic dosages) in QCTOOL dosage format. 
+
 Genotype files have to be filtered before running NPS. NPS expects all markers in training genotype file to be present in GWAS summary statitics. We recommend to filter out InDels, tri-allelic SNPs, rare variants with MAF < 5% and markers with any QC issue. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. There should be no duplicated SNPs. NPS expects that genotype data are split by chromosomes and each file is named as chrom**N**.**CohortName**.dosage.gz. NPS matches allele by chromosome, position, alleleA and allele B, and will ignore SNPID or rsid. NPS expects 'alleleA' to match 'ref' column and 'alleleB' to match 'alt' column in summary stats. The allelic dosage refers the dosage of alt allele (alleleB). See [here](https://www.well.ox.ac.uk/~gav/qctool/) for the detailed file format. See our UK Biobank processing script as an example. 
 ```
 chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
@@ -65,6 +68,7 @@ chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41
 ...
 ```
 3. Training sample information in PLINK .fam format. 
+
 The samples in the .fam file should appear in the exactly same order as training genotype dosage file. See [here](https://www.cog-genomics.org/plink2/formats#fam) for the details. This is space-separated six-column text file without a header. Only first two columns (family ID and individual ID) are used. 
 ```
 trainF2 trainI2 0 0 0 -9
@@ -76,6 +80,7 @@ trainF58 trainI58 0 0 0 -9
 ```
 
 4. Training phenotypes in PLINK phenotype format. 
+
 NPS ignores the phenotype column in the .fam file and needs a separate phenotype file. See [here](http://zzz.bwh.harvard.edu/plink/data.shtml#pheno) for the details. 
 ```
 FID	IID	TotalLiability	Outcome
