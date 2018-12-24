@@ -1,20 +1,20 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction algorithm described in [Chun et al. (2018) BioRxiv](https://www.biorxiv.org/content/early/2018/07/16/370064). 
+NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) BioRxiv [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). 
 
 
 ## How to install
 
-1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/)(v3.0 or later is required). Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). 
+1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/). R-3.0 or later is required to run NPS. Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). Since the most time-consuming steps in NPS are matrix manipulations, this can significantly reduce the running time of NPS. 
 
-2. (Optional) NPS relies on R modules, **pROC** and **DescTools**, to calculate AUC and Nagelkerke's R2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R2 will not be reported. To enable this feature, please install these packages by running the following lines on command line: 
+2. (Optional) NPS relies on R modules, **pROC** and **DescTools**, to calculate the AUC and Nagelkerke's R2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R2 will not be reported. To enable this feature, please install these packages by running the following on command line: 
 
 ```
 $ Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
 $ Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
 ```
 
-3. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled. For this, you need GNU C++ compiler with C++0x support (GCC 4.4 or later). This step will create two executable binaries, **stdgt** and **grs**, in the top-level folder. stdgt converts an imputed dosage file to standardized genotypes with the mean of 0 and variance of 1. grs calculates genetic risk scores for an imputed dosage file using NPS-generated per-SNP weighted effects. 
+3. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled. For this, you need GNU C++ compiler with C++0x support (GCC 4.4 or later). This step will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. stdgt converts an imputed dosage file to standardized genotypes with the mean of 0 and variance of 1. grs calculates genetic risk scores for all indiviudals in an imputed dosage file with per-SNP genetic effects computed by NPS.
 
 ```
 $ tar -zxvf nps-1.0.0.tar.gz
@@ -22,13 +22,23 @@ $ cd nps-1.0.0/
 $ make
 ```
 
-4. We recommend to run NPS with computer clusters, processing chromosomes in parallel. We provide sample job scripts in **sge** and **lsf** directories to use for SGE and LSF clusters. You may still need to modify the provided job scripts, e.g. to load necessary modules. Note that some steps are memory-intensive or take long computing time; you may need to request resources to your job scheduler. 
+4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples below. You may still need to modify the provided job scripts, for example, to load necessary modules. 
 
-5. (Optional) We provide SGE job scripts to prepare UK Biobank data as NPS training genotypes. To use these scripts, you need [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). 
+5. (Optional) We provide sample SGE job scripts to prepare UK Biobank data for an NPS training cohort. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). Our scripts use [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/).  
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
-1. GWAS summary statistics 
+
+1. GWAS summary statistics. 
+
+This is a tab-delimited text file. NPS requires the following seven columns, and the rest of columns will be ignored. 
+- chr: chromosome starts with "chr." NPS expects only chromosomes 1-22.
+- pos: base positions of SNP
+- ref and alt: reference and alternative alleles of a SNP. NPS do not accept InDels or tri-allelic SNPs. There should not be duplicated SNPs in the file. 
+- reffreq: allele frequency of reference allele
+- pval: p-value of association
+- effalt: estimated **per-allele** effect size of alternative allele. For case/control GWAS, log(OR) can be used for this. NPS will convert this relative to standardized genotypes using **reffreq** data.  
+
 ```
 chr	pos	ref	alt	reffreq	pval	effalt
 chr1	676118	G	A	0.91584	0.7908	0.0012
@@ -41,7 +51,9 @@ chr1	831489	G	A	0.2797	0.1287	0.004252
 chr1	832318	G	A	0.2797	0.4102	0.002304
 chr1	836924	G	A	0.7958	0.6591	-0.001374
 ```
-2. Training genotypes in [QCTOOL dosage format](https://www.well.ox.ac.uk/~gav/qctool/)
+2. Training genotypes (imputed allelic dosages) in QCTOOL dosage format. 
+
+Genotype files have to be filtered before running NPS. NPS expects all markers in training genotype file to be present in GWAS summary statitics. We recommend to filter out InDels, tri-allelic SNPs, rare variants with MAF < 5% and markers with any QC issue. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. There should be no duplicated SNPs. NPS expects that genotype data are split by chromosomes and each file is named as chrom**N**.**CohortName**.dosage.gz. NPS matches allele by chromosome, position, alleleA and allele B, and will ignore SNPID or rsid. NPS expects 'alleleA' to match 'ref' column and 'alleleB' to match 'alt' column in summary stats. The allelic dosage refers the dosage of alt allele (alleleB). See [here](https://www.well.ox.ac.uk/~gav/qctool/) for the detailed file format. See our UK Biobank processing script as an example. 
 ```
 chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
 01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
@@ -55,7 +67,9 @@ chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41
 01 1_836924:836924:G:A 1_836924:836924:G:A 836924 G A 0 0 0 0 0
 ...
 ```
-3. Training sample information in [PLINK .fam format](https://www.cog-genomics.org/plink2/formats#fam)
+3. Training sample information in PLINK .fam format. 
+
+The samples in the .fam file should appear in the exactly same order as training genotype dosage file. See [here](https://www.cog-genomics.org/plink2/formats#fam) for the details. This is space-separated six-column text file without a header. Only first two columns (family ID and individual ID) are used. 
 ```
 trainF2 trainI2 0 0 0 -9
 trainF3 trainI3 0 0 0 -9
@@ -65,7 +79,9 @@ trainF58 trainI58 0 0 0 -9
 ...
 ```
 
-4. Training phenotypes [in PLINK phenotype format](http://zzz.bwh.harvard.edu/plink/data.shtml#pheno)
+4. Training phenotypes in PLINK phenotype format. 
+
+NPS ignores the phenotype column in the .fam file and needs a separate phenotype file. See [here](http://zzz.bwh.harvard.edu/plink/data.shtml#pheno) for the details. 
 ```
 FID	IID	TotalLiability	Outcome
 trainF68266	trainI68266	2.00037013482937	1
@@ -81,7 +97,13 @@ trainF65453	trainI65453	0.817881328612934	0
 
 
 ## Test cases
+We provide two sets of simulated data as test cases. Due to their file large sizes, they are available separately from the software distribution. Please download them from [here]. Test1 is a relatively small dataset (225MB), and NPS can finsih running in less than 1 hour on a modest desktop PC without linear-algebra acceleration. In contrast, Test2 is more realistic simulation (6.4GB) and will demand serious computational resource. NPS will generate up to 1 TB of intermediary data and need computer clusters with large memory. The running time will depend on how much parallelization you cluster can support, but you should expect 1/2 day to a day. Both datasets were generated with our multivariate-normal simulator (See our manuscript for the details).   
 
+- Test1: The number of markers across the genome is 100,449, and we assume that all causal SNPs are included in the 100,449 SNP set. Note that this is unrealistic assumption; causal SNPs cannot be accurately tagged with such a sparse SNP set. The fraction of causal SNP is 0.0001. The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
+
+- Test2: The number of markers across the genome is 5,012,501, which covers the most of common SNPs in the genome. The fraction of causal SNP is 0.001. The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 1,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of simulation dataset we used in our paper, with 1/50-fold reduced validation cohort size. 
+
+We assume that you download and unpack test datasets in the following directories.
 ```
 $ cd nps-1.0.0/testdata/
 $ tar -zxvf NPS.Test1.tar.gz 
