@@ -82,7 +82,7 @@ elif [ $step == "init" ]; then
 	exit 1
     fi
     
-    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"VERSION\"]]);"`
+    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"VERSION\"]]);" | tail -n 1`
     
     echo "OK ($ver)"
 
@@ -252,7 +252,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		continue
 	    fi
 
-	    dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));"`
+	    dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));" | tail -n 1`
 	    dim=`echo $dim | sed 's/ / x /g'`
 
 	    echo "OK ($dim)"
@@ -278,8 +278,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
     elif [ $step == "back2snpeff" ]; then 
 
-	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);"`
-	traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);"`
+	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+	traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
 
 	for chrom in `seq 1 22`
 	do 
@@ -409,7 +409,7 @@ elif [ $step == "weight" ]; then
 	exit 1
     fi
     
-    dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(dim(PTwt));"`
+    dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(dim(PTwt));" | tail -n 1`
     dim=`echo $dim | sed 's/ / x /g'`
 
     echo "OK ($dim)"
