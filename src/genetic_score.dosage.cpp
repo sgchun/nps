@@ -72,8 +72,14 @@ int main(int argc, char *argv[]) {
   double gt_ij;
   double *gliab = NULL;
 
-  i = 0;
   gliab = new double[N];
+
+  // initialize
+  for (i = 0; i < N; i++) {
+    gliab[i] = 0;
+  }
+
+  i = 0;
 
   // header (ignore)
   getline(cin, line);
