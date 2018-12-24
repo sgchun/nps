@@ -12,6 +12,7 @@ if [ $# -eq 0 ]; then
     echo "    part workdir winshift"
     echo "    weight workdir winshift"
     echo "    back2snpeff workdir winshift"
+    echo "    score workdir traintag valdir valtag"
 
     exit 1
 fi
@@ -426,6 +427,62 @@ elif [ $step == "weight" ]; then
 
     if [ $outdated != 0 ]; then
 	echo "FAIL (outdated PTwt data)"
+	exit 1
+    fi
+
+    echo "OK"
+
+elif [ $step == "score" ]; then
+    echo "Verifying nps_$step:"
+
+    if [ $# -ne 4 ]; then
+	echo "Usage: nps_check.sh $step workdir traintag valdir valtag"
+	exit 1
+    fi
+
+    workdir=$2
+    traintag=$3
+    valdir=$4
+    valtag=$5
+
+    for chrom in `seq 1 22`
+    do 
+
+	scorefile="$valdir/$traintag.predY.chrom$chrom.txt"
+
+	echo -n "Checking $scorefile ..."
+
+	if [ ! -s $scorefile ]; then
+	    echo "FAIL (missing)"
+	    status=1
+	    continue
+	fi
+	
+	# check line number
+	N=`zcat $valdir/chrom${chrom}.${valtag}.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
+
+	N0=`wc -l $scorefile`
+
+	if [ $N != $N0 ]; then
+	    echo "FAIL (incomplete)"
+	    status=1
+	    continue
+	fi
+
+	echo "OK"
+    done
+
+    if [ $status != 0 ]; then 
+	exit $status
+    fi
+	
+    echo -n "Checking timestamp ..."
+
+    prevfile=`ls -t $workdir/$traintag.adjbetahat.chrom*.txt | head -n 1`
+    outdated=`find $valdir/ -name "$traintag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
+
+    if [ $outdated != 0 ]; then
+	echo "FAIL (outdated score data)"
 	exit 1
     fi
 
