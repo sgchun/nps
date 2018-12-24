@@ -435,7 +435,7 @@ elif [ $step == "weight" ]; then
 elif [ $step == "score" ]; then
     echo "Verifying nps_$step:"
 
-    if [ $# -ne 4 ]; then
+    if [ $# -ne 5 ]; then
 	echo "Usage: nps_check.sh $step workdir traintag valdir valtag"
 	exit 1
     fi
