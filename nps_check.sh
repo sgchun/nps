@@ -469,7 +469,7 @@ elif [ $step == "score" ]; then
 	    continue
 	fi
 
-	echo "OK"
+	echo "OK (N=$N)"
     done
 
     if [ $status != 0 ]; then 
