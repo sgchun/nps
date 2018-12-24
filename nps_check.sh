@@ -461,7 +461,7 @@ elif [ $step == "score" ]; then
 	# check line number
 	N=`zcat $valdir/chrom${chrom}.${valtag}.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 
-	N0=`wc -l $scorefile`
+	N0=`cat $scorefile | wc -l`
 
 	if [ $N != $N0 ]; then
 	    echo "FAIL (incomplete)"
