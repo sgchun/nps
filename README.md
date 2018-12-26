@@ -123,10 +123,10 @@ $ cd nps-1.0.0/
 # SGE cluster
 $ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train 5000
 
-# Batch processing (on desktop)
+# Or batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train 5000
 ```
-After all jobs are completed, `nps_check.sh` script can be used to make sure that all jobs are successful as follows (`FAIL` message will be printed out if failure is detected): 
+After all jobs are completed, `nps_check.sh` script can be used to make sure that all jobs are successful. If failure is detected, `FAIL` message will be printed. Note `nps_check.sh` script can be used on clusters (both SGE and LSF) and in batch mode as follows in the same way: 
 ```bash
 $ ./nps_check.sh stdgt testdata/Test1 Test1.train 
 Verifying nps_stdgt:
@@ -139,7 +139,7 @@ Checking testdata/Test1/chrom3.Test2.train ...OK
 2. **Configure an NPS run.** NPS will create the directory to store intermediate data (`testdata/Test1/npsdat`) and save the NPS configuration file in the directory. For parameters, NPS needs the path to GWAS summary statistics file (`testdata/Test1/Test1.summstats.txt`), directory containing training genotypes (`testdata/Test1`), IDs of training samples (`testdata/Test1/Test1.train.2.5K_2.5K.fam`), phenotypes of training samples (`testdata/Test1/Test1.train.2.5K_2.5K.phen`), name of training cohort (`Test1.train`), analysis window size (`80` SNPs here), and directory for intermediate data (`testdata/Test1/npsdat`). The window size of 80 SNPs for ~100,000 genome-wide SNPs is comparable to 4,000 SNPs for ~5,000,000 genome-wide SNPs. 
 
 ```bash
-# For both SGE cluster and batch processing
+# Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
 
 # Check the results
@@ -153,6 +153,12 @@ $ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0
 $ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
 $ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
 $ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
+
+# Or batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
+$ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
+$ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
+$ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh decor testdata/Test1/npsdat/ 0 
@@ -169,6 +175,12 @@ $ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
 $ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
 $ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
 
+# Or batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
+$ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
+$ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
+$ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
+
 # Check the results
 $ ./nps_check.sh prune testdata/Test1/npsdat/ 0 
 $ ./nps_check.sh prune testdata/Test1/npsdat/ 20 
@@ -184,6 +196,12 @@ $ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
 $ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
 $ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
 
+# Or batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
+$ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
+$ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
+$ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
+
 # Check the results
 $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 
 $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 20 
@@ -193,7 +211,7 @@ $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 60
 
 6. **Define a partitioning scheme.** The partition boundaries will be defined with `npsR/nps_prep_part.R` and then, partitioned genetic risk scores will be calculated for all training samples using `nps_part.job`. We recommend to set up general 10 x 10 partitioning as follows. For `npsR/nps_prep_part.R`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), the second is the window shift (`0`, `20`, `40` or `60`), the third is the number of partitions on intervals of eigenvalues of eigenlocus projection (`10`), and the last is the number of partitions on intervals of observed effect sizes in the eigenlocus space (`10`). For `nps_part.job`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), and the second  is the window shift (`0`, `20`, `40` or `60`)
 ```
-# For both SGE cluster and batch processing
+# Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
 $ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
 $ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
@@ -211,6 +229,12 @@ $ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
 $ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
 $ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 
+# Or batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 0
+$ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 20
+$ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 40
+$ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
+
 # Check the results
 $ ./nps_check.sh part testdata/Test1/npsdat/ 0 
 $ ./nps_check.sh part testdata/Test1/npsdat/ 20 
@@ -218,9 +242,9 @@ $ ./nps_check.sh part testdata/Test1/npsdat/ 40
 $ ./nps_check.sh part testdata/Test1/npsdat/ 60 
 ```
 
-7. **Estimate per-partition shrinkage weights.**
+7. **Estimate per-partition shrinkage weights.** Then, we estimate the per-partition shrinkage weights using `npsR/nps_weight.R`. We also provide two optimal utilities. 
 ```bash
-# For both SGE cluster and batch processing
+# Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
 $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
 $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
@@ -232,14 +256,16 @@ $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
 ```
 
 ```bash
+# Optional 
 $ Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+...
 Data: 2500 controls < 2500 cases.
 Area under the curve: 0.8799
 95% CI: 0.8707-0.8891 (DeLong)
 ```
 
 ```
-# For both SGE cluster and batch processing
+# Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 ```
 
@@ -269,7 +295,7 @@ $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_60 
 # Check the results
 
 # Calculate the overall prediction accuray in the validation cohort 
-# For both SGE cluster and batch processing
+# Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/ testdata/Test1.val.5K.fam testdata/Test1.val.5K.phen 0 20 40 60 
 
 Non-Parametric Shrinkage 1.0.0 
