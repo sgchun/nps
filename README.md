@@ -270,7 +270,7 @@ Area under the curve: 0.8799
 95% CI: 0.8707-0.8891 (DeLong)
 ```
 
-`npsR/nps_train_AUC.R` will store the following plot of shrinkage curve (See our example)[https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf]
+`npsR/nps_train_AUC.R` will store the following plot of shrinkage curve. See our example [(Test1.nps.pdf)](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf).
 ```
 # Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
@@ -301,11 +301,17 @@ $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_40 
 $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_60 testdata/ Test1.val
 
 # Check the results
+$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_20 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_40 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_60 testdata/Test1/ Test1.val
 
 # Calculate the overall prediction accuray in the validation cohort 
 # Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/ testdata/Test1.val.5K.fam testdata/Test1.val.5K.phen 0 20 40 60 
+```
 
+```
 Non-Parametric Shrinkage 1.0.0 
 Validation cohort:
 Total  5000 samples
