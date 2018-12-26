@@ -308,7 +308,7 @@ $ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_60 testdata/Test1/
 
 # Calculate the overall prediction accuray in the validation cohort 
 # Same on clusters and for batch processing (no parallelization)
-$ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/ testdata/Test1.val.5K.fam testdata/Test1.val.5K.phen 0 20 40 60 
+$ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
 ```
 
 ```
