@@ -369,3 +369,172 @@ Residual Deviance: 1621 	AIC: 1625
 Done
 
 ```
+
+### Running NPS on Test set #2
+
+```bash
+bsub -q short -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train 5000
+
+./nps_check.sh stdgt testdata/Test2/ Test2.train 
+
+Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testda
+ta/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Tes
+t2.train 4000 testdata/Test2/npsdat 
+
+./nps_check.sh init testdata/Test2/npsdat/
+
+bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+est2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+est2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+est2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+est2/npsdat/ 3000 
+
+./nps_check.sh decor testdata/Test2/npsdat/ 0 
+./nps_check.sh decor testdata/Test2/npsdat/ 1000 
+./nps_check.sh decor testdata/Test2/npsdat/ 2000 
+./nps_check.sh decor testdata/Test2/npsdat/ 3000 
+
+bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+est2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+est2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+est2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+est2/npsdat/ 3000 
+
+./nps_check.sh prune testdata/Test2/npsdat/ 0 
+./nps_check.sh prune testdata/Test2/npsdat/ 1000 
+./nps_check.sh prune testdata/Test2/npsdat/ 2000 
+./nps_check.sh prune testdata/Test2/npsdat/ 3000 
+
+bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
+
+./nps_check.sh gwassig testdata/Test2/npsdat/ 0
+./nps_check.sh gwassig testdata/Test2/npsdat/ 1000
+./nps_check.sh gwassig testdata/Test2/npsdat/ 2000
+./nps_check.sh gwassig testdata/Test2/npsdat/ 3000
+
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
+
+./nps_check.sh prep_part testdata/Test2/npsdat/ 0
+./nps_check.sh prep_part testdata/Test2/npsdat/ 1000
+./nps_check.sh prep_part testdata/Test2/npsdat/ 2000
+./nps_check.sh prep_part testdata/Test2/npsdat/ 3000
+
+bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
+
+./nps_check.sh part testdata/Test2/npsdat/ 0
+./nps_check.sh part testdata/Test2/npsdat/ 1000
+./nps_check.sh part testdata/Test2/npsdat/ 2000
+./nps_check.sh part testdata/Test2/npsdat/ 3000
+
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0 
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000 
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000 
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000 
+
+Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000 
+
+Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000 
+```
+
+```
+Data: 2500 controls < 2500 cases.
+Area under the curve: 0.7843
+95% CI: 0.7718-0.7968 (DeLong)
+```
+
+```bash
+bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
+
+./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 
+./nps_check.sh back2snpeff testdata/Test2/npsdat/ 1000 
+./nps_check.sh back2snpeff testdata/Test2/npsdat/ 2000 
+./nps_check.sh back2snpeff testdata/Test2/npsdat/ 3000 
+
+bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
+bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
+bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
+bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
+
+./nps_check.sh score testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
+
+Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000 
+```
+
+```
+Non-Parametric Shrinkage 1.0.0 
+Validation cohort:
+Total  5000 samples
+240  case samples
+4760  control samples
+0  samples with missing phenotype (-9)
+Includes TotalLiability
+Checking a prediciton model (winshift = 0 )...
+Observed-scale R2 = 0.04862955 
+Liability-scale R2 = 0.2303062 
+Checking a prediciton model (winshift = 1000 )...
+Observed-scale R2 = 0.04994584 
+Liability-scale R2 = 0.2298484 
+Checking a prediciton model (winshift = 2000 )...
+Observed-scale R2 = 0.05150205 
+Liability-scale R2 = 0.2268046 
+Checking a prediciton model (winshift = 3000 )...
+Observed-scale R2 = 0.05258402 
+Liability-scale R2 = 0.2298871 
+
+
+
+Producing a combined prediction model...OK (saved in testdata/Test2/Test2.val.5K.phen.nps_score )
+Observed-scale R2 = 0.05253146 
+Liability-scale R2 = 0.2376991 
+Loading required package: pROC
+Type 'citation("pROC")' for a citation.
+
+Attaching package: ‘pROC’
+
+The following objects are masked from ‘package:stats’:
+
+    cov, smooth, var
+
+AUC:
+
+Call:
+roc.default(controls = prisk[vlY == 0], cases = prisk[vlY ==     1], ci = TRUE)
+
+Data: 4760 controls < 240 cases.
+Area under the curve: 0.7886
+95% CI: 0.7617-0.8154 (DeLong)
+Loading required package: DescTools
+Nagelkerke's R2 = 0.1668188 
+
+Call:  glm(formula = vlY ~ prisk, family = binomial(link = "logit"))
+
+Coefficients:
+(Intercept)        prisk  
+    -5.2888       0.2387  
+
+Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual
+Null Deviance:      1926 
+Residual Deviance: 1652         AIC: 1656
+Done
+```
