@@ -209,7 +209,7 @@ $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 40
 $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 60 
 ```
 
-6. **Define a partitioning scheme.** The partition boundaries will be defined with `npsR/nps_prep_part.R` and then, partitioned genetic risk scores will be calculated for all training samples using `nps_part.job`. We recommend to set up general 10 x 10 partitioning as follows. For `npsR/nps_prep_part.R`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), the second is the window shift (`0`, `20`, `40` or `60`), the third is the number of partitions on intervals of eigenvalues of eigenlocus projection (`10`), and the last is the number of partitions on intervals of observed effect sizes in the eigenlocus space (`10`). For `nps_part.job`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), and the second  is the window shift (`0`, `20`, `40` or `60`)
+6. **Define a partitioning scheme.** The partition scheme will be defined with `npsR/nps_prep_part.R` and then, partitioned genetic risk scores will be calculated for all training samples using `nps_part.job`. Specifically, for `npsR/nps_prep_part.R`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), the second is the window shift (`0`, `20`, `40` or `60`), the third is the number of partitions on intervals of eigenvalues of eigenlocus projection (`10`), and the last is the number of partitions on intervals of observed effect sizes in the eigenlocus space (`10`). For `nps_part.job`, the first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), and the second is the window shift (`0`, `20`, `40` or `60`)
 ```
 # Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
@@ -242,7 +242,8 @@ $ ./nps_check.sh part testdata/Test1/npsdat/ 40
 $ ./nps_check.sh part testdata/Test1/npsdat/ 60 
 ```
 
-7. **Estimate per-partition shrinkage weights.** Then, we estimate the per-partition shrinkage weights using `npsR/nps_weight.R`. We also provide two optimal utilities. 
+7. **Estimate per-partition shrinkage weights.** Then, we estimate the per-partition shrinkage weights using `npsR/nps_weight.R`. We also provide two optional utilities: `npsR/nps_train_AUC.R`, which reports the AUC statistics of prediction in training cohort, and `npsR/nps_plot_shrinkage.R`, which plots the overall curve of GWAS effect sizes re-weighted by per-partition shrinkage. Both tools take the average of NPS run on shifted windows. `npsR/nps_plot_shrinkage.R` will save the shrinkage curve plot in the pdf file path given as second argument (`Test1.nps.pdf`). 
+
 ```bash
 # Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
@@ -251,25 +252,31 @@ $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40
 $ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
 
 # Check the results
-
-
+$ ./nps_check.sh weight testdata/Test1/npsdat/ 0 
+$ ./nps_check.sh weight testdata/Test1/npsdat/ 20 
+$ ./nps_check.sh weight testdata/Test1/npsdat/ 40 
+$ ./nps_check.sh weight testdata/Test1/npsdat/ 60 
 ```
 
 ```bash
 # Optional 
 $ Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
-...
+```
+
+With test set #1, `npsR/nps_train_AUC.R` will report the following AUC in the training cohort: 
+```
 Data: 2500 controls < 2500 cases.
 Area under the curve: 0.8799
 95% CI: 0.8707-0.8891 (DeLong)
 ```
 
+`npsR/nps_train_AUC.R` will store the following plot of shrinkage curve (See our example)[https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf]
 ```
 # Same on clusters and for batch processing (no parallelization)
 $ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 ```
 
-8. **Convert back to per-SNP effect sizes.**
+8. **Convert back to per-SNP effect sizes.** Then, the re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. This will generate Test1.train.adjbetahat.chrom*N*.txt for the shift of 0, and Test1.train.win_*shift*.adjbetahat.chrom*N*.txt for the rest of shifts. 
 ```bash
 # SGE cluster
 $ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
@@ -285,6 +292,7 @@ $ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 60
 ```
 
 9. **Validate.**
+
 ```bash
 # SGE cluster
 $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train testdata/ Test1.val
