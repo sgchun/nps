@@ -109,7 +109,7 @@ We assume that the test datasets will be downloaded and unpacked in the followin
 ```bash
 $ cd nps-1.0.0/testdata/
 $ tar -zxvf NPS.Test1.tar.gz 
-# This will create test data in nps-1.0.0/testdata/Test1
+# This will create the following test data files in nps-1.0.0/testdata/Test1
 # Test1/Test1.summstats.txt (GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
@@ -123,7 +123,18 @@ $ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 
 $ tar -zxvf NPS.Test2.tar.gz 
-# This will create test data in nps-1.0.0/testdata/Test2
+# This will create the following test data in nps-1.0.0/testdata/Test2
+# Test2/Test2.summstats.txt (GWAS summary statistics)
+# Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
+# Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
+# ... 
+# Test2/Test2.train.2.5K_2.5K.fam (training cohort sample IDs)
+# Test2/Test2.train.2.5K_2.5K.phen (training cohort phenotypes)
+# Test2/chrom1.Test2.val.dosage.gz (validation cohort genotypes)
+# Test2/chrom2.Test2.val.dosage.gz (validation cohort genotypes)
+# ... 
+# Test2/Test2.val.5K.fam (validation cohort sample IDs)
+# Test2/Test2.val.5K.phen (validation cohort phenotypes)
 ```
 
 ### Running NPS on Test set #1
