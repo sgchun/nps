@@ -110,6 +110,18 @@ We assume that the test datasets will be downloaded and unpacked in the followin
 $ cd nps-1.0.0/testdata/
 $ tar -zxvf NPS.Test1.tar.gz 
 # This will create test data in nps-1.0.0/testdata/Test1
+# Test1/Test1.summstats.txt (GWAS summary statistics)
+# Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
+# Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
+# ... 
+# Test1/Test1.train.2.5K_2.5K.fam (training cohort sample IDs)
+# Test1/Test1.train.2.5K_2.5K.phen (training cohort phenotypes)
+# Test1/chrom1.Test1.val.dosage.gz (validation cohort genotypes)
+# Test1/chrom2.Test1.val.dosage.gz (validation cohort genotypes)
+# ... 
+# Test1/Test1.val.5K.fam (validation cohort sample IDs)
+# Test1/Test1.val.5K.phen (validation cohort phenotypes)
+
 $ tar -zxvf NPS.Test2.tar.gz 
 # This will create test data in nps-1.0.0/testdata/Test2
 ```
