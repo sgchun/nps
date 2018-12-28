@@ -373,7 +373,7 @@ Done
 ### Running NPS on Test set #2
 
 ```bash
-bsub -q short -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train 5000
+bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train 5000
 
 ./nps_check.sh stdgt testdata/Test2/ Test2.train 
 
@@ -383,13 +383,13 @@ t2.train 4000 testdata/Test2/npsdat
 
 ./nps_check.sh init testdata/Test2/npsdat/
 
-bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/T
 est2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/T
 est2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/T
 est2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -q medium -J decor[1-22] lsf/nps_decor.job testdata/T
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/T
 est2/npsdat/ 3000 
 
 ./nps_check.sh decor testdata/Test2/npsdat/ 0 
@@ -397,13 +397,13 @@ est2/npsdat/ 3000
 ./nps_check.sh decor testdata/Test2/npsdat/ 2000 
 ./nps_check.sh decor testdata/Test2/npsdat/ 3000 
 
-bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/T
 est2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/T
 est2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/T
 est2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -q medium -J prune[1-22] lsf/nps_prune.job testdata/T
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/T
 est2/npsdat/ 3000 
 
 ./nps_check.sh prune testdata/Test2/npsdat/ 0 
@@ -411,10 +411,10 @@ est2/npsdat/ 3000
 ./nps_check.sh prune testdata/Test2/npsdat/ 2000 
 ./nps_check.sh prune testdata/Test2/npsdat/ 3000 
 
-bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -q medium -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
 
 ./nps_check.sh gwassig testdata/Test2/npsdat/ 0
 ./nps_check.sh gwassig testdata/Test2/npsdat/ 1000
@@ -431,10 +431,10 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 ./nps_check.sh prep_part testdata/Test2/npsdat/ 2000
 ./nps_check.sh prep_part testdata/Test2/npsdat/ 3000
 
-bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -q medium -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
+bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
 
 ./nps_check.sh part testdata/Test2/npsdat/ 0
 ./nps_check.sh part testdata/Test2/npsdat/ 1000
@@ -458,20 +458,20 @@ Area under the curve: 0.7843
 ```
 
 ```bash
-bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -q medium -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
+bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 1000 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 2000 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 3000 
 
-bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
-bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
-bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
-bsub -q medium -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
 
 ./nps_check.sh score testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
 ./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
