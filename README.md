@@ -53,49 +53,46 @@ use OpenblasR
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** Currently, NPS supports two summary statistics formats: *PREFORMATTED* and *MINIMAL*. 
-1.1. The preformatted summary statistics format is the native format immediately ready for NPS. We provide summary statistics for [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file, sorted by chromsome numbers and positions and with the following seven essential columns: 
-- `chr`: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
-- `pos`: base positions of SNP.
-- `ref` and `alt`: reference and alternative alleles of SNP. NPS does not allow InDels or tri-allelic SNPs. There should not be duplicated SNPs in the file. 
-- `reffreq`: allele frequency of reference allele in the discovery GWAS cohort. 
-- `pval`: p-value of association. 
-- `effalt`: estimated *per-allele* effect size of alternative allele. For case/control GWAS, log(OR) should be used. NPS will convert `effalt` to effect sizes relative to the standardized genotype using `reffreq` values.  
-
-```
-chr	pos	ref	alt	reffreq	pval	effalt
-chr1	676118	G	A	0.91584	0.7908	0.0012
-chr1	734349	G	A	0.90222	0.6989	0.001636
-chr1	770886	G	A	0.91708	0.721	0.001627
-chr1	785050	G	A	0.1139	0.3353	-0.00381
-chr1	798400	G	A	0.8032	0.03301	0.006736
-chr1	804759	G	A	0.8837	0.7324	-0.00134
-chr1	831489	G	A	0.2797	0.1287	0.004252
-chr1	832318	G	A	0.2797	0.4102	0.002304
-chr1	836924	G	A	0.7958	0.6591	-0.001374
-```
-
-1.2. Because sometimes it is cumbersome to convert publicly available summary statistics into the preformatted summary statistics, we support the minimal summary statistics format, which can be automatically converted into the preformatted format and harmonized with training genotype data (See [**LINK HERE**]). Currently, this feature is supported only when UK Biobank is used as a training cohort. The minimal format is a tab-delimited text file with the seven or eight columns: 
-- `chr`: chromosome number. NPS expects only chromosomes 1-22.
-- `pos`: base positions of SNP.
-- `a1` and `a2`: Alleles at each SNP in any order. There should not be duplicated SNPs in the file. 
-- `effal`: the effect allele. It should be either a1 or a2 allele. 
-- `pval`: p-value of association. 
-- `effbeta`: estimated *per-allele* effect size of the effect allele. For case/control GWAS, log(OR) should be used. 
-- `effaf`: (Optional) allele frequency of effect allele in the discovery GWAS cohort. If this column is provided, the allele frequency will be compared between GWAS and training cohort, and markers with too divergent allele frequencies will be filtered out. If this column is not provided, allele frequencies of training cohort will be copied to summary statistics. 
-
-```
-chr	pos	a1	a2	effal	pval	effbeta	effaf
-1	569406	G	A	G	0.849496	0.05191	0.99858
-1	751756	C	T	C	0.699604	0.00546	0.14418
-1	753405	C	A	C	0.818922	0.00316	0.17332
-1	753541	A	G	A	0.8945	0.00184	0.16054
-1	754182	A	G	A	0.792062	0.00361	0.18067
-1	754192	A	G	A	0.78532	0.00373	0.1809
-1	754334	T	C	T	0.717932	0.005	0.18554
-1	755890	A	T	A	0.75168	0.00441	0.17327
-1	756604	A	G	A	0.906485	0.00162	0.18202
-```
+1. **GWAS summary statistics.** Currently, NPS supports two summary statistics formats: *preformated* and *minimal*. 
+   - The *preformatted* summary statistics format is the native format immediately ready for NPS. We provide summary statistics for [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file, sorted by chromsome numbers and positions and with the following seven essential columns: 
+     - `chr`: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
+     - `pos`: base positions of SNP.
+     - `ref` and `alt`: reference and alternative alleles of SNP. NPS does not allow InDels or tri-allelic SNPs. There should not be duplicated SNPs in the file. 
+     - `reffreq`: allele frequency of reference allele in the discovery GWAS cohort. 
+     - `pval`: p-value of association. 
+     - `effalt`: estimated *per-allele* effect size of alternative allele. For case/control GWAS, log(OR) should be used. NPS will convert `effalt` to effect sizes relative to the standardized genotype using `reffreq` values.  
+     ```
+     chr	pos	ref	alt	reffreq	pval	effalt
+     chr1	676118	G	A	0.91584	0.7908	0.0012
+     chr1	734349	G	A	0.90222	0.6989	0.001636
+     chr1	770886	G	A	0.91708	0.721	0.001627
+     chr1	785050	G	A	0.1139	0.3353	-0.00381
+     chr1	798400	G	A	0.8032	0.03301	0.006736
+     chr1	804759	G	A	0.8837	0.7324	-0.00134
+     chr1	831489	G	A	0.2797	0.1287	0.004252
+     chr1	832318	G	A	0.2797	0.4102	0.002304
+     chr1	836924	G	A	0.7958	0.6591	-0.001374
+     ```
+   - Because sometimes it is cumbersome to convert publicly available summary statistics into the preformatted summary statistics, we support the *minimal* summary statistics format, which can be automatically converted into the preformatted format and harmonized with training genotype data (See [**LINK HERE**]). Currently, this feature is supported only when UK Biobank is used as a training cohort. The minimal format is a tab-delimited text file with the seven or eight columns: 
+     - `chr`: chromosome number. NPS expects only chromosomes 1-22.
+     - `pos`: base positions of SNP.
+     - `a1` and `a2`: Alleles at each SNP in any order. There should not be duplicated SNPs in the file. 
+     - `effal`: the effect allele. It should be either a1 or a2 allele. 
+     - `pval`: p-value of association. 
+     - `effbeta`: estimated *per-allele* effect size of the effect allele. For case/control GWAS, log(OR) should be used. 
+     - `effaf`: (Optional) allele frequency of effect allele in the discovery GWAS cohort. If this column is provided, the allele frequency will be compared between GWAS and training cohort, and markers with too divergent allele frequencies will be filtered out. If this column is not provided, allele frequencies of training cohort will be copied to summary statistics. 
+     ```
+     chr	pos	a1	a2	effal	pval	effbeta	effaf
+     1	569406	G	A	G	0.8494	0.05191	0.99858
+     1	751756	C	T	C	0.6996	0.00546	0.14418
+     1	753405	C	A	C	0.8189	0.00316	0.17332
+     1	753541	A	G	A	0.8945	0.00184	0.16054
+     1	754182	A	G	A	0.7920	0.00361	0.18067
+     1	754192	A	G	A	0.7853	0.00373	0.1809
+     1	754334	T	C	T	0.7179	0.00500	0.18554
+     1	755890	A	T	A	0.7516	0.00441	0.17327
+     1	756604	A	G	A	0.9064	0.00162	0.18202
+     ```
 
 2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in the GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. NPS does not allow duplicated SNPs in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*CohortName*.dosage.gz." If you use UK Biobank data, all these QC processing steps can be done automatically using `ukbb_support` scripts [**LINK HERE**]. 
 
