@@ -33,7 +33,7 @@ $ make
 
 Note on cluster use: If you loaded a GCC module to compile NPS binaries, you also need to load the GCC module in `nps_stdgt.job` and `nps_score.job` in order to use shared C++ libraries in run time. 
 
-4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples [below](https://github.com/sgchun/nps#test-cases). You may need to modify the provided job scripts to load necessary modules if they are not loaded by default. For example, you may need to do the following in job scripts (Do not bindly add these codes. The details depend on individual system configurations): 
+4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples [below](https://github.com/sgchun/nps#test-cases). You may need to modify the provided job scripts to load necessary modules if they are not loaded by default. For example, you may need to do the following lines in the job scripts (Do not blindly add these lines. The details depend on individual system configurations): 
 
 ```bash 
 ###
