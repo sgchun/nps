@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   }
   
   // header
-  meandosfile << "SNPID" << "\t" << "MAF" << endl; 
+  meandosfile << "SNPID" << "\t" << "AAF" << endl; 
 
   snpinfofile << "chromosome" << "\t" << "SNPID" << "\t" << "rsid" << "\t"
 	      << "position" << "\t" << "alleleA" << "\t" << "alleleB" << endl; 

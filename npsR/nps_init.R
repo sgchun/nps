@@ -47,11 +47,12 @@ summstat <- read.delim(summstatfile, header=TRUE, stringsAsFactors=FALSE,
 # dim(summstat)
 
 if (length(intersect(colnames(summstat), 
-                     c("chr", "pos", "ref", "alt", "reffreq", "effalt"))) 
-    != 6) {
+                     c("chr", "pos", "ref", "alt", "reffreq", "pval",
+                       "effalt"))) 
+    != 7) {
     cat(paste(colnames(summstat), collapse="\t"), "\n")
     cat("Expected essential columns: ",
-        paste(c("chr", "pos", "ref", "alt", "reffreq", "effalt"),
+        paste(c("chr", "pos", "ref", "alt", "reffreq", "pval", "effalt"),
               collapse="\t"), "\n")
     stop("Missing essential columns:", summstatfile)
 }
@@ -95,6 +96,14 @@ if (any(is.na(summstat$effalt))) {
     stop("NA in effalt:", summstatfile)
 }
 
+if (any(is.na(summstat$pval))) {
+    stop("NA in pval:", summstatfile)
+}
+
+if (any(summstat$pval == 0)) {
+    stop("pval underflow (pval == 0):", summstatfile)
+}
+
 if (any(nchar(summstat$ref) != 1) || any(nchar(summstat$alt) != 1)) {
     stop("InDels are not allowed:", summstatfile)
 }
@@ -118,7 +127,7 @@ for (CHR in 1:22) {
     trfrq <- read.table(meandosfile, header=TRUE, stringsAsFactors=FALSE)
     
     if (length(colnames(trfrq)) != 2 ||
-        any(colnames(trfrq) != c("SNPID", "MAF"))) {
+        any(colnames(trfrq) != c("SNPID", "AAF"))) {
 
         stop("Invalid .meandos header: ", meandosfile)
     }
@@ -130,14 +139,21 @@ for (CHR in 1:22) {
         paste(traindir, "/chrom", CHR, ".", traintag, ".snpinfo", sep='')
 
     snpinfo <- read.table(snpinfofile, header=TRUE, stringsAsFactors=FALSE)
-    
-    trSNPID <- c(trSNPID,
-                 paste(snpinfo$chromosome, ":", snpinfo$position,
-                       "_", snpinfo$alleleA, "_", snpinfo$alleleB,
-                       sep=''))
 
-    
+    trSNPID.chr <- paste(snpinfo$chromosome, ":", snpinfo$position,
+                         "_", snpinfo$alleleA, "_", snpinfo$alleleB,
+                         sep='')
+
+    if (any(!(trSNPID.chr %in% summstat.SNPID))) {
+        cat(paste(setdiff(trSNPID.chr, summstat.SNPID), collapse="\n"), "\n")
+        stop("Missing summary statistics for the above SNPs in training cohort")
+    }
+
+    trSNPID <- c(trSNPID, trSNPID.chr)
 }
+
+summstat <- summstat[summstat.SNPID %in% trSNPID, ]
+summstat.SNPID <- summstat.SNPID[summstat.SNPID %in% trSNPID]
 
 if (nrow(trfrq.combined) != nrow(summstat)) {
     print(nrow(summstat))
@@ -160,6 +176,13 @@ if (any(trSNPID != summstat.SNPID)) {
     stop("Alleles does not align:", summstatfile, ", ",
          paste(traindir, "/chromXX.", traintag, ".snpinfo", sep=''))
 }
+
+# Save summary statistics
+summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt")
+
+write.table(summstat, file=summstatfile2, quote=FALSE, sep="\t",
+            row.names=FALSE, col.names=TRUE)
+
 
 trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
                     stringsAsFactors=FALSE)
@@ -248,7 +271,7 @@ cat("Writing config file ", trainfreqfile, "...")
 args <- list()
 
 args[["VERSION"]] <- VERSION
-args[["summstatfile"]] <- summstatfile
+args[["summstatfile"]] <- summstatfile2
 args[["Nt"]] <- Nt
 args[["traindir"]] <- traindir
 args[["trainfamfile"]] <- trainfamfile

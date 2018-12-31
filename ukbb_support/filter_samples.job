@@ -1,0 +1,16 @@
+#! /bin/bash 
+
+source /broad/software/scripts/useuse
+use .qctool-2.0-rc2
+
+CHROM=$SGE_TASK_ID
+UKBB_SAMPLE_FILE=$1
+WORK_DIR=$2
+SELECTED_SAMPLES=$3
+COHORT_NAME=$4
+
+
+qctool -g $WORK_DIR/chrom$CHROM.bgen -s $UKBB_SAMPLE_FILE -incl-samples $SELECTED_SAMPLES -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -os $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample
+
+qctool -g $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -s $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample -ofiletype dosage -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.dosage.gz
+

@@ -82,11 +82,10 @@ summstat <- cbind(summstat, std.effalt=std.effalt)
 
 # Use traing AF instead of discovery AF
 trfrq <- read.table(trainfreqfile, header=TRUE)
-tr.se <- sqrt(2 * trfrq$MAF * (1 - trfrq$MAF))
+tr.se <- sqrt(2 * trfrq$AAF * (1 - trfrq$AAF))
 #plot(tr.se, se, cex=0.25)
 #abline(0, 1, col="red")
 
-# tr.se.chr <- tr.se[trfrq$CHR == CHR]
 tr.se.chr <- tr.se[summstat$chr == paste('chr', CHR, sep='')]
 
 cat("M", "CHR", CHR, "=", length(tr.se.chr), "\n")
