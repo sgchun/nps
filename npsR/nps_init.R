@@ -178,7 +178,7 @@ if (any(trSNPID != summstat.SNPID)) {
 }
 
 # Save summary statistics
-summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt")
+summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
 
 write.table(summstat, file=summstatfile2, quote=FALSE, sep="\t",
             row.names=FALSE, col.names=TRUE)
