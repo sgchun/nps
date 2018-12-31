@@ -90,6 +90,10 @@ trY <- trphen$Outcome
 
 ASSERT(Nt == length(trY))
 
+if (any(trY == -9)) {
+    stop("Missing outcome (-9) is not allowed")
+}
+
 #########################################################################
 # Read partitions
 
