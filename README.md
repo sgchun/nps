@@ -4,7 +4,7 @@ NPS is a non-parametric polygenic risk prediction algorithm described in Chun et
 
 ## How to install
 
-1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/). R-3.0 or later is required to run NPS. Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). Since the most time-consuming steps in NPS are matrix manipulations, this can significantly reduce the running time of NPS. 
+1. The core NPS module is implemented in R. R can be downloaded from [here](https://www.r-project.org/). R-3.0 or later is required to run NPS. Although NPS can run on a plain-vanilla version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries reduce the running time of NPS substantially by speeding up matrix manipulation steps in NPS.  
 
 2. (Optional) NPS relies on R modules, `pROC` and `DescTools`, to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will not be reported. To enable this feature, please install these packages by running the following on command line: 
 
@@ -31,14 +31,30 @@ $ cd nps-1.0.0/
 $ make
 ```
 
-4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples below. You may still need to modify the provided job scripts, for example, to load necessary modules. 
+Note on cluster use: If you loaded a GCC module to compile NPS binaries, you also need to load the GCC module in `nps_stdgt.job` and `nps_score.job` in order to use shared C++ libraries in run time. 
 
-5. (Optional) We provide sample SGE job scripts to prepare UK Biobank data for NPS training and validation cohorts. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). Our scripts rely on [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). If you use different cohorts, please convert them to .bgen file and follow our instructions. 
+4. We recommend to run NPS on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories along with provided examples [below](https://github.com/sgchun/nps#test-cases). You may need to modify the provided job scripts to load necessary modules if they are not loaded by default. For example, you may need to do the following in job scripts (Do not bindly add these codes. The details depend on individual system configurations): 
+
+```bash 
+###
+# ADD CODES TO LOAD R MODULE HERE
+#
+# On clusters running environment modules and providing R-mkl
+module add gcc/5.3.0 
+module add R-mkl/3.3.2
+
+# On clusters running DotKit instead and supporting OpenblasR
+use GCC-5.2 
+use OpenblasR
+```
+
+5. (Optional) We provide job scripts to prepare UK Biobank data for NPS training and validation cohorts. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). Our scripts rely on [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). If you use a different cohort for training dataset, you can still use these scripts as far as the genotype data are provided in .bgen files [**LINK TO INSTRUCTIONS HERE**]. 
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** This is a tab-delimited text file, sorted by chromsome numbers and positions. NPS requires the following seven essential columns: 
+1. **GWAS summary statistics.** Currently, NPS supports two summary statistics formats: *PREFORMATTED* and *MINIMAL*. 
+1.1. The preformatted summary statistics format is the native format immediately ready for NPS. We provide summary statistics for [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file, sorted by chromsome numbers and positions and with the following seven essential columns: 
 - `chr`: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
 - `pos`: base positions of SNP.
 - `ref` and `alt`: reference and alternative alleles of SNP. NPS does not allow InDels or tri-allelic SNPs. There should not be duplicated SNPs in the file. 
@@ -58,7 +74,32 @@ chr1	831489	G	A	0.2797	0.1287	0.004252
 chr1	832318	G	A	0.2797	0.4102	0.002304
 chr1	836924	G	A	0.7958	0.6591	-0.001374
 ```
-2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in the GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. NPS does not allow duplicated SNPs in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*CohortName*.dosage.gz." NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on `SNPID` or `rsid`. NPS expects `alleleA` to match `ref` allele and `alleleB` to match `alt` allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of `alleleB`. Markers has to be sorted by `position`. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
+
+1.2. Because sometimes it is cumbersome to convert publicly available summary statistics into the preformatted summary statistics, we support the minimal summary statistics format, which can be automatically converted into the preformatted format and harmonized with training genotype data (See [**LINK HERE**]). Currently, this feature is supported only when UK Biobank is used as a training cohort. The minimal format is a tab-delimited text file with the seven or eight columns: 
+- `chr`: chromosome number. NPS expects only chromosomes 1-22.
+- `pos`: base positions of SNP.
+- `a1` and `a2`: Alleles at each SNP in any order. There should not be duplicated SNPs in the file. 
+- `effal`: the effect allele. It should be either a1 or a2 allele. 
+- `pval`: p-value of association. 
+- `effbeta`: estimated *per-allele* effect size of the effect allele. For case/control GWAS, log(OR) should be used. 
+- `effaf`: (Optional) allele frequency of effect allele in the discovery GWAS cohort. If this column is provided, the allele frequency will be compared between GWAS and training cohort, and markers with too divergent allele frequencies will be filtered out. If this column is not provided, allele frequencies of training cohort will be copied to summary statistics. 
+
+```
+chr	pos	a1	a2	effal	pval	effbeta	effaf
+1	569406	G	A	G	0.849496	0.05191	0.99858
+1	751756	C	T	C	0.699604	0.00546	0.14418
+1	753405	C	A	C	0.818922	0.00316	0.17332
+1	753541	A	G	A	0.8945	0.00184	0.16054
+1	754182	A	G	A	0.792062	0.00361	0.18067
+1	754192	A	G	A	0.78532	0.00373	0.1809
+1	754334	T	C	T	0.717932	0.005	0.18554
+1	755890	A	T	A	0.75168	0.00441	0.17327
+1	756604	A	G	A	0.906485	0.00162	0.18202
+```
+
+2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in the GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. NPS does not allow duplicated SNPs in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*CohortName*.dosage.gz." If you use UK Biobank data, all these QC processing steps can be done automatically using `ukbb_support` scripts [**LINK HERE**]. 
+
+NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on `SNPID` or `rsid`. NPS expects `alleleA` to match `ref` allele and `alleleB` to match `alt` allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of `alleleB`. Markers has to be sorted by `position`. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
 ```
 chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
 01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
@@ -143,11 +184,11 @@ $ tar -zxvf NPS.Test2.tar.gz
 ```bash
 $ cd nps-1.0.0/
 
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train 5000
-
-# Or batch processing (on desktop)
+# Batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train 5000
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train 5000
 ```
 After all jobs are completed, `nps_check.sh` script can be used to make sure that all jobs are successful. If failure is detected, `FAIL` message will be printed. Note `nps_check.sh` script can be used on clusters (both SGE and LSF) and in batch mode as follows in the same way: 
 ```bash
@@ -167,21 +208,23 @@ $ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 test
 
 # Check the results
 $ ./nps_check.sh init testdata/Test1/npsdat/
+Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.0.0)
+Checking testdata/Test1/npsdat//log ...OK
 ```
 
 3. **Transform data to the decorrelated "eigenlocus" space.** In general, this is one of the most time-consuming steps in NPS. We recommend to run NPS four times on shifted windows and merge the results in the later steps. For the window shift, we recommend the shifts of 0, 1/WINSZ, 2/WINSZ and 3/WINSZ SNPs, where WINSZ is the size of analysis window. In the case of test set #1, they correspond to 0, 20, 40 and 60. The first parameter is the location of intermediary data (`testdata/Test1/npsdat/`), and the second parameter is the window shift (`0`, `20`, `40` or `60`). 
 ```bash
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
-
-# Or batch processing (on desktop)
+# Batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
 $ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
 $ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
 $ ./batch_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
 
 # Check the results
 $ ./nps_check.sh decor testdata/Test1/npsdat/ 0 
@@ -192,17 +235,17 @@ $ ./nps_check.sh decor testdata/Test1/npsdat/ 60
 
 4. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space.  
 ```bash
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
-
-# Or batch processing (on desktop)
+# Batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
 $ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
 $ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
 $ ./batch_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh prune testdata/Test1/npsdat/ 0 
@@ -213,17 +256,17 @@ $ ./nps_check.sh prune testdata/Test1/npsdat/ 60
 
 5. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. NPS takes longer time to complete this step when there are more GWAS-significant signals.
 ```bash
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-
-# Or batch processing (on desktop)
+# Batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
 $ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
 $ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
 $ ./batch_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 
@@ -246,17 +289,17 @@ $ ./nps_check.sh prep_part testdata/Test1/npsdat/ 20
 $ ./nps_check.sh prep_part testdata/Test1/npsdat/ 40 
 $ ./nps_check.sh prep_part testdata/Test1/npsdat/ 60 
 
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
-
-# Or batch processing (on desktop)
+# Batch processing (on desktop)
 $ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 0
 $ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 20
 $ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 40
 $ ./batch_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh part testdata/Test1/npsdat/ 0 
@@ -301,7 +344,13 @@ $ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40
 
 8. **Convert back to per-SNP effect sizes.** Then, the re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. This will generate Test1.train.adjbetahat.chrom*N*.txt for the shift of 0, and Test1.train.win_*shift*.adjbetahat.chrom*N*.txt for the rest of shifts. 
 ```bash
-# SGE cluster
+# Batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
+$ ./batch_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
+$ ./batch_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
+$ ./batch_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
+
+# Or on SGE cluster
 $ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
 $ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
 $ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
@@ -317,6 +366,12 @@ $ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 60
 9. **Validate.**
 
 ```bash
+# Batch processing (on desktop)
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train testdata/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_20 testdata/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_40 testdata/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_60 testdata/ Test1.val
+
 # SGE cluster
 $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train testdata/ Test1.val
 $ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_20 testdata/ Test1.val
