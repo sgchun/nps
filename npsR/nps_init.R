@@ -177,13 +177,6 @@ if (any(trSNPID != summstat.SNPID)) {
          paste(traindir, "/chromXX.", traintag, ".snpinfo", sep=''))
 }
 
-# Save summary statistics
-summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
-
-write.table(summstat, file=summstatfile2, quote=FALSE, sep="\t",
-            row.names=FALSE, col.names=TRUE)
-
-
 trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
                     stringsAsFactors=FALSE)
 
@@ -243,16 +236,6 @@ if (sum(trphen$Outcome == 1) == 0) {
 ##################################################################
 # SAVE
 
-trainfreqfile <-
-    paste(traindir, "/", traintag, ".meandos", sep='')
-
-cat("Dumping ", trainfreqfile, "...")
-
-write.table(trfrq.combined, file=trainfreqfile,
-            sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
-
-cat(" OK\n")
-
 if (!dir.exists(tempprefix)) {
     dir.create(tempprefix)
 }
@@ -266,6 +249,28 @@ if (!dir.exists(paste(tempprefix, "/log", sep=''))) {
     cat(" OK\n")
 }
 
+# Save combined AAF
+trainfreqfile <-
+    paste(tempprefix, "/", traintag, ".meandos", sep='')
+
+cat("Dumping merged training AAF file: ", trainfreqfile, "...")
+
+write.table(trfrq.combined, file=trainfreqfile,
+            sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
+
+cat(" OK\n")
+
+
+# Save summary statistics
+summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
+
+cat("Dumping harmonized summary stats file: ", summstatfile2, "...")
+
+write.table(summstat, file=summstatfile2, quote=FALSE, sep="\t",
+            row.names=FALSE, col.names=TRUE)
+cat(" OK\n")
+
+# SAve config
 cat("Writing config file ", trainfreqfile, "...")
 
 args <- list()

@@ -85,7 +85,7 @@ elif [ $step == "init" ]; then
     
     ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"VERSION\"]]);" | tail -n 1`
     
-    echo "OK ($ver)"
+    echo "OK (version $ver)"
 
     echo -n "Checking $workdir/log ..."
 
