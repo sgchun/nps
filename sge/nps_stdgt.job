@@ -3,6 +3,12 @@ datasetName=$2
 N=$3
 chrom=$SGE_TASK_ID
 
+###
+# ADD CODES TO LOAD MODULES HERE
+#
+# If you loaded a GCC module to compile stdgt, you also need to load 
+# the GCC module here. 
+###
 
 prefix="$dir/chrom${chrom}.${datasetName}"
 

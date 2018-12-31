@@ -7,6 +7,13 @@ valtag=$4
 
 chrom=$LSB_JOBINDEX
 
+###
+# ADD CODES TO LOAD MODULES HERE
+#
+# If you loaded a GCC module to compile grs, you also need to load 
+# the GCC module here. 
+###
+
 prefix="$valdir/chrom${chrom}.${valtag}"
 
 echo $prefix
