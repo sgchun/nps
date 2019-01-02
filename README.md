@@ -614,8 +614,9 @@ Residual Deviance: 1652         AIC: 1656
 Done
 ```
 
-## How to prepare training cohort 
+## How to prepare a training cohort for NPS
 
+### Using UK Biobank
 ```bash
 qsub -l h_vmem=16G -l h_rt=12:00:00 -t 1-22 ukbb_support/common_snps.job /broad/ukbb/imputed_v3/ukb_imp_chr#_v3.bgen /broad/ukbb/imputed_v3/ukb_mfi_chr#_v3.txt /broad/hptmp/sgchun/ukbb.cvd2/
 
@@ -629,4 +630,13 @@ qsub -cwd -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job /broad/hptmp/sgc
 
 ukbb_support/make_fam.sh /broad/hptmp/sgchun/ukbb.cvd2/ softtr
 ```
+### Using other cohort as a training cohort 
+
+## How to prepare a validation cohort for NPS 
+
+### Using UK Biobank for validation as well as training cohorts
+
+### Using a different cohort for validation
+
+
 
