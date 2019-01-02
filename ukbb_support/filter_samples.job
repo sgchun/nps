@@ -1,7 +1,12 @@
 #! /bin/bash 
 
+#####
+# Load bgenix module here
+
+# (Broad institute)
 source /broad/software/scripts/useuse
 use .qctool-2.0-rc2
+#####
 
 CHROM=$SGE_TASK_ID
 UKBB_SAMPLE_FILE=$1
