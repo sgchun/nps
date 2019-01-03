@@ -179,39 +179,29 @@ for (chr in 1:22) {
     ASSERT(ncol(tab.chr) == 8)
     
     colnames(tab.chr) <- 
-        c("snpID", "rsID", "BP", "REF", "ALT", "AF", "V7", "INFO")
+        c("snpID", "rsID", "BP", "REF", "ALT", "MAF", "MINOR", "INFO")
 
-    ASSERT(all(!is.na(tab.chr$AF)))
+    ASSERT(all(!is.na(tab.chr$MAF)))
 
     # some INFO are NA
 #    ASSERT(all(!is.na(tab.chr$INFO)))
 
-
-    # READ AAF (alternative AF)
-    fname <-
-        paste(workdir, "/", "chrom", chr, ".", cohortname, ".QC1.meandos",
-              sep='')
-
-    if (!file.exists(fname)) {
-        cat("Missing", fname, ": use sge/nps_stdgt.job or lsf/nps_stdgt.job\n")
-        stop("")
-    }
-
-    tab.frq <- 
-        read.delim(fname, header=TRUE, stringsAsFactors=FALSE, sep="\t")
-
-    ASSERT(nrow(tab.frq) == nrow(tab.chr))
-
+    
+    # Get AAF (alternative AF)
+    AAF.chr <- rep(NA, nrow(tab.chr))
+    AAF.chr[tab.chr$ALT == tab.chr$MINOR] <- tab.chr$MAF[tab.chr$ALT == tab.chr$MINOR]
+    AAF.chr[tab.chr$REF == tab.chr$MINOR] <- 1 - tab.chr$MAF[tab.chr$REF == tab.chr$MINOR]
+    
     # MAF >= 5% & INFO >= 0.4
-    if (any((tab.chr$AF < 0.05) |
+    if (any((tab.chr$MAF < 0.05) |
             is.na(tab.chr$INFO) | (tab.chr$INFO < 0.4))) {
-        cat("    Removing", sum(tab.chr$AF < 0.05), " with MAF < 0.05\n")
+        cat("    Removing", sum(tab.chr$MAF < 0.05), " with MAF < 0.05\n")
         cat("    Removing", sum(is.na(tab.chr$INFO) | (tab.chr$INFO < 0.4)),
             " with INFO < 0.4\n")
         
         ukbb.rejected.snpIDs <-
             c(ukbb.rejected.snpIDs, 
-              tab.chr$snpID[(tab.chr$AF < 0.05) |
+              tab.chr$snpID[(tab.chr$MAF < 0.05) |
                             is.na(tab.chr$INFO) | (tab.chr$INFO < 0.4)])
     }
 
@@ -230,7 +220,7 @@ for (chr in 1:22) {
     # combine
     tab.chr <-
         cbind(tab.chr, CHR=chr, CHR.POS=paste(chr, tab.chr$BP, sep=":"),
-              AAF=tab.frq$AAF,
+              AAF=AAF.chr,
               stringsAsFactors=FALSE)
 
     tab <- rbind(tab, tab.chr[!(tab.chr$snpID %in% ukbb.rejected.snpIDs), ])
