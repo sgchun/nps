@@ -266,7 +266,9 @@ summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
 
 cat("Dumping harmonized summary stats file: ", summstatfile2, "...")
 
-write.table(summstat, file=summstatfile2, quote=FALSE, sep="\t",
+write.table(summstat[, c("chr", "pos", "ref", "alt", "reffreq", "pval",
+                         "effalt")],
+            file=summstatfile2, quote=FALSE, sep="\t",
             row.names=FALSE, col.names=TRUE)
 cat(" OK\n")
 
