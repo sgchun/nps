@@ -6,6 +6,8 @@
 # (Broad institute)
 source /broad/software/scripts/useuse
 use .qctool-2.0-rc2
+
+QCTOOL=qctool
 #####
 
 CHROM=$SGE_TASK_ID
@@ -15,7 +17,7 @@ SELECTED_SAMPLES=$3
 COHORT_NAME=$4
 
 
-qctool -g $WORK_DIR/chrom$CHROM.bgen -s $UKBB_SAMPLE_FILE -incl-samples $SELECTED_SAMPLES -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -os $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample
+$QCTOOL -g $WORK_DIR/chrom$CHROM.bgen -s $UKBB_SAMPLE_FILE -incl-samples $SELECTED_SAMPLES -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -os $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample
 
-qctool -g $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -s $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample -ofiletype dosage -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.dosage.gz
+$QCTOOL -g $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.bgen -s $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.sample -ofiletype dosage -og $WORK_DIR/chrom$CHROM.$COHORT_NAME.QC1.dosage.gz
 

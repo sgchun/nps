@@ -6,6 +6,8 @@
 # (Broad institute)
 source /broad/software/scripts/useuse
 use .qctool-2.0-rc2
+
+QCTOOL=qctool
 #####
 
 BGEN_PATH_BASE=$1
@@ -23,7 +25,7 @@ do
 
     echo "    Running qctool..."
     
-    qctool -g $BGEN_PATH -osnp $QCTOOL_FILE -snp-stats
+    $QCTOOL -g $BGEN_PATH -osnp $QCTOOL_FILE -snp-stats
 
     echo "    Capturing the following columns:"
     cat $QCTOOL_FILE |grep -v "^#"  | head -n 1 | cut -d' ' -f 1-2,4-6,14,15,17 | sed 's/ /\t/g'
