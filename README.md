@@ -368,22 +368,22 @@ $ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 60
 
 ```bash
 # Batch processing (on desktop)
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_20 testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_40 testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_60 testdata/Test1/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 0 testdata/Test1/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 20 testdata/Test1/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 40 testdata/Test1/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 60 testdata/Test1/ Test1.val
 
 # SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_20 testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_40 testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ Test1.train.win_60 testdata/Test1/ Test1.val
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 0 testdata/Test1/ Test1.val
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 20 testdata/Test1/ Test1.val
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 40 testdata/Test1/ Test1.val
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 60 testdata/Test1/ Test1.val
 
 # Check the results
-$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train testdata/Test1/ Test1.val
-$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_20 testdata/Test1/ Test1.val
-$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_40 testdata/Test1/ Test1.val
-$ ./nps_check.sh score testdata/Test1/npsdat/ Test1.train.win_60 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ 0 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ 20 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ 40 testdata/Test1/ Test1.val
+$ ./nps_check.sh score testdata/Test1/npsdat/ 60 testdata/Test1/ Test1.val
 
 # Calculate the overall prediction accuray in the validation cohort 
 # Same on clusters and for batch processing (no parallelization)
@@ -542,15 +542,15 @@ bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 2000 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 3000 
 
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 0 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 1000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 2000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 3000 testdata/Test2/ Test2.val
 
-./nps_check.sh score testdata/Test2/npsdat/ Test2.train testdata/Test2/ Test2.val
-./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_1000 testdata/Test2/ Test2.val
-./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_2000 testdata/Test2/ Test2.val
-./nps_check.sh score testdata/Test2/npsdat/ Test2.train.win_3000 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ 0 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ 1000 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ 2000 testdata/Test2/ Test2.val
+./nps_check.sh score testdata/Test2/npsdat/ 3000 testdata/Test2/ Test2.val
 
 Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000 
 ```
@@ -614,25 +614,32 @@ Residual Deviance: 1652         AIC: 1656
 Done
 ```
 
-## How to prepare a training cohort for NPS
+## How to prepare training and validation cohort for NPS
 
 ### Using UK Biobank
 ```bash
-qsub -l h_vmem=16G -l h_rt=12:00:00 -t 1-22 ukbb_support/common_snps.job /broad/ukbb/imputed_v3/ukb_imp_chr#_v3.bgen /broad/ukbb/imputed_v3/ukb_mfi_chr#_v3.txt /broad/hptmp/sgchun/ukbb.cvd2/
+qsub -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
 
-qsub -l h_vmem=16G -l h_rt=12:00:00 -t 1-22 ukbb_support/filter_samples.job /broad/hptmp/sgchun/ukbb.cvd2/ukb31063.sample /broad/hptmp/sgchun/ukbb.cvd2/ /broad/hptmp/sgchun/ukbb.cvd2/EOMI.postinterim.samples softtr
+qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <cohort_name>
 
-qsub -l h_vmem=16G -t 1-22 sge/nps_stdgt.job /broad/hptmp/sgchun/ukbb.cvd2/ softtr.QC1 5546
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file_in_minimal_format> <work_dir> <cohort_name>
 
-Rscript ukbb_support/harmonize_summstats.R /broad/hptmp/sgchun/ukbb.cvd2/summstat_softcad.minimal.txt /broad/hptmp/sgchun/ukbb.cvd2/ softtr
+qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <cohort_name>
 
-qsub -cwd -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job /broad/hptmp/sgchun/ukbb.cvd2/ softtr
-
-ukbb_support/make_fam.sh /broad/hptmp/sgchun/ukbb.cvd2/ softtr
+ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
-### Using other cohort as a training cohort 
 
-## How to prepare a validation cohort for NPS 
+```
+SAMPLE1_ID
+SAMPLE2_ID
+SAMPLE3_ID
+...
+```
+
+### Using other cohort as a training cohort 
+```bash
+
+```
 
 ### Using UK Biobank for validation as well as training cohorts
 
