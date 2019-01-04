@@ -4,8 +4,8 @@
 # Load bgenix module here
 
 # (Broad institute)
-source /broad/software/scripts/useuse
-use .qctool-2.0-rc2
+# source /broad/software/scripts/useuse
+# use .qctool-2.0-rc2
 
 QCTOOL=qctool
 #####

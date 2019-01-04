@@ -4,9 +4,9 @@
 # Load bgenix module here
 
 # (Broad institute)
-source /broad/software/scripts/useuse
-use GCC-5.2
-use .bgen-1.0
+# source /broad/software/scripts/useuse
+# use GCC-5.2
+# use .bgen-1.0
 #####
 
 CHROM=$SGE_TASK_ID
