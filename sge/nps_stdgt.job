@@ -1,19 +1,23 @@
 dir=$1
 datasetName=$2
-N=$3
 chrom=$SGE_TASK_ID
 
 ###
 # ADD CODES TO LOAD MODULES HERE
 #
 # If you loaded a GCC module to compile stdgt, you also need to load 
-# the GCC module here. 
+# the GCC module here.
+
+# Broad institute: 
+# source /broad/software/scripts/useuse
+# use GCC-5.2
 ###
 
 prefix="$dir/chrom${chrom}.${datasetName}"
 
 echo $prefix
 
+N=`zcat $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
 
 echo "N=$N M=$M"
