@@ -149,9 +149,16 @@ summstats <- cbind(summstats,
                    stringsAsFactors=FALSE)
 
 if (any(duplicated(summstats$a1a2))) {
-    cat(paste(summstats$a1a2[duplicated(summstats$a1a2)], collapse="\n"),
-        "\n")
-    stop(summstatfile, ": duplicated markers")
+    
+    dup.a1a2 <- unique(summstats$a1a2[duplicated(summstats$a1a2)])
+    cat("WARNING: duplicated markers in summary statistics file",
+        summstatfile, ":\n")    
+    print(summstats[summstats$a1a2 %in% dup.a1a2, ])
+    
+    summstats <- summstats[!(summstats$a1a2 %in% dup.a1a2), ]
+    cat("Excluding duplicates:", nrow(summstats), "variants remaining\n")
+
+    ASSERT(all(!duplicated(summstats$a1a2)))
 }
 
 ######
