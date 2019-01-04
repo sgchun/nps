@@ -137,7 +137,41 @@ trainF65453	trainI65453	0.817881328612934	0
 7. **Validation phenotypes in PLINK phenotype format.** This is for validation cohort. See the above training phenotypes for the details. Missing phenotypes are allowed in this file (encoded with `-9`). Such samples will be simply excluded when calculating the accuracy statistics. 
 
 
-## Test cases
+## How to prepare training and validation cohort for NPS
+
+### Using UK Biobank
+```bash
+qsub -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
+
+qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <cohort_name>
+
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file_in_minimal_format> <work_dir> <cohort_name>
+
+qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <cohort_name>
+
+ukbb_support/make_fam.sh <work_dir> <cohort_name>
+```
+
+```
+SAMPLE1_ID
+SAMPLE2_ID
+SAMPLE3_ID
+...
+```
+
+### Using other cohort as a training cohort 
+```bash
+
+```
+
+### Using UK Biobank for validation as well as training cohorts
+
+### Using a different cohort for validation
+
+
+## Running NPS 
+
+### Test cases
 We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is a relatively small dataset (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resource: NPS will generate up to 1 TB of intermediary data and take 1/2 day to a day to run on computer clusters (the exact overall running time will depend on the degree of parallelization).  
 
 Both simulation datasets were generated using our multivariate-normal simulator. See our NPS manuscript for the details.   
@@ -186,10 +220,10 @@ For Test set #1, we provide an instruction on running it on desktop without para
 $ cd nps-1.0.0/
 
 # Batch processing (on desktop)
-$ ./batch_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train 5000
+$ ./batch_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
 
 # Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train 5000
+$ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
 ```
 After all jobs are completed, `nps_check.sh` script can be used to make sure that all jobs are successful. If failure is detected, `FAIL` message will be printed. Note `nps_check.sh` script can be used on clusters (both SGE and LSF) and in batch mode as follows in the same way: 
 ```bash
@@ -455,7 +489,7 @@ Done
 We provide the instruction to run on Test set #2 with LSF. Running it on SGE clusters will be similar. For ~5,000,000 genome-wide SNPs, we recommend to use the window size of 4,000 SNPs, and window shifts of 0, 1,000, 2,000, and 3,000 SNPs. In addition, some of NPS steps now require large memory space. For the most of data we tested, 4GB memory limit is sufficient to run individual NPS tasks. The memory limit can be specified by `-R 'rusage[mem=4000]'` in LSF and `-l h_vmem=4G` in SGE clusters. 
 
 ```bash
-bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train 5000
+bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
 
 ./nps_check.sh stdgt testdata/Test2/ Test2.train 
 
@@ -613,37 +647,5 @@ Null Deviance:      1926
 Residual Deviance: 1652         AIC: 1656
 Done
 ```
-
-## How to prepare training and validation cohort for NPS
-
-### Using UK Biobank
-```bash
-qsub -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
-
-qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <cohort_name>
-
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file_in_minimal_format> <work_dir> <cohort_name>
-
-qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <cohort_name>
-
-ukbb_support/make_fam.sh <work_dir> <cohort_name>
-```
-
-```
-SAMPLE1_ID
-SAMPLE2_ID
-SAMPLE3_ID
-...
-```
-
-### Using other cohort as a training cohort 
-```bash
-
-```
-
-### Using UK Biobank for validation as well as training cohorts
-
-### Using a different cohort for validation
-
 
 
