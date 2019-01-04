@@ -1,7 +1,7 @@
 #! /bin/bash 
 
 moddir=$1
-modtag=$2
+winshift=$2
 valdir=$3
 valtag=$4
 
@@ -10,9 +10,20 @@ chrom=$LSB_JOBINDEX
 ###
 # ADD CODES TO LOAD MODULES HERE
 #
+# Load R module if necessary. 
+# 
 # If you loaded a GCC module to compile grs, you also need to load 
 # the GCC module here. 
+# 
 ###
+
+traintag=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+
+if [ $winshift == 0 ]; then
+    modtag=$traintag
+else
+    modtag="$traintag.win_${winshift}"
+fi
 
 prefix="$valdir/chrom${chrom}.${valtag}"
 

@@ -12,7 +12,7 @@ if [ $# -eq 0 ]; then
     echo "    part workdir winshift"
     echo "    weight workdir winshift"
     echo "    back2snpeff workdir winshift"
-    echo "    score workdir traintag valdir valtag"
+    echo "    score workdir winshift valdir valtag"
 
     exit 1
 fi
@@ -436,19 +436,27 @@ elif [ $step == "score" ]; then
     echo "Verifying nps_$step:"
 
     if [ $# -ne 5 ]; then
-	echo "Usage: nps_check.sh $step workdir traintag valdir valtag"
+	echo "Usage: nps_check.sh $step workdir winshift valdir valtag"
 	exit 1
     fi
 
     workdir=$2
-    traintag=$3
+    winshift=$3
     valdir=$4
     valtag=$5
+
+    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+
+    if [ $winshift == 0 ]; then
+	modtag=$traintag
+    else
+	modtag="$traintag.win_${winshift}"
+    fi
 
     for chrom in `seq 1 22`
     do 
 
-	scorefile="$valdir/$traintag.predY.chrom$chrom.txt"
+	scorefile="$valdir/$modtag.predY.chrom$chrom.txt"
 
 	echo -n "Checking $scorefile ..."
 
@@ -478,8 +486,8 @@ elif [ $step == "score" ]; then
 	
     echo -n "Checking timestamp ..."
 
-    prevfile=`ls -t $workdir/$traintag.adjbetahat.chrom*.txt | head -n 1`
-    outdated=`find $valdir/ -name "$traintag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
+    prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
+    outdated=`find $valdir/ -name "$modtag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
 
     if [ $outdated != 0 ]; then
 	echo "FAIL (outdated score data)"
