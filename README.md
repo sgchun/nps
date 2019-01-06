@@ -381,16 +381,16 @@ $ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
 
 ```bash
 # Batch processing (on desktop)
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 0 testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 20 testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 40 testdata/Test1/ Test1.val
-$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ 60 testdata/Test1/ Test1.val
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+$ ./batch_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
 # SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 0 testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 20 testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 40 testdata/Test1/ Test1.val
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ 60 testdata/Test1/ Test1.val
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
 # Check the results
 $ ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
@@ -534,10 +534,10 @@ bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata
 
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
 
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 0 testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 1000 testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 2000 testdata/Test2/ Test2.val
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ 3000 testdata/Test2/ Test2.val
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
+bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
 
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
