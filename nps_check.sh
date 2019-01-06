@@ -5,14 +5,14 @@ if [ $# -eq 0 ]; then
     echo "nps_command:"
     echo "    stdgt traindir traintag"
     echo "    init workdir"
-    echo "    decor workdir winshift"
-    echo "    prune workdir winshift"
-    echo "    gwassig workdir winshift"
-    echo "    prep_part workdir winshift"
-    echo "    part workdir winshift"
-    echo "    weight workdir winshift"
-    echo "    back2snpeff workdir winshift"
-    echo "    score workdir winshift valdir valtag"
+    echo "    decor workdir winshift1 winshift2 ..."
+    echo "    prune workdir winshift1 winshift2 ..."
+    echo "    gwassig workdir winshift1 winshift2 ..."
+    echo "    prep_part workdir winshift1 winshift2 ..."
+    echo "    part workdir winshift1 winshift2 ..."
+    echo "    weight workdir winshift1 winshift2 ..."
+    echo "    back2snpeff workdir winshift1 winshift2 ..."
+    echo "    score workdir valdir valtag winshift1 winshift2 ..."
 
     exit 1
 fi
@@ -106,209 +106,411 @@ elif [ $step == "init" ]; then
 elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [ $step == "part" ] || [ $step == "back2snpeff" ]; then
     echo "Verifying nps_$step:"
 
-    if [ $# -ne 3 ]; then
-	echo "Usage: nps_check.sh $step workdir winshift"
+    if [ $# -lt 3 ]; then
+	echo "Usage: nps_check.sh $step workdir winshift1 wishift2 ..."
 	exit 1
     fi
 
     workdir=$2
-    winshift=$3
+    cmdargs=( $@ )
+    argslen=${#cmdargs[@]}
 
-    for chrom in `seq 1 22`
-    do 
-	logfile="$workdir/log/nps_$step.Rout.$winshift.$chrom"
-	echo -n "Checking $logfile ..."
+    for (( k=2; k<argslen; k++ ))
+    do
+	winshift=${cmdargs[$k]}
 
-	if [ ! -f $logfile ]; then
-	    echo "FAIL (missing)"
-	    status=1
-	    continue
-	fi
-	
-	last=`tail -n 1 $logfile`
-
-	if [ "$last" != "Done" ]; then
-	    echo "FAIL (incomplete)"
-	    status=1
-	    continue
-	fi
-
-	echo "OK"
-    done
-
-    if [ $status != 0 ]; then
-	exit $status
-    fi
-
-    if [ $step == "prune" ]; then
-	
-	echo -n "Checking window count..." 
-
-	if [ $winshift == 0 ]; then
-	    win1=`ls -l $workdir/win.*.Q.RDS | wc -l`
-	    win2=`ls -l $workdir/win.*.pruned.table | wc -l`
-
-	    if [ $win1 != $win2 ]; then
-		echo "FAIL ($win1 != $win2)"
-		exit 1
-	    else
-		echo "OK ($win1 windows)"
-	    fi
-
-	    echo -n "Checking timestamp..."
-	    
-	    decorfile=`ls -t $workdir/win.*.Q.RDS | head -n 1`
-	    outdated=`find $workdir/ -name "win.*.pruned.table" ! -newer "$decorfile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated pruning data)"
-		exit 1
-	    fi
-	    
-	    echo "OK"
-
-	else
-	    win1=`ls -l $workdir/win_$winshift.*.Q.RDS | wc -l`
-	    win2=`ls -l $workdir/win_$winshift.*.pruned.table | wc -l`
-
-	    if [ $win1 != $win2 ]; then
-		echo "FAIL ($win1 != $win2)"
-		exit 1
-	    else
-		echo "OK ($win1 windows)"
-	    fi
-
-	    echo -n "Checking timestamp..."
-
-	    decorfile=`ls -t $workdir/win_$winshift.*.Q.RDS | head -n 1`
-	    outdated=`find $workdir/ -name "win_$winshift.*.pruned.table" ! -newer "$decorfile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated pruning data)"
-		exit 1
-	    fi
-	    
-	    echo "OK"
-
-	fi
-
-    elif [ $step == "gwassig" ]; then
-
-	# check timestamp
-	echo -n "Checking timestamp..."
-
-	if [ $winshift == 0 ]; then
-
-	    prunefile=`ls -t $workdir/win.*.pruned.table | head -n 1`
-	    outdated=`find $workdir/ -name "win.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated gwassig data)"
-		exit 1
-	    fi
-
-	    outdated=`find $workdir/ -name "tail_betahat.*.table" ! -newer "$prunefile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated gwassig data)"
-		exit 1
-	    fi
-
-	    outdated=`find $workdir/ -name "trPT.*.tail.RDS" ! -newer "$prunefile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated gwassig data)"
-		exit 1
-	    fi
-
-	else
-
-	    prunefile=`ls -t $workdir/win_$winshift.*.pruned.table | head -n 1`
-	    outdated=`find $workdir/ -name "win_$winshift.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
-
-	    if [ $outdated != 0 ]; then
-		echo "FAIL (outdated gwassig data)"
-		exit 1
-	    fi
-	fi
-
-	echo "OK"
-
-    elif [ $step == "part" ]; then 
+	echo "----- Shifted by $winshift -----"
 
 	for chrom in `seq 1 22`
 	do 
-	    
-	    if [ $winshift == 0 ]; then 
-		trPT="$workdir/trPT.$chrom.RDS"
-	    else 
-		trPT="$workdir/win_$winshift.trPT.$chrom.RDS"
-	    fi
-	    
-	    echo -n "Checking $trPT ..."
+	    logfile="$workdir/log/nps_$step.Rout.$winshift.$chrom"
+	    echo -n "Checking $logfile ..."
 
-	    if [ ! -s $trPT ]; then
+	    if [ ! -f $logfile ]; then
 		echo "FAIL (missing)"
 		status=1
 		continue
 	    fi
+	
+	    last=`tail -n 1 $logfile`
 
-	    dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));" | tail -n 1`
-	    dim=`echo $dim | sed 's/ / x /g'`
+	    if [ "$last" != "Done" ]; then
+		echo "FAIL (incomplete)"
+		status=1
+		continue
+	    fi
 
-	    echo "OK ($dim)"
+	    echo "OK"
 	done
 
 	if [ $status != 0 ]; then
 	    exit $status
 	fi
+
+	if [ $step == "prune" ]; then
 	
-	echo -n "Checking timestamp ..."
+	    echo -n "Checking window count..." 
+
+	    if [ $winshift == 0 ]; then
+		win1=`ls -l $workdir/win.*.Q.RDS | wc -l`
+		win2=`ls -l $workdir/win.*.pruned.table | wc -l`
+
+		if [ $win1 != $win2 ]; then
+		    echo "FAIL ($win1 != $win2)"
+		    exit 1
+		else
+		    echo "OK ($win1 windows)"
+		fi
+
+		echo -n "Checking timestamp..."
+		
+		decorfile=`ls -t $workdir/win.*.Q.RDS | head -n 1`
+		outdated=`find $workdir/ -name "win.*.pruned.table" ! -newer "$decorfile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated pruning data)"
+		    exit 1
+		fi
+		
+		echo "OK"
+
+	    else
+		win1=`ls -l $workdir/win_$winshift.*.Q.RDS | wc -l`
+		win2=`ls -l $workdir/win_$winshift.*.pruned.table | wc -l`
+
+		if [ $win1 != $win2 ]; then
+		    echo "FAIL ($win1 != $win2)"
+		    exit 1
+		else
+		    echo "OK ($win1 windows)"
+		fi
+
+		echo -n "Checking timestamp..."
+
+		decorfile=`ls -t $workdir/win_$winshift.*.Q.RDS | head -n 1`
+		outdated=`find $workdir/ -name "win_$winshift.*.pruned.table" ! -newer "$decorfile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated pruning data)"
+		    exit 1
+		fi
+		
+		echo "OK"
+
+	    fi
+
+	elif [ $step == "gwassig" ]; then
+
+	    # check timestamp
+	    echo -n "Checking timestamp..."
+
+	    if [ $winshift == 0 ]; then
+
+		prunefile=`ls -t $workdir/win.*.pruned.table | head -n 1`
+		outdated=`find $workdir/ -name "win.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated gwassig data)"
+		    exit 1
+		fi
+
+		outdated=`find $workdir/ -name "tail_betahat.*.table" ! -newer "$prunefile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated gwassig data)"
+		    exit 1
+		fi
+
+		outdated=`find $workdir/ -name "trPT.*.tail.RDS" ! -newer "$prunefile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated gwassig data)"
+		    exit 1
+		fi
+
+	    else
+
+		prunefile=`ls -t $workdir/win_$winshift.*.pruned.table | head -n 1`
+		outdated=`find $workdir/ -name "win_$winshift.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
+
+		if [ $outdated != 0 ]; then
+		    echo "FAIL (outdated gwassig data)"
+		    exit 1
+		fi
+	    fi
+
+	    echo "OK"
+
+	elif [ $step == "part" ]; then 
+
+	    for chrom in `seq 1 22`
+	    do 
+		
+		if [ $winshift == 0 ]; then 
+		    trPT="$workdir/trPT.$chrom.RDS"
+		else 
+		    trPT="$workdir/win_$winshift.trPT.$chrom.RDS"
+		fi
+		
+		echo -n "Checking $trPT ..."
+
+		if [ ! -s $trPT ]; then
+		    echo "FAIL (missing)"
+		    status=1
+		    continue
+		fi
+
+		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));" | tail -n 1`
+		dim=`echo $dim | sed 's/ / x /g'`
+
+		echo "OK ($dim)"
+	    done
+
+	    if [ $status != 0 ]; then
+		exit $status
+	    fi
+	    
+	    echo -n "Checking timestamp ..."
+	    if [ $winshift == 0 ]; then 
+		outdated=`find $workdir/ -name "trPT.*.RDS" ! -newer "$workdir/part.RDS" | grep -v tail.RDS | wc -l`
+	    else 
+		outdated=`find $workdir/ -name "win_$winshift.trPT.*.RDS" ! -newer "$workdir/win_$winshift.part.RDS" | grep -v tail.RDS | wc -l`
+	    fi
+
+	    if [ $outdated != 0 ]; then
+		echo "FAIL (outdated trPT data)"
+		exit 1
+	    fi
+
+	    echo "OK"
+
+	elif [ $step == "back2snpeff" ]; then 
+
+	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
+
+	    for chrom in `seq 1 22`
+	    do 
+		
+		if [ $winshift == 0 ]; then 
+		    snpeff="$workdir/$traintag.adjbetahat.chrom$chrom.txt"
+		else 
+		    snpeff="$workdir/$traintag.win_$winshift.adjbetahat.chrom$chrom.txt"
+		fi
+		
+		echo -n "Checking $snpeff ..."
+
+		if [ ! -s $snpeff ]; then
+		    echo "FAIL (missing)"
+		    status=1
+		    continue
+		fi
+
+		M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
+		M2=`cat $snpeff | wc -l`
+
+		if [ $M1 != $M2 ]; then
+		    echo "FAIL (marker count mismatch: $M1 != $M2)"
+		    status=1
+		    continue
+		fi
+
+		echo "OK"
+	    done
+
+	    if [ $status != 0 ]; then 
+		exit $status
+	    fi
+	    
+	    echo -n "Checking timestamp ..."
+
+	    if [ $winshift == 0 ]; then 
+
+		outdated=`find $workdir/ -name "$traintag.adjbetahat.chrom*.txt" ! -newer "$workdir/PTwt.RDS" | wc -l`
+
+	    else 
+
+		outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat.chrom*.txt" ! -newer "$workdir/win_$winshift.PTwt.RDS" | wc -l`
+
+	    fi
+
+	    if [ $outdated != 0 ]; then
+		echo "FAIL (outdated snpeff data)"
+		exit 1
+	    fi
+
+	    echo "OK"
+	fi
+    done
+
+elif [ $step == "prep_part" ]; then
+    echo "Verifying nps_$step:"
+
+    if [ $# -lt 3 ]; then
+	echo "Usage: nps_check.sh $step workdir winshift1 wishift2 ..."
+	exit 1
+    fi
+
+    workdir=$2
+    cmdargs=( $@ )
+    argslen=${#cmdargs[@]}
+
+    for (( k=2; k<argslen; k++ ))
+    do
+	winshift=${cmdargs[$k]}
+
+	echo "----- Shifted by $winshift -----"
+
 	if [ $winshift == 0 ]; then 
-	    outdated=`find $workdir/ -name "trPT.*.RDS" ! -newer "$workdir/part.RDS" | grep -v tail.RDS | wc -l`
-	else 
-	    outdated=`find $workdir/ -name "win_$winshift.trPT.*.RDS" ! -newer "$workdir/win_$winshift.part.RDS" | grep -v tail.RDS | wc -l`
+	    partfile="part.RDS"
+	    prevfile=`ls -t $workdir/win.*.pruned.table $workdir/win.*.pruned.tailfix.table | head -n 1`
+
+	else
+	    partfile="win_$winshift.part.RDS"
+	    prevfile=`ls -t $workdir/win_$winshift.*.pruned.table $workdir/win_$winshift.*.pruned.tailfix.table | head -n 1`
+	    
 	fi
 
-	if [ $outdated != 0 ]; then
-	    echo "FAIL (outdated trPT data)"
+	echo -n "Checking $workdir/$partfile ..."
+
+	if [ ! -s $workdir/$partfile ]; then
+	    echo "FAIL (missing)"
 	    exit 1
 	fi
 
 	echo "OK"
 
-    elif [ $step == "back2snpeff" ]; then 
+	echo -n "Checking timestamp ..."
+
+	outdated=`find $workdir/ -name "$partfile" ! -newer "$prevfile" | wc -l`    
+
+	if [ $outdated != 0 ]; then
+	    echo "FAIL (outdated partition files)"
+	    exit 1
+	fi
+
+	echo "OK"
+    done
+
+elif [ $step == "weight" ]; then
+    echo "Verifying nps_$step:"
+
+    if [ $# -lt 3 ]; then
+	echo "Usage: nps_check.sh $step workdir winshift1 wishift2 ..."
+	exit 1
+    fi
+
+    workdir=$2
+    cmdargs=( $@ )
+    argslen=${#cmdargs[@]}
+
+    for (( k=2; k<argslen; k++ ))
+    do
+	winshift=${cmdargs[$k]}
+
+	echo "----- Shifted by $winshift -----"
+
+	if [ $winshift == 0 ]; then 
+
+	    echo -n "Checking S0 weight ..."
+
+	    if [ ! -s "$workdir/PTwt.tail.RDS" ]; then
+		echo "FAIL (missing $workdir/PTwt.tail.RDS)"
+		exit 1
+	    fi
+
+	    echo "OK"
+
+	    ptwtfile="$workdir/PTwt.RDS"
+	else
+	    ptwtfile="$workdir/win_$winshift.PTwt.RDS"
+	fi
+
+	echo -n "Checking partition weights ..."
+	if [ ! -s "$ptwtfile" ]; then
+	    echo "FAIL (missing)"
+	    exit 1
+	fi
+	
+	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(dim(PTwt));" | tail -n 1`
+	dim=`echo $dim | sed 's/ / x /g'`
+
+	echo "OK ($dim)"
+
+	echo -n "Checking timestamp ..."
+
+	if [ $winshift == 0 ]; then 
+	    prevfile=`ls -t $workdir/trPT.*.RDS | head -n 1`
+	    outdated=`find $workdir/ -name "PTwt*.RDS" ! -newer "$prevfile" | wc -l`
+	else 
+	    prevfile=`ls -t $workdir/win_$winshift.trPT.*.RDS | head -n 1`
+	    outdated=`find $workdir/ -name "win_$winshift.PTwt.RDS" ! -newer "$prevfile" | wc -l`
+	fi
+
+	if [ $outdated != 0 ]; then
+	    echo "FAIL (outdated PTwt data)"
+	    exit 1
+	fi
+
+	echo "OK"
+    done
+
+elif [ $step == "score" ]; then
+    echo "Verifying nps_$step:"
+
+
+    if [ $# -lt 5 ]; then
+	echo "Usage: nps_check.sh $step workdir valdir valtag winshift1 wishift2 ..."
+	exit 1
+    fi
+
+    workdir=$2
+    valdir=$3
+    valtag=$4
+
+    cmdargs=( $@ )
+    argslen=${#cmdargs[@]}
+
+    for (( k=4; k<argslen; k++ ))
+    do
+	winshift=${cmdargs[$k]}
+
+	echo "----- Shifted by $winshift -----"
+
 
 	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
-	traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
+
+	if [ $winshift == 0 ]; then
+	    modtag=$traintag
+	else
+	    modtag="$traintag.win_${winshift}"
+	fi
 
 	for chrom in `seq 1 22`
 	do 
-	    
-	    if [ $winshift == 0 ]; then 
-		snpeff="$workdir/$traintag.adjbetahat.chrom$chrom.txt"
-	    else 
-		snpeff="$workdir/$traintag.win_$winshift.adjbetahat.chrom$chrom.txt"
-	    fi
-	    
-	    echo -n "Checking $snpeff ..."
 
-	    if [ ! -s $snpeff ]; then
+	    scorefile="$valdir/$modtag.predY.chrom$chrom.txt"
+
+	    echo -n "Checking $scorefile ..."
+
+	    if [ ! -s $scorefile ]; then
 		echo "FAIL (missing)"
 		status=1
 		continue
 	    fi
+	    
+	    # check line number
+	    N=`zcat $valdir/chrom${chrom}.${valtag}.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 
-	    M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
-	    M2=`cat $snpeff | wc -l`
+	    N0=`cat $scorefile | wc -l`
 
-	    if [ $M1 != $M2 ]; then
-		echo "FAIL (marker count mismatch: $M1 != $M2)"
+	    if [ $N != $N0 ]; then
+		echo "FAIL (incomplete)"
 		status=1
 		continue
 	    fi
 
-	    echo "OK"
+	    echo "OK (N=$N)"
 	done
 
 	if [ $status != 0 ]; then 
@@ -317,184 +519,16 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 	
 	echo -n "Checking timestamp ..."
 
-	if [ $winshift == 0 ]; then 
-
-	    outdated=`find $workdir/ -name "$traintag.adjbetahat.chrom*.txt" ! -newer "$workdir/PTwt.RDS" | wc -l`
-
-	else 
-
-	    outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat.chrom*.txt" ! -newer "$workdir/win_$winshift.PTwt.RDS" | wc -l`
-
-	fi
+	prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
+	outdated=`find $valdir/ -name "$modtag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
 
 	if [ $outdated != 0 ]; then
-	    echo "FAIL (outdated snpeff data)"
+	    echo "FAIL (outdated score data)"
 	    exit 1
 	fi
 
 	echo "OK"
-
-    fi
-
-elif [ $step == "prep_part" ]; then
-    echo "Verifying nps_$step:"
-
-    if [ $# -ne 3 ]; then
-	echo "Usage: nps_check.sh $step workdir winshift"
-	exit 1
-    fi
-
-    workdir=$2
-    winshift=$3
-
-    if [ $winshift == 0 ]; then 
-	partfile="part.RDS"
-	prevfile=`ls -t $workdir/win.*.pruned.table $workdir/win.*.pruned.tailfix.table | head -n 1`
-
-    else
-	partfile="win_$winshift.part.RDS"
-	prevfile=`ls -t $workdir/win_$winshift.*.pruned.table $workdir/win_$winshift.*.pruned.tailfix.table | head -n 1`
-	
-    fi
-
-    echo -n "Checking $workdir/$partfile ..."
-
-    if [ ! -s $workdir/$partfile ]; then
-	echo "FAIL (missing)"
-	exit 1
-    fi
-
-    echo "OK"
-
-    echo -n "Checking timestamp ..."
-
-    outdated=`find $workdir/ -name "$partfile" ! -newer "$prevfile" | wc -l`    
-
-    if [ $outdated != 0 ]; then
-	echo "FAIL (outdated partition files)"
-	exit 1
-    fi
-
-    echo "OK"
-
-elif [ $step == "weight" ]; then
-    echo "Verifying nps_$step:"
-
-    if [ $# -ne 3 ]; then
-	echo "Usage: nps_check.sh $step workdir winshift"
-	exit 1
-    fi
-
-    workdir=$2
-    winshift=$3
-
-    if [ $winshift == 0 ]; then 
-
-	echo -n "Checking S0 weight ..."
-
-	if [ ! -s "$workdir/PTwt.tail.RDS" ]; then
-	    echo "FAIL (missing $workdir/PTwt.tail.RDS)"
-	    exit 1
-	fi
-
-	echo "OK"
-
-	ptwtfile="$workdir/PTwt.RDS"
-    else
-	ptwtfile="$workdir/win_$winshift.PTwt.RDS"
-    fi
-
-    echo -n "Checking partition weights ..."
-    if [ ! -s "$ptwtfile" ]; then
-	echo "FAIL (missing)"
-	exit 1
-    fi
-    
-    dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(dim(PTwt));" | tail -n 1`
-    dim=`echo $dim | sed 's/ / x /g'`
-
-    echo "OK ($dim)"
-
-    echo -n "Checking timestamp ..."
-
-    if [ $winshift == 0 ]; then 
-	prevfile=`ls -t $workdir/trPT.*.RDS | head -n 1`
-	outdated=`find $workdir/ -name "PTwt*.RDS" ! -newer "$prevfile" | wc -l`
-    else 
-	prevfile=`ls -t $workdir/win_$winshift.trPT.*.RDS | head -n 1`
-	outdated=`find $workdir/ -name "win_$winshift.PTwt.RDS" ! -newer "$prevfile" | wc -l`
-    fi
-
-    if [ $outdated != 0 ]; then
-	echo "FAIL (outdated PTwt data)"
-	exit 1
-    fi
-
-    echo "OK"
-
-elif [ $step == "score" ]; then
-    echo "Verifying nps_$step:"
-
-    if [ $# -ne 5 ]; then
-	echo "Usage: nps_check.sh $step workdir winshift valdir valtag"
-	exit 1
-    fi
-
-    workdir=$2
-    winshift=$3
-    valdir=$4
-    valtag=$5
-
-    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
-
-    if [ $winshift == 0 ]; then
-	modtag=$traintag
-    else
-	modtag="$traintag.win_${winshift}"
-    fi
-
-    for chrom in `seq 1 22`
-    do 
-
-	scorefile="$valdir/$modtag.predY.chrom$chrom.txt"
-
-	echo -n "Checking $scorefile ..."
-
-	if [ ! -s $scorefile ]; then
-	    echo "FAIL (missing)"
-	    status=1
-	    continue
-	fi
-	
-	# check line number
-	N=`zcat $valdir/chrom${chrom}.${valtag}.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
-
-	N0=`cat $scorefile | wc -l`
-
-	if [ $N != $N0 ]; then
-	    echo "FAIL (incomplete)"
-	    status=1
-	    continue
-	fi
-
-	echo "OK (N=$N)"
     done
-
-    if [ $status != 0 ]; then 
-	exit $status
-    fi
-	
-    echo -n "Checking timestamp ..."
-
-    prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
-    outdated=`find $valdir/ -name "$modtag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
-
-    if [ $outdated != 0 ]; then
-	echo "FAIL (outdated score data)"
-	exit 1
-    fi
-
-    echo "OK"
 
 else 
     echo "ERROR: unknown NPS step: $step"
