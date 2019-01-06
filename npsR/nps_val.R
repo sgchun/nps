@@ -209,7 +209,7 @@ if (cor(vlY, prisk) < 0) {
 }
 
 filename <- paste(valphenofile, ".nps_score", sep='')
-df.out <- cbind(vlphen, Score=prisk)
+df.out <- cbind(vlphen[vlphen$Outcome >= 0, ], Score=prisk)
 write.table(df.out, file=filename,
             row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
 cat("OK (saved in", filename, ")\n")
