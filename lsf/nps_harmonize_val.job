@@ -18,7 +18,7 @@ QCTOOL=qctool
 #####
 if [ $# != 5 ]; then 
     echo "Usage: nps_harmonize_val.job npsdatadir bgen_file_path bgen_sample_file workdir cohort_name" 
-    echo "Use with qsub -t 1-22 or bsub -J jobname[1-22]"
+    echo "Use with bsub -J jobname[1-22]"
     exit 1
 fi 
 
@@ -121,6 +121,17 @@ zcat $DOSAGE_IN_GZFILE | head -n 1 > $OUT_PREFIX.header.txt
 
 zgrep -F -f $OUT_PREFIX.RefAlt $DOSAGE_IN_GZFILE > $DOSAGE_OUT_FILE
 
+echo -n "Checking if $GENOPATH and $DOSAGE_OUT_FILE are sorted by SNP position..."
+
+sort -c -T $OUTPUT_DIR -t' ' -k 4n,4 $DOSAGE_OUT_FILE
+
+if [ $? != 0 ]; then 
+    echo "FAIL"
+    exit 1
+fi
+
+echo "OK"
+
 ## "\t position \t alleleA \t alleleB \t"
 cat $DOSAGE_OUT_FILE | cut -f1-6 -d' ' | awk '{print("\t" $4 "\t" $5 "\t" $6 "\t")}' > $OUT_PREFIX.nonmissing
 
@@ -145,9 +156,23 @@ if [ $lines -lt $total ]; then
 
     echo -n "Filling in zeroes at $M_fill SNPs..."
 
-    tail -n +2 $summstat | grep -w "^chr$CHROM" | grep -v -F -f $OUT_PREFIX.nonmissing | awk -v N=$N -v CHROM=$CHROM '{ printf("NA %d:%d_%s_%s %d:%d_%s_%s %d %s %s", CHROM, $2, $3, $4, CHROM, $2, $3, $4, $2, $3, $4); i = 0; while (i++ < N) { printf ("%s", " 0") } print(""); }' >> $DOSAGE_OUT_FILE
+    tail -n +2 $summstat | grep -w "^chr$CHROM" | grep -v -F -f $OUT_PREFIX.nonmissing | awk -v N=$N -v CHROM=$CHROM '{ printf("NA %d:%d_%s_%s %d:%d_%s_%s %d %s %s", CHROM, $2, $3, $4, CHROM, $2, $3, $4, $2, $3, $4); i = 0; while (i++ < N) { printf ("%s", " 0") } print(""); }' > $DOSAGE_OUT_FILE.zerofill
 
     echo "OK"
+
+    echo -n "Merging..."
+
+    sort -m -T $OUTPUT_DIR -t' ' -k 4n,4 $DOSAGE_OUT_FILE $DOSAGE_OUT_FILE.zerofill > $DOSAGE_OUT_FILE.merged
+
+    if [ $? != 0 ]; then 
+	echo "FAIL"
+	exit 1
+    fi
+
+    echo "OK"
+
+    rm "$DOSAGE_OUT_FILE"
+    mv "$DOSAGE_OUT_FILE.merged" "$DOSAGE_OUT_FILE"
 
     lines=`cat $DOSAGE_OUT_FILE | wc -l`
 
@@ -159,9 +184,9 @@ if [ $lines -lt $total ]; then
     fi 
 fi
 
-echo -n "Reordering and compressing $DOSAGE_OUT_GZFILE ..."
+echo -n "Compressing to $DOSAGE_OUT_GZFILE ..."
 
-(cat "$OUT_PREFIX.header.txt" ; sort -T $OUTPUT_DIR -t' ' -k 4n,4 $DOSAGE_OUT_FILE) | gzip -c > $DOSAGE_OUT_GZFILE
+cat "$OUT_PREFIX.header.txt" "$DOSAGE_OUT_FILE" | gzip -c > $DOSAGE_OUT_GZFILE
 
 echo "OK"
 
