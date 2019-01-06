@@ -1,9 +1,9 @@
 #! /bin/bash 
 
 moddir=$1
-winshift=$2
-valdir=$3
-valtag=$4
+valdir=$2
+valtag=$3
+winshift=$4
 
 chrom=$LSB_JOBINDEX
 
