@@ -39,7 +39,7 @@ For citation:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly as the following example of `sge/nps_score.job`:
+4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly as the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
 
    ```bash
    ###
@@ -132,14 +132,13 @@ To run NPS, you need the following set of input files:
    In order to match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will be ignored. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers has to be ordered by **position**. All SNPs in the training genotype file are expected to have non-missing GWAS summary statistics.  
 
 3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is space-separated six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for additional details on the format. 
-   ```
-   trainF2 trainI2 0 0 0 -9
-   trainF3 trainI3 0 0 0 -9
-   trainF39 trainI39 0 0 0 -9
-   trainF41 trainI41 0 0 0 -9
-   trainF58 trainI58 0 0 0 -9
-   ```
-
+   
+   > trainF2 trainI2 0 0 0 -9
+   > trainF3 trainI3 0 0 0 -9
+   > trainF39 trainI39 0 0 0 -9
+   > trainF41 trainI41 0 0 0 -9
+   > trainF58 trainI58 0 0 0 -9
+   
 4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed.
    ```
    FID	IID	Outcome
