@@ -348,11 +348,11 @@ write.table(data.frame(SNPs=unique(ukbb.rejected.snpIDs),
 
 cat("OK\n")
 
-# Generate pre-formated summstat file
+# Generate pre-formatted summstat file
 outfile <-
-    paste(workdir, "/", cohortname, ".preformated_summstats.txt", sep='')
+    paste(workdir, "/", cohortname, ".preformatted_summstats.txt", sep='')
 
-cat("Saving preformated summary stats file to", outfile, "...")
+cat("Saving preformatted summary stats file to", outfile, "...")
 
 df <- data.frame(chr=paste("chr", ukbb$CHR, sep=''), 
                  pos=ukbb$BP, 
