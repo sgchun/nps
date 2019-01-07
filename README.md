@@ -109,9 +109,9 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. Duplicated SNPs are not allowed in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*CohortName*.dosage.gz." 
+2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. Duplicated SNPs are not allowed in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*GenotypeSetID*.dosage.gz." 
 
-NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on **SNPID** or **rsid**. NPS expects **alleleA** to match **ref** allele and **alleleB** to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB**. Markers has to be sorted by **position**. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
+   NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on **SNPID** or **rsid**. NPS expects **alleleA** to match **ref** allele and **alleleB** to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB**. Markers has to be sorted by **position**. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
 ```
 chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
 01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
@@ -135,41 +135,56 @@ trainF58 trainI58 0 0 0 -9
 ...
 ```
 
-4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in the separate phenotype file and ignores the phenotype data provided in the .fam file above. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. When the optional **TotalLiability** column is provided, NPS also reports *R2* on the liability scale, namely *R2* between polygenic scores and **TotalLiablity**. The combination of **FID** and **IID** are used to match samples to .fam file. Samples can appear in any order in this file. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed. 
+4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in the separate phenotype file and ignores the phenotype data provided in the .fam file above. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples to .fam file. Samples can appear in any order in this file. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed. 
 ```
-FID	IID	TotalLiability	Outcome
-trainF68266	trainI68266	2.00037013482937	1
-trainF77481	trainI77481	2.19146817328717	1
-trainF39184	trainI39184	0.833227631267031	0
-trainF76746	trainI76746	0.168893429255002	0
-trainF65453	trainI65453	0.817881328612934	0
+FID	IID	Outcome
+trainF68266	trainI68266 1
+trainF77481	trainI77481 1
+trainF39184	trainI39184 0
+trainF76746	trainI76746 0
+trainF65453	trainI65453 0
 ...
 ```
 5. **Validation genotypes in QCTOOL dosage format.** Same as the training genotype dosage format. 
 6. **Validation sample IDs in PLINK .fam format.** Same as the training sample ID file format.
-7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Missing phenotype values (**-9**) are allowed in this file. Such samples will be simply excluded when calculating the accuracy statistics. 
+7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. The only difference is that missing phenotype values (**-9**) are allowed in validation cohort phenotypes. Samples with missing phenotypes will be simply excluded when evaluating the prediction accuracy. 
 
 
 ## How to prepare training and validation cohort for NPS
+We show an example of preparing UK Biobank data for NPS. However, NPS can work with other cohorts as far as the genotype data are prepared in .bgen file format. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
 
-### Using UK Biobank
+### Using UK Biobank as a training cohort
+In UK Biobank, imputed allelic dosages are provided in files named as **ukb_imp_chr1_v3.bgen**, and SNP information annotations are provided in files named as **ukb_mfi_chr1_v3.txt**. When these files are present in the **<path_to_ukbb>** directory, they can harmonized with *minimal*-formatted summary statistics for NPS as follows: 
+
+First, we exclude SNPs with MAF < 5% in UK Biobank or imputation INFO score < 0.4. Output files are written in **<work_dir>**.
 ```bash
 qsub -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
+```
 
+Then, we select samples to include in training cohort. **<path_to_ukbb>/ukb31063.sample** is the original bgen sample file of the entire cohort. 
+```bash
 qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <cohort_name>
-
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file_in_minimal_format> <work_dir> <cohort_name>
-
-qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <cohort_name>
-
-ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
-
+**<cohort_name>** is the name of cohort, which output files will be named after. **<sample_id_file>** is the list of samples to choose from **<path_to_ukbb>/ukb31063.sample** for the training cohort, with one sample ID in each line, as follows:  
 ```
-SAMPLE1_ID
-SAMPLE2_ID
-SAMPLE3_ID
+2959669
+1774228
+3227484
 ...
+```
+Next, we harmonize GWAS summary statitics using training cohort data. The harmonized GWAS summary statistics will be written to **<work_dir>/<cohort_name>.preformatted_summstats.txt**. 
+```
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file_in_minimal_format> <work_dir> <cohort_name>
+```
+
+We filter out SNPs that were flagged for removal during the harmonization step. This will generate genotype files in the QCTOOL dosage format, which are ready to use for NPS. The file names will be as **chrom1.<cohort_name>.QC2.dosage.gz**, and **<cohort_name>.QC2** will be used to designated this genotype data set (*GenotypeSetID*).
+```
+qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <cohort_name>
+```
+
+Finally, the following step will create **<work_dir>/<cohort_name>.fam**, which keeps the sample IDs of all training cohort samples. 
+```
+ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
 
 ### Using other cohort as a training cohort 
@@ -228,7 +243,7 @@ $ tar -zxvf NPS.Test2.tar.gz
 
 For Test set #1, we provide an instruction on running it on desktop without parallelization or on SGE clusters. For LSF clusters, see the example of [Test set #2](https://github.com/sgchun/nps#running-nps-on-test-set-2). 
 
-1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1. `sge/snps_stdgt.job` and `lsf/snps_stdgt.job` scripts run the computation in parallel across all 22 chromosomes. On a desktop computer, `run_all_chroms.sh` can be used to run an SGE job script for all chromosomes one by one sequentially. The first parameter (`testdata/Test1`) is the location of training cohort (.dosage.gz files), the second parameter (`Test1.train`) is the *CohortName* of training cohort, and the last parameter (`5000`) is the number of samples in the training cohort. 
+1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1. `sge/snps_stdgt.job` and `lsf/snps_stdgt.job` scripts run the computation in parallel across all 22 chromosomes. On a desktop computer, `run_all_chroms.sh` can be used to run an SGE job script for all chromosomes one by one sequentially. The first parameter (`testdata/Test1`) is the location of training cohort (.dosage.gz files), the second parameter (`Test1.train`) is the *GenotypeSetID* of training cohort, and the last parameter (`5000`) is the number of samples in the training cohort. 
 ```bash
 $ cd nps-1.0.0/
 
