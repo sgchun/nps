@@ -58,7 +58,7 @@ use OpenblasR
 # -----------------------------------------------------------
 ```
 
-   * Note: Do not blindly add the above lines. These are just examples. The details will depend on individual system configurations. 
+   * **Note: Do not blindly add the above lines. These are just examples. The details will depend on individual system configurations.** 
 
 5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). 
 
