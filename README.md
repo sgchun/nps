@@ -2,11 +2,11 @@
 # Non-Parametric Shrinkage (NPS)
 NPS is a non-parametric polygenic risk prediction model described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
 
-For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
-
 For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
+
+For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
 1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
@@ -62,7 +62,7 @@ For citation:
    ...
    ```
 
-   **Note: Do not blindly add the above lines. The details will depend on individual system configurations.** 
+   **Note: Do not blindly use the above codes. The details will depend on system configurations.** 
 
 5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Please modify the job scripts (`ukbb_support/*.job`) to load **bgen** and **qctool** modules as necessary.
 
@@ -92,7 +92,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *preformatted* format is the native format for NPS. We provide all summary statistics of our [test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
+   - The *preformatted* format is the native format for NPS. We provide all summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP. NPS does not allow InDels, tri-allelic SNPs, or duplicated markers. 
@@ -113,7 +113,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*TrainSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
+2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*TrainSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
 
    ```
    chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
@@ -131,7 +131,7 @@ To run NPS, you need the following set of input files:
    
    In order to match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will be ignored. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers has to be ordered by **position**. All SNPs in the training genotype file are expected to have non-missing GWAS summary statistics.  
 
-3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for additional details on the format. 
+3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
    ```
    trainF2 trainI2 0 0 0 -9
    trainF3 trainI3 0 0 0 -9
@@ -141,11 +141,11 @@ To run NPS, you need the following set of input files:
    ```
 4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed.
    ```
-   FID	IID	Outcome
-   trainF2	trainI2  1
-   trainF39 trainI39 1
-   trainF3	trainI3  0
-   trainF41 trainI41 0
+   FID   IID    Outcome
+   trainF2  trainI2  0
+   trainF39 trainI39 0
+   trainF3  trainI3  1
+   trainF41 trainI41 1
    trainF58 trainI58 0
    ```
 5. **Validation genotypes in QCTOOL dosage format.** Same as the training genotype dosage format. 
@@ -153,13 +153,13 @@ To run NPS, you need the following set of input files:
 7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Unlike the training cohort phenotype file, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
 
 ## How to prepare training and validation cohorts for NPS
-We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in .bgen file format. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
+We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
 
 ### Using UK Biobank as a training cohort
 UK Biobank data consist of the following files: 
 - **ukb_imp_chrN_v3.bgen**: imputed allelic for each chromosome chrN
 - **ukb_mfi_chrN_v3.txt**: information of markers in the bgen file
-- **ukb31063.sample**: bgen sample information file 
+- **ukb31063.sample**: bgen sample information for the entire cohort 
 
 Assuming that UK Biobank dataset is located in `<path_to_ukbb>/` directory, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
 ```bash
@@ -167,15 +167,7 @@ qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_ch
 ```
 The output files will be stored in `<work_dir>/`.
 
-Next, we filter bgen files to include only samples with identifier listed in `<sample_id_file>` and convert bgen files to dosage file format. `<sample_id_file>` is simply a list of sample IDs, with one sample in each line, and looks like the following: 
-```
-2959669
-1774228
-3227484
-...
-```
-
-With the `<sample_id_file>`, the following step will generate filtered dosage files using qctool in `<work_dir>/`: 
+Next, we filter bgen files to include only samples with identifier listed in `<sample_id_file>` and then convert bgen files to dosage file format. `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. With the `<sample_id_file>`, the following step will generate filtered dosage files using qctool in `<work_dir>/`: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
 ```  
