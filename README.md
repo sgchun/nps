@@ -25,7 +25,7 @@ Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")'
 Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
 ```
 
-In case that it is preferred to install these R extensions in your home directory (e.g. ~/R) instead of the default system path, please do the following:
+   In case that it is preferred to install these R extensions in your home directory (e.g. ~/R) instead of the default system path, please do the following:
 
 ```bash
 Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -186,6 +186,9 @@ Finally, the following step will create **<work_dir>/<cohort_name>.fam**, which 
 ```
 ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
+* **Note: `common_snps.job` and `filter_samples.job` will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.** 
+* **Note: The job scripts in `ukbb_support` directory is for SGE clusters but can be easily changed for LSF or other cluster systems.**
+* **Note: Some steps take long run time and demand memory space up to 4GB (`qsub -l h_vmem=4G`). `ukbb_support/harmonize_summstats.R` may take memory up to ~8GB. 
 
 ### Using other cohort as a training cohort 
 ```bash
@@ -193,6 +196,13 @@ ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
 
 ### Using UK Biobank for validation as well as training cohorts
+
+```
+cp <training_cohort_name>.UKBB_rejected_SNPIDs <validation_cohort_name>.UKBB_rejected_SNPIDs
+qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
+qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <validation_cohort_name>
+ukbb_support/make_fam.sh <work_dir> <validation_cohort_name>
+```
 
 ### Using a different cohort for validation
 
