@@ -132,25 +132,23 @@ To run NPS, you need the following set of input files:
    In order to match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will be ignored. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers has to be ordered by **position**. All SNPs in the training genotype file are expected to have non-missing GWAS summary statistics.  
 
 3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is space-separated six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for additional details on the format. 
-```
-trainF2 trainI2 0 0 0 -9
-trainF3 trainI3 0 0 0 -9
-trainF39 trainI39 0 0 0 -9
-trainF41 trainI41 0 0 0 -9
-trainF58 trainI58 0 0 0 -9
-...
-```
+   ```
+   trainF2 trainI2 0 0 0 -9
+   trainF3 trainI3 0 0 0 -9
+   trainF39 trainI39 0 0 0 -9
+   trainF41 trainI41 0 0 0 -9
+   trainF58 trainI58 0 0 0 -9
+   ```
 
-4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. Samples can appear in any order in this file. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed. 
-```
-FID	IID	Outcome
-trainF68266	trainI68266 1
-trainF77481	trainI77481 1
-trainF39184	trainI39184 0
-trainF76746	trainI76746 0
-trainF65453	trainI65453 0
-...
-```
+4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed.
+   ```
+   FID	IID	Outcome
+   trainF2	trainI2  1
+   trainF39 trainI39 1
+   trainF3	trainI3  0
+   trainF41 trainI41 0
+   trainF58 trainI58 0
+   ```
 5. **Validation genotypes in QCTOOL dosage format.** Same as the training genotype dosage format. 
 6. **Validation sample IDs in PLINK .fam format.** Same as the training sample ID file format.
 7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Unlike the training cohort phenotype file, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
