@@ -1,12 +1,15 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated non-parametrically by using a training cohort with individual-level genotype data. For citation: 
+NPS is a non-parametric polygenic risk prediction model described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
 
+For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
+
+For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
 
 ## How to Install
-1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. And **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
    tar -zxvf nps-1.0.0.tar.gz
@@ -14,9 +17,9 @@ NPS is a non-parametric polygenic risk prediction algorithm described in Chun et
    make
    ```
 
-   * **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts, `nps_stdgt.job` and `nps_score.job`, as stdgt and grs will depend on GCC shared libraries in the run time.**
+   **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts - `nps_stdgt.job` and `nps_score.job` - as stdgt and grs will depend on GCC shared libraries in the run time.**
 
-2. The core NPS module was implemented in R. R-3.0 or later is required for NPS and available for download from [here](https://www.r-project.org/). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries can speed up NPS substantially.  
+2. The core NPS module was implemented in R and requires R-3.0 or later (available for download from [here](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries can speed up NPS substantially.  
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
@@ -25,20 +28,20 @@ NPS is a non-parametric polygenic risk prediction algorithm described in Chun et
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   In case that it is preferred to install these R extensions in your home directory (e.g. ~/R) instead of the default system path, please do the following:
+   In case that you prefer to install the R extensions in your home directory (e.g. ~/R), please do the following instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", "~/R", repos="http://cran.r-project.org")' 
    
    # Add "~/R" to the local R library path in your login shell's start-up file.
-   # For examaple in case of bash, add this to .bash_profile or .bashrc: 
+   # For example, in case of bash, add the following to .bash_profile or .bashrc: 
    export R_LIBS="~/R:$R_LIBS"
    ```
 
 4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly as the following example of `sge/nps_score.job`:
 
-   ```bash 
+   ```bash
    ###
    # ADD CODES TO LOAD MODULES HERE
    #
@@ -56,24 +59,25 @@ NPS is a non-parametric polygenic risk prediction algorithm described in Chun et
    use GCC-5.3.0 
    use OpenblasR
    # -----------------------------------------------------------
+   ...
    ```
 
-   * **Note: Do not blindly add the above lines. The details will depend on individual system configurations.** 
+   **Note: Do not blindly add the above lines. The details will depend on individual system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). 
+5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Please modify the job scripts (`ukbb_support/*.job`) load **bgen** and **qctool** modules if necessary.
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
 1. **GWAS summary statistics.** NPS supports two summary statistics formats: *minimal* and *preformatted*. 
-   - The summary statistics in the *minimal* format need to be converted into the *preformatted* format and harmonized with training genotype data. This can be done automatically with NPS (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohort-for-nps)). The minimal format is a tab-delimited text file with the following seven or eight columns: 
+   - The summary statistics in the *minimal* format can be automatically converted into the *preformatted* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohort-for-nps) for the details). The minimal format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
      - **a1** and **a2**: Alleles at each SNP in any order.
      - **effal**: effect allele. It should be either a1 or a2 allele. 
      - **pval**: p-value of association. 
-     - **effbeta**: estimated *per-allele* effect size of *effect allele*. For case/control GWAS, log(OR) should be used. 
-     - **effaf**: (*Optional*) allele frequency of *effect allele* in the discovery GWAS cohort. If this column is provided, the effect allele frequency will be checked across GWAS data and training cohort, and markers with too divergent allele frequencies will be filtered out. If this information is not available, allele frequencies of training cohort will be copied to the summary statistics file. 
+     - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. 
+     - **effaf**: (*Optional*) allele frequency of *effect allele* in the discovery GWAS cohort. If this column is provided, the effect allele frequency will be compared between GWAS data and training cohort, and markers with too discrepant allele frequencies will be filtered out. If this information is not available, allele frequencies of training cohort will be copied to the summary statistics file. 
      ```
      chr	pos	a1	a2	effal	pval	effbeta	effaf
      1	569406	G	A	G	0.8494	0.05191	0.99858
@@ -88,13 +92,13 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *preformatted* format is the native format for NPS. We provide summary statistics of our [test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows have to be sorted by chromsome numbers and positions. The following seven columns are required: 
+   - The *preformatted* format is the native format for NPS. We provide summary statistics of our [test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP. NPS does not allow InDels, tri-allelic SNPs, or duplicated markers. 
      - **reffreq**: allele frequency of reference allele in the discovery GWAS cohort. 
      - **pval**: p-value of association. 
-     - **effalt**: estimated *per-allele* effect size of *alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to the standardized genotype using **reffreq**.  
+     - **effalt**: estimated *per-allele* effect size of *the alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to the standardized genotype using **reffreq**.  
      ```
      chr	pos	ref	alt	reffreq	pval	effalt
      chr1	676118	G	A	0.91584	0.7908	0.0012
@@ -109,7 +113,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statitics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. Duplicated SNPs are not allowed in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*GenotypeSetID*.dosage.gz." 
+2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statistics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. Duplicated SNPs are not allowed in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*GenotypeSetID*.dosage.gz." 
 
    NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on **SNPID** or **rsid**. NPS expects **alleleA** to match **ref** allele and **alleleB** to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB**. Markers has to be sorted by **position**. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
 ```
