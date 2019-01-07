@@ -188,7 +188,7 @@ ukbb_support/make_fam.sh <work_dir> <cohort_name>
 ```
 * **Note: `common_snps.job` and `filter_samples.job` will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.** 
 * **Note: The job scripts in `ukbb_support` directory is for SGE clusters but can be easily changed for LSF or other cluster systems.**
-* **Note: Some steps take long run time and demand memory space up to 4GB (`qsub -l h_vmem=4G`). `ukbb_support/harmonize_summstats.R` may take memory up to ~8GB. 
+* **Note: Some steps take long run time and demand memory space up to 4GB (`qsub -l h_vmem=4G`). `ukbb_support/harmonize_summstats.R` may take memory up to ~8GB.** 
 
 ### Using other cohort as a training cohort 
 ```bash
