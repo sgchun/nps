@@ -64,13 +64,13 @@ For citation:
 
    **Note: Do not blindly add the above lines. The details will depend on individual system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Please modify the job scripts (`ukbb_support/*.job`) load **bgen** and **qctool** modules if necessary.
+5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Please modify the job scripts (`ukbb_support/*.job`) to load **bgen** and **qctool** modules as necessary.
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
 1. **GWAS summary statistics.** NPS supports two summary statistics formats: *minimal* and *preformatted*. 
-   - The summary statistics in the *minimal* format can be automatically converted into the *preformatted* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohort-for-nps) for the details). The minimal format is a tab-delimited text file with the following seven or eight columns: 
+   - The summary statistics in the *minimal* format can be automatically converted into the *preformatted* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction). The minimal format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
      - **a1** and **a2**: Alleles at each SNP in any order.
@@ -92,7 +92,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *preformatted* format is the native format for NPS. We provide summary statistics of our [test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
+   - The *preformatted* format is the native format for NPS. We provide all summary statistics of our [test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP. NPS does not allow InDels, tri-allelic SNPs, or duplicated markers. 
@@ -113,23 +113,25 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotypes in QCTOOL dosage format.** Genotype data have to be prepared in the dosage format. NPS requires that all markers in this file overlap with GWAS summary statistics. We recommend to remove InDels, tri-allelic SNPs, rare variants with MAF < 5%, markers with any QC issue, and markers that are not found in GWAS summary statistics. Markers with very different allele frequencies between GWAS and training cohort should be also discarded. Duplicated SNPs are not allowed in the dosage file. Genotype data needs to be split by chromosomes for parallelization, and each file should be named as "chrom*N*.*GenotypeSetID*.dosage.gz." 
+2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*GenotypeDatasetID*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
 
-   NPS matches SNPs using the combination of chromosome, position and alleles on the assumed forward strand (+) and does not rely on **SNPID** or **rsid**. NPS expects **alleleA** to match **ref** allele and **alleleB** to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB**. Markers has to be sorted by **position**. [QCTOOL](https://www.well.ox.ac.uk/~gav/qctool/) can be used to generate the dosage files.  
-```
-chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
-01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
-01 1_734349:734349:G:A 1_734349:734349:G:A 734349 G A 1 0 0 0 0
-01 1_770886:770886:G:A 1_770886:770886:G:A 770886 G A 0 0 0 1 0
-01 1_785050:785050:G:A 1_785050:785050:G:A 785050 G A 1 2 2 2 2
-01 1_798400:798400:G:A 1_798400:798400:G:A 798400 G A 1 0 1 1 0
-01 1_804759:804759:G:A 1_804759:804759:G:A 804759 G A 1 0 1 0 0
-01 1_831489:831489:G:A 1_831489:831489:G:A 831489 G A 1 2 2 1 2
-01 1_832318:832318:G:A 1_832318:832318:G:A 832318 G A 1 2 2 1 2
-01 1_836924:836924:G:A 1_836924:836924:G:A 836924 G A 0 0 0 0 0
-...
-```
-3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file *without a header*. Only first two columns (family ID and individual ID) will be used. See [here](https://www.cog-genomics.org/plink2/formats#fam) for additional details on the format. 
+   ```
+   chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
+   01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
+   01 1_734349:734349:G:A 1_734349:734349:G:A 734349 G A 1 0 0 0 0
+   01 1_770886:770886:G:A 1_770886:770886:G:A 770886 G A 0 0 0 1 0
+   01 1_785050:785050:G:A 1_785050:785050:G:A 785050 G A 1 2 2 2 2
+   01 1_798400:798400:G:A 1_798400:798400:G:A 798400 G A 1 0 1 1 0
+   01 1_804759:804759:G:A 1_804759:804759:G:A 804759 G A 1 0 1 0 0
+   01 1_831489:831489:G:A 1_831489:831489:G:A 831489 G A 1 2 2 1 2
+   01 1_832318:832318:G:A 1_832318:832318:G:A 832318 G A 1 2 2 1 2
+   01 1_836924:836924:G:A 1_836924:836924:G:A 836924 G A 0 0 0 0 0
+   ...
+   ```
+   
+   In order to match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will be ignored. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers has to be ordered by **position**. All SNPs in the training genotype file are expected to have non-missing GWAS summary statistics.  
+
+3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is space-separated six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for additional details on the format. 
 ```
 trainF2 trainI2 0 0 0 -9
 trainF3 trainI3 0 0 0 -9
@@ -139,7 +141,7 @@ trainF58 trainI58 0 0 0 -9
 ...
 ```
 
-4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in the separate phenotype file and ignores the phenotype data provided in the .fam file above. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples to .fam file. Samples can appear in any order in this file. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed. 
+4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. Samples can appear in any order in this file. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed. 
 ```
 FID	IID	Outcome
 trainF68266	trainI68266 1
@@ -151,11 +153,10 @@ trainF65453	trainI65453 0
 ```
 5. **Validation genotypes in QCTOOL dosage format.** Same as the training genotype dosage format. 
 6. **Validation sample IDs in PLINK .fam format.** Same as the training sample ID file format.
-7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. The only difference is that missing phenotype values (**-9**) are allowed in validation cohort phenotypes. Samples with missing phenotypes will be simply excluded when evaluating the prediction accuracy. 
+7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Unlike the training cohort phenotype file, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
 
-
-## How to prepare training and validation cohort for NPS
-We show an example of preparing UK Biobank data for NPS. However, NPS can work with other cohorts as far as the genotype data are prepared in .bgen file format. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
+## How to prepare training and validation cohorts for NPS
+We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in .bgen file format. To gain access to UK Biobank data, please see [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
 
 ### Using UK Biobank as a training cohort
 In UK Biobank, imputed allelic dosages are provided in files named as **ukb_imp_chr1_v3.bgen**, and SNP information annotations are provided in files named as **ukb_mfi_chr1_v3.txt**. When these files are present in the **<path_to_ukbb>** directory, they can harmonized with *minimal*-formatted summary statistics for NPS as follows: 
