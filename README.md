@@ -167,17 +167,17 @@ qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_ch
 ```
 The output files will be stored in `<work_dir>/`.
 
-Next, we filter bgen files to include only samples with identifier listed in `<sample_id_file>` and then convert bgen files to dosage file format. `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. With the `<sample_id_file>`, the following step will generate filtered dosage files using qctool in `<work_dir>/`: 
+Next, we filter bgen files to include only samples with identifier listed in `<sample_id_file>` and then convert bgen files to dosage file format. `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. With the `<sample_id_file>`, the following step will generate filtered dosage files in `<work_dir>/` using qctool: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
 ```  
 
-Then, we harmonize GWAS summary statitics with training cohort data. When `<summary_statistics_file>` is a raw summary statistics file in the *minimal* format, running the following step will harmonize it with training cohort data and generate the harmonized GWAS summary statistics in the *preformatted* format: 
+Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *minimal* format with training cohort and generate the harmonized GWAS summary statistics in the *preformatted* format: 
 ```bash
 Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
 ```
 
-We need to filter out SNPs that were flagged for removal during the harmonization step by running the following line: 
+After that, we need to filter out SNPs that were flagged for removal during the abover harmonization step by running the following line: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
 ```
@@ -192,15 +192,44 @@ After the above steps, ukbb_support job scripts will automatially generate the f
 - `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
 - `<work_dir>/<training_cohort_name>.fam`
 
-* **Note: common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.** 
-* **Note: The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.**
-* **Note: Some steps take long running time and demand memory space up to 4GB (`qsub -l h_vmem=4G`). `ukbb_support/harmonize_summstats.R` may take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly without explanation if it runs out of memory.**
+**Note:**
+* common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.
+* The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
+* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `ukbb_support/harmonize_summstats.R` can take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
 
 ### Using other cohort as a training cohort 
 
+To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. When the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
 ```bash
-
+qsub -t 1-22 ukbb_support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
 ```
+Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. This step will create marker information files, named as **chromN.mfi.txt** in `<dataset_dir>/`, similar to the following: 
+```
+1:11008:C:G 1:11008:C:G 11008 C  G  0.0979261   G  0.566473
+1:11012:C:G 1:11012:C:G 11012 C  G  0.0979261   G  0.566473
+1:13110:G:A 1:13110:G:A 13110 G  A  0.0408733   A  0.310472
+rs78601809:15211:T:G rs78601809  15211 T  G  0.332698 T  0.355547
+...
+```
+This is a tab-delimited file without a header with the following columns: 
+- col #1: SNP ID
+- col #2: rs ID
+- col #3: base position
+- col #4: ref allele 
+- col #5: alt allele 
+- col #6: minor allele frquency 
+- col #7: minor allele 
+- col #8: imputation score (INFO)
+
+Then, the rest of steps are similar to the case with UK Biobank: 
+```bash
+qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <cohort_bgen_sample_file> <work_dir> <sample_id_file> <training_cohort_name>
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
+ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
+```
+Here, `<cohort_bgen_sample_file>` is the bgen sample file of the entire cohort (as ukb31063.sample in UK Biobank).
 
 ### Using UK Biobank for validation as well as training cohorts
 
