@@ -1,64 +1,64 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) BioRxiv [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effect are estimated non-parametrically by using a training cohort with individual-level genotype data. For citation: 
+NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated non-parametrically by using a training cohort with individual-level genotype data. For citation: 
 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
 
 ## How to Install
-1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled. For this, you need GNU C++ compiler with C++0x support (GCC 4.4 or later). This step will create two executable binaries, `stdgt` and `grs`, in the top-level NPS directory. `stdgt` is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. And `grs` calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. And **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
-```bash
-tar -zxvf nps-1.0.0.tar.gz
-cd nps-1.0.0/
-make
-```
+   ```bash
+   tar -zxvf nps-1.0.0.tar.gz
+   cd nps-1.0.0/
+   make
+   ```
 
-   * Note on computer clusters: If you loaded a GCC module to compile NPS, you will also need to load the GCC module in `nps_stdgt.job` and `nps_score.job` as `stdgt` and `grs` will need GCC shared libraries in run time. 
+   * **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts, `nps_stdgt.job` and `nps_score.job`, as stdgt and grs will depend on GCC shared libraries in the run time.**
 
-2. The core NPS module was implemented in R. R can be downloaded from [here](https://www.r-project.org/). R-3.0 or later is required to run NPS. Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries speed up NPS substantially.  
+2. The core NPS module was implemented in R. R-3.0 or later is required for NPS and available for download from [here](https://www.r-project.org/). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries can speed up NPS substantially.  
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
-```bash
-Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
-Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
-```
+   ```bash
+   Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
+   Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
+   ```
 
    In case that it is preferred to install these R extensions in your home directory (e.g. ~/R) instead of the default system path, please do the following:
 
-```bash
-Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
-Rscript -e 'install.packages("DescTools", "~/R", repos="http://cran.r-project.org")' 
+   ```bash
+   Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
+   Rscript -e 'install.packages("DescTools", "~/R", repos="http://cran.r-project.org")' 
+   
+   # Add "~/R" to the local R library path in your login shell's start-up file.
+   # For examaple in case of bash, add this to .bash_profile or .bashrc: 
+   export R_LIBS="~/R:$R_LIBS"
+   ```
 
-# Add "~/R" to your local R library path in your login shell's start-up file
-# For examaple in case of bash, add this to .bash_profile or .bashrc: 
-export R_LIBS="~/R:$R_LIBS"
-```
+4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly as the following example of `sge/nps_score.job`:
 
-4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters. Please see `sge` and `lsf` directories. You may still need to modify the provided job scripts to load necessary modules. For example, you may need to add the following lines in the provided `sge/nps_score.job`:
+   ```bash 
+   ###
+   # ADD CODES TO LOAD MODULES HERE
+   #
+   # Load R module if necessary. 
+   # 
+   # If you loaded a GCC module to compile grs, you also need to load 
+   # the GCC module here. 
+   #
+   # ---------------------- EXAMPLE ----------------------------
+   # On clusters running environment modules and providing R-mkl
+   module add gcc/5.3.0 
+   module add R-mkl/3.3.2
+   
+   # On clusters running DotKit instead and supporting OpenblasR
+   use GCC-5.3.0 
+   use OpenblasR
+   # -----------------------------------------------------------
+   ```
 
-```bash 
-###
-# ADD CODES TO LOAD MODULES HERE
-#
-# Load R module if necessary. 
-# 
-# If you loaded a GCC module to compile grs, you also need to load 
-# the GCC module here. 
-#
-# ---------------------- EXAMPLE ----------------------------
-# On clusters running environment modules and providing R-mkl
-module add gcc/5.3.0 
-module add R-mkl/3.3.2
-
-# On clusters running DotKit instead and supporting OpenblasR
-use GCC-5.3.0 
-use OpenblasR
-# -----------------------------------------------------------
-```
-
-   * **Note: Do not blindly add the above lines. These are just examples. The details will depend on individual system configurations.** 
+   * **Note: Do not blindly add the above lines. The details will depend on individual system configurations.** 
 
 5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). 
 
