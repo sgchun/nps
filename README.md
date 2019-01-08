@@ -11,7 +11,7 @@ For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harva
 ## How to Install
 1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
-   ```bash
+   ```shell_session
    tar -zxvf nps-1.0.0.tar.gz
    cd nps-1.0.0/
    make
@@ -23,14 +23,14 @@ For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harva
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
-   ```bash
+   ```shell_session
    Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
    In case that you prefer to install the R extensions in your home directory (e.g. ~/R), please do the following instead:
 
-   ```bash
+   ```shell_session
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", "~/R", repos="http://cran.r-project.org")' 
    
@@ -69,8 +69,8 @@ For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harva
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** NPS supports two summary statistics formats: *minimal* and *preformatted*. 
-   - The summary statistics in the *minimal* format can be automatically converted into the *preformatted* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction). The minimal format is a tab-delimited text file with the following seven or eight columns: 
+1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. 
+   - The summary statistics in the *MINIMAL* format can be automatically converted into the *PREFORMATTED* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction). The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
      - **a1** and **a2**: Alleles at each SNP in any order.
@@ -92,7 +92,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *preformatted* format is the native format for NPS. We provide all summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
+   - The *PREFORMATTED* format is the native format for NPS. We provide all summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP. NPS does not allow InDels, tri-allelic SNPs, or duplicated markers. 
@@ -153,31 +153,31 @@ To run NPS, you need the following set of input files:
 7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Unlike the training cohort phenotype file, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
 
 ## How to prepare training and validation cohorts for NPS
-We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
+We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
 
 ### Using UK Biobank as a training cohort
 UK Biobank data consist of the following files: 
-- **ukb_imp_chrN_v3.bgen**: imputed allelic for each chromosome chrN
-- **ukb_mfi_chrN_v3.txt**: information of markers in the bgen file
-- **ukb31063.sample**: bgen sample information for the entire cohort 
+- **ukb_imp_chrN_v3.bgen**: imputed allelic dosages for chrN
+- **ukb_mfi_chrN_v3.txt**: marker information for ukb_imp_chrN_v3.bgen
+- **ukb31063.sample**: bgen sample file for the entire cohort 
 
-Assuming that UK Biobank dataset is located in `<path_to_ukbb>/` directory, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
+Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
 ```
 The output files will be stored in `<work_dir>/`.
 
-Next, we filter bgen files to include only samples with identifier listed in `<sample_id_file>` and then convert bgen files to dosage file format. `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. With the `<sample_id_file>`, the following step will generate filtered dosage files in `<work_dir>/` using qctool: 
+Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done by running the following: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
 ```  
 
-Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *minimal* format with training cohort and generate the harmonized GWAS summary statistics in the *preformatted* format: 
+Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *MINIMAL* format with training cohort data and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format: 
 ```bash
 Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
 ```
 
-After that, we need to filter out SNPs that were flagged for removal during the abover harmonization step by running the following line: 
+After that, we need to filter out SNPs that were flagged for removal during the above harmonization step by running the following: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
 ```
@@ -187,7 +187,7 @@ Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`,
 ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
 ```
 
-After the above steps, ukbb_support job scripts will automatially generate the following files ready for NPS: 
+Overall, the job scripts will automatially generate the following NPS input files: 
 - `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
 - `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
 - `<work_dir>/<training_cohort_name>.fam`
@@ -197,51 +197,40 @@ After the above steps, ukbb_support job scripts will automatially generate the f
 * The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
 * The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `ukbb_support/harmonize_summstats.R` can take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
 
-### Using other cohort as a training cohort 
+### Using a different cohort as a training cohort 
 
-To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. When the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
+To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
 ```bash
 qsub -t 1-22 ukbb_support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
 ```
-Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. This step will create marker information files, named as **chromN.mfi.txt** in `<dataset_dir>/`, similar to the following: 
-```
-1:11008:C:G 1:11008:C:G 11008 C  G  0.0979261   G  0.566473
-1:11012:C:G 1:11012:C:G 11012 C  G  0.0979261   G  0.566473
-1:13110:G:A 1:13110:G:A 13110 G  A  0.0408733   A  0.310472
-rs78601809:15211:T:G rs78601809  15211 T  G  0.332698 T  0.355547
-...
-```
-This is a tab-delimited file without a header with the following columns: 
-- col #1: SNP ID
-- col #2: rs ID
-- col #3: base position
-- col #4: ref allele 
-- col #5: alt allele 
-- col #6: minor allele frquency 
-- col #7: minor allele 
-- col #8: imputation score (INFO)
+Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
 
-Then, the rest of steps are similar to the case with UK Biobank: 
+The rest of steps are straight-forward and similar to processing UK Biobank data: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <cohort_bgen_sample_file> <work_dir> <sample_id_file> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
 Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
 qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
 ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
 ```
-Here, `<cohort_bgen_sample_file>` is the bgen sample file of the entire cohort (as ukb31063.sample in UK Biobank).
 
 ### Using UK Biobank for validation as well as training cohorts
-
+UK Biobank can be split into two and used as a validation as well as training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort data can be prepared for NPS with UK Biobank in the following steps: 
 ```
 cp <training_cohort_name>.UKBB_rejected_SNPIDs <validation_cohort_name>.UKBB_rejected_SNPIDs
+
 qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
 qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <validation_cohort_name>
 ukbb_support/make_fam.sh <work_dir> <validation_cohort_name>
 ```
+The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `ukbb_support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
 
-### Using a different cohort for validation
+### Using a validation cohort that are independent from a training cohort
 
+To run NPS on a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` and `lsf/nps_harmonize_val.job` scripts. Let us  assuming that the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
+```
+qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> 
+```
 
 ## Running NPS 
 
