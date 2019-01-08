@@ -403,8 +403,8 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > Call:  glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
    >   
    > Coefficients:  
-   > (Intercept)        prisk    
-   >     -7.2563       0.1908    
+   > (Intercept)     prisk    
+   >     -7.2563     0.1908    
    >   
    > Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual  
    > Null Deviance:	    2107   
@@ -466,7 +466,7 @@ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
 # Check the results
 ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
 
-# Caculate partitioned risk scores in the training cohort
+# Calculate partitioned risk scores in the training cohort
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
@@ -566,7 +566,7 @@ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
 # Check the results
 ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60
 
-# Caculate partitioned risk scores in the training cohort
+# Calculate partitioned risk scores in the training cohort
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 0
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 20
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 40
@@ -626,14 +626,14 @@ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
 # Check the results
 ./nps_check.sh stdgt testdata/Test2/ Test2.train
 
+# Configure
 # This step requires large memory space.
-Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/T\
-est2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testda\
-ta/Test2/npsdat
+Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat
 
 # Check the results
 ./nps_check.sh init testdata/Test2/npsdat/
 
+# Transform data to the decorrelate eigenlocus space
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 2000
@@ -642,6 +642,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Prune correlations across windows
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 2000
@@ -650,6 +651,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Separate the GWAS-significant partition
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 2000
@@ -658,6 +660,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
@@ -666,6 +669,7 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 # Check the results
 ./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Calculate partitioned risk scores in the training cohort
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 2000
@@ -674,6 +678,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000
@@ -682,9 +687,12 @@ Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000
 
+# (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000
+
 
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 1000
@@ -694,6 +702,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 30
 # Check the results
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Convert back to per-SNP effect sizes
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
@@ -702,8 +711,8 @@ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2
 # Check the results
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
-Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.\
-fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000
+# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
+Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000
 ```
 
 The following AUC is reported in the training cohort by `nps_train_AUC.R`:
@@ -772,21 +781,25 @@ The shrinkage curve generated by `nps_plot_shrinkage.R` is [here](https://github
 
 ### Running NPS on Test set #2 using LSF clusters
 
+Running NPS on LSF is similar to running it on SGE clusters. The memory limit is specified by `bsub -R 'rusage[mem=4000]'`
 
 ```bash
 cd nps-1.0.0/
 
+# Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
 
 # Check the results
 ./nps_check.sh stdgt testdata/Test2/ Test2.train 
 
+# Configure
 # This step requires large memory space.  
 Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat 
 
 # Check the results
 ./nps_check.sh init testdata/Test2/npsdat/
 
+# Transform data to the decorrelate eigenlocus space
 bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 2000 
@@ -795,6 +808,7 @@ bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsda
 # Check the results
 ./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Prune correlations across windows
 bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 2000 
@@ -803,6 +817,7 @@ bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsda
 # Check the results
 ./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Separate the GWAS-significant partition
 bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
@@ -811,6 +826,7 @@ bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/n
 # Check the results
 ./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
@@ -819,6 +835,7 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 # Check the results
 ./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Calculate partitioned risk scores in the training cohort
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
@@ -827,6 +844,7 @@ bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/
 # Check the results
 ./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000 
@@ -835,20 +853,13 @@ Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000
 # Check the results
 ./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000 
 
+# (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000 
-```
 
-The following is the training AUC reported by `npsR/nps_train_AUC.R` with test case #2. 
-```
-Data: 2500 controls < 2500 cases.
-Area under the curve: 0.7843
-95% CI: 0.7718-0.7968 (DeLong)
-```
-
-The validation can be proceeded as follows. 
-```bash
+# Convert back to per-SNP effect sizes
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
@@ -857,6 +868,7 @@ bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata
 # Check the results
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
 
+# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
@@ -865,12 +877,9 @@ bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Tes
 # Check the results
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
+# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000 
 ```
-
-
-
-
 
 ## How to prepare training and validation cohorts for NPS
 We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
@@ -883,28 +892,28 @@ UK Biobank data consist of the following files:
 
 Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
 ```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
+qsub -l h_vmem=4G -t 1-22 support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
 ```
 The output files will be stored in `<work_dir>/`.
 
 Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done by running the following: 
 ```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
 ```  
 
 Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *MINIMAL* format with training cohort data and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format: 
 ```bash
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+Rscript support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
 ```
 
 After that, we need to filter out SNPs that were flagged for removal during the above harmonization step by running the following: 
 ```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
 ```
 
 Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`, which keeps tracks of the IDs of all training cohort samples: 
 ```bash
-ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
+support/make_fam.sh <work_dir> <training_cohort_name>
 ```
 
 Overall, the job scripts will automatially generate the following NPS input files: 
@@ -914,36 +923,36 @@ Overall, the job scripts will automatially generate the following NPS input file
 
 **Note:**
 * common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.
-* The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
-* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `ukbb_support/harmonize_summstats.R` can take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
+* The job scripts in `support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
+* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `support/harmonize_summstats.R` can take memory up to ~8GB. `support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
 
 ### Using a different cohort as a training cohort 
 
 To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
 ```bash
-qsub -t 1-22 ukbb_support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
+qsub -t 1-22 support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
 ```
-Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
+Internally, `support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
 
 The rest of steps are straight-forward and similar to processing UK Biobank data: 
 ```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
-ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
+qsub -l h_vmem=4G -t 1-22 support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
+Rscript support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
+support/make_fam.sh <work_dir> <training_cohort_name>
 ```
 
 ### Using UK Biobank for validation as well as training cohorts
 UK Biobank can be split into two and used as a validation as well as training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort data can be prepared for NPS with UK Biobank in the following steps: 
-```
-cp <training_cohort_name>.UKBB_rejected_SNPIDs <validation_cohort_name>.UKBB_rejected_SNPIDs
+```bash
+cp <work_dir>/<training_cohort_name>.UKBB_rejected_SNPIDs <work_dir>/<validation_cohort_name>.UKBB_rejected_SNPIDs
 
-qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
-qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <validation_cohort_name>
-ukbb_support/make_fam.sh <work_dir> <validation_cohort_name>
+qsub -t 1-22 support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
+qsub -t 1-22 support/filter_variants.job <work_dir> <validation_cohort_name>
+support/make_fam.sh <work_dir> <validation_cohort_name>
 ```
-The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `ukbb_support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
+The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
 
 ### Using a validation cohort that are independent from a training cohort
 
@@ -951,5 +960,5 @@ To run NPS on a cohort that is independent from a training cohort, we provide `s
 ```
 qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
 ```
-* Note: load qctool
-* Note: file names chromN.<cohort_name>.dosage.gz 
+* **Note: nps_harmonize_val.job use qctool internally. The codes may need to be modified to load qctool module.**
+* **Note: The generated file names will be as chrom*N*.*<cohort_name>*.dosage.gz. The DatasetTag will be just *<cohort_name>*.
