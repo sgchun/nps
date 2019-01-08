@@ -1,6 +1,6 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction model described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
+NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2018/07/16/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
 
 For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
@@ -17,9 +17,9 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
    make
    ```
 
-   **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts - `nps_stdgt.job` and `nps_score.job` - as stdgt and grs will depend on GCC shared libraries in the run time.**
+   **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts (`nps_stdgt.job` and `nps_score.job`). stdgt and grs will depend on GCC shared libraries in the run time.**
 
-2. The core NPS module was implemented in R and requires R-3.0 or later (available for download from [here](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [R open](https://mran.microsoft.com/open). These libraries can speed up NPS substantially.  
+2. The core NPS module was implemented in R and requires R-3.3 or later (available for download at [https://www.r-project.org/](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
@@ -39,7 +39,7 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly as the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
+4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
 
    ```bash
    ###
@@ -62,22 +62,22 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
    ...
    ```
 
-   **Note: Do not blindly use the above codes. The details will depend on system configurations.** 
+   **Note: Do not blindly use the above lines. The details will depend on specific system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgenix](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [QCTOOL v2](https://www.well.ox.ac.uk/~gav/qctool/). Please modify the job scripts (`ukbb_support/*.job`) to load **bgen** and **qctool** modules as necessary.
+5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these software or edit the job scripts (`support/*.job`) to load necessary modules. 
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. 
-   - The summary statistics in the *MINIMAL* format can be automatically converted into the *PREFORMATTED* format and harmonized with training genotype data using provided NPS scripts (See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction). The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
+1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend to prepare summary statistics in the MINIMAL format and harmonize them with training genotype data using provided scripts. This will automatically convert the summary statistics file into the PREFORMATTED format. See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction. 
+   - The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
      - **a1** and **a2**: Alleles at each SNP in any order.
      - **effal**: effect allele. It should be either a1 or a2 allele. 
      - **pval**: p-value of association. 
-     - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. 
-     - **effaf**: (*Optional*) allele frequency of *effect allele* in the discovery GWAS cohort. If this column is provided, the effect allele frequency will be compared between GWAS data and training cohort, and markers with too discrepant allele frequencies will be filtered out. If this information is not available, allele frequencies of training cohort will be copied to the summary statistics file. 
+     - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. *DO NOT pre-convert them to effect sizes relative to standardized genotypes. NPS will handle this automatically.*
+     - **effaf**: (*Optional*) allele frequency of *effect allele* in the discovery GWAS cohort. If this column is provided, NPS will 1) use it to convert the **effbeta** to effect sizes relative to standardized genotypes and 2) apply an extra QC to compare allele frequency between GWAS and training cohort data. If this information is not available, the reference allele frequencies of training cohort will be used instead. Although this field is optional, we strongly recommend to use this feature if this information is directly available from a GWAS study.* 
      ```
      chr	pos	a1	a2	effal	pval	effbeta	effaf
      1	569406	G	A	G	0.8494	0.05191	0.99858
@@ -92,13 +92,13 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *PREFORMATTED* format is the native format for NPS. We provide all summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format. This is a tab-delimited text file format, and rows are sorted by chromsome numbers and positions. The following seven columns are required: 
+   - The *PREFORMATTED* format is the native format for NPS, and we provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that they are testable without extra conversion steps. This is a tab-delimited text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
-     - **ref** and **alt**: reference and alternative alleles of SNP. NPS does not allow InDels, tri-allelic SNPs, or duplicated markers. 
+     - **ref** and **alt**: reference and alternative alleles of SNP. 
      - **reffreq**: allele frequency of reference allele in the discovery GWAS cohort. 
      - **pval**: p-value of association. 
-     - **effalt**: estimated *per-allele* effect size of *the alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to the standardized genotype using **reffreq**.  
+     - **effalt**: estimated *per-allele* effect size of *the alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to *the standardized genotype* internally using **reffreq**.  
      ```
      chr	pos	ref	alt	reffreq	pval	effalt
      chr1	676118	G	A	0.91584	0.7908	0.0012
@@ -112,8 +112,9 @@ To run NPS, you need the following set of input files:
      chr1	836924	G	A	0.7958	0.6591	-0.001374
      ...
      ```
+     With this format, NPS will not run automatic data harmonization procedures. The user need to ensure that the summary statistics file does not include InDels, tri-allelic SNPs or duplicated markers and that all SNPs of training genotypes files have non-missing summary statistics. If these requirements are violated, NPS will report an error and terminate. 
 
-2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*DataSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
+2. **Training genotypes in the qctool dosage format.** NPS supports the dosage format for the genotype data of training cohort. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DataSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns providing the marker information and rest of columns specifying the allelic dosage of that marker in each individual:
 
    ```
    chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
@@ -129,9 +130,9 @@ To run NPS, you need the following set of input files:
    ...
    ```
    
-   In order to match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will be ignored. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers has to be ordered by **position**. All SNPs in the training genotype file are expected to have non-missing GWAS summary statistics.  
+   To match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). **SNPID** or **rsid** will not be used. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers are expected to be in the order of **position**. 
 
-3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a header. The phenotype information in this file is ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
+3. **Training sample IDs in PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a header. The phenotype information in this file will be ignored. See [here](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
    ```
    trainF2 trainI2 0 0 0 -9
    trainF3 trainI3 0 0 0 -9
@@ -139,7 +140,7 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 0 0 0 -9
    trainF58 trainI58 0 0 0 -9
    ```
-4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. The combination of **FID** and **IID** are used to match samples with .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed.
+4. **Training phenotypes in PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. encoded with **-9** or missing entry of samples described in .fam file) are not allowed.
    ```
    FID   IID    Outcome
    trainF2  trainI2  0
@@ -148,108 +149,26 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 1
    trainF58 trainI58 0
    ```
-5. **Validation genotypes in QCTOOL dosage format.** Same as the training genotype dosage format. 
+5. **Validation genotypes in qctool dosage format.** Same as the training genotype dosage format. 
 6. **Validation sample IDs in PLINK .fam format.** Same as the training sample ID file format.
 7. **Validation phenotypes in PLINK phenotype format.** Similar to the training phenotype file format. Unlike the training cohort phenotype file, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
-
-## How to prepare training and validation cohorts for NPS
-We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
-
-### Using UK Biobank as a training cohort
-UK Biobank data consist of the following files: 
-- **ukb_imp_chrN_v3.bgen**: imputed allelic dosages for chrN
-- **ukb_mfi_chrN_v3.txt**: marker information for ukb_imp_chrN_v3.bgen
-- **ukb31063.sample**: bgen sample file for the entire cohort 
-
-Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
-```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
-```
-The output files will be stored in `<work_dir>/`.
-
-Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done by running the following: 
-```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
-```  
-
-Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *MINIMAL* format with training cohort data and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format: 
-```bash
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
-```
-
-After that, we need to filter out SNPs that were flagged for removal during the above harmonization step by running the following: 
-```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
-```
-
-Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`, which keeps tracks of the IDs of all training cohort samples: 
-```bash
-ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
-```
-
-Overall, the job scripts will automatially generate the following NPS input files: 
-- `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
-- `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
-- `<work_dir>/<training_cohort_name>.fam`
-
-**Note:**
-* common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.
-* The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
-* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `ukbb_support/harmonize_summstats.R` can take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
-
-### Using a different cohort as a training cohort 
-
-To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
-```bash
-qsub -t 1-22 ukbb_support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
-```
-Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
-
-The rest of steps are straight-forward and similar to processing UK Biobank data: 
-```bash
-qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
-Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
-qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
-ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
-```
-
-### Using UK Biobank for validation as well as training cohorts
-UK Biobank can be split into two and used as a validation as well as training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort data can be prepared for NPS with UK Biobank in the following steps: 
-```
-cp <training_cohort_name>.UKBB_rejected_SNPIDs <validation_cohort_name>.UKBB_rejected_SNPIDs
-
-qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
-qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <validation_cohort_name>
-ukbb_support/make_fam.sh <work_dir> <validation_cohort_name>
-```
-The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `ukbb_support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
-
-### Using a validation cohort that are independent from a training cohort
-
-To run NPS on a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` and `lsf/nps_harmonize_val.job` scripts. Let us  assuming that the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
-```
-qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
-```
-* Note: load qctool
-* Note: file names chromN.<cohort_name>.dosage.gz 
 
 ## Running NPS 
 
 ### Test cases
-We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is a relatively small dataset (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediary data and can take 1/2 day to a day on computer clusters.  
+We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediary data and can take 1/2 day to a day on computer clusters with linear-algebra acceleration.
 
-Both simulation datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly,   
-- **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in the 100,449 SNPs. Note that this is unrealistic assumption; causal SNPs cannot be accurately tagged with such a sparse SNP set. The fraction of causal SNP is 0.005 (a total of 522 SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
+Both simulation datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly:    
+- **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in the 100,449 SNPs. Note that this is unrealistic assumption; causal SNPs cannot be accurately tagged with such a sparse SNP set. The fraction of causal SNP is 0.005 (a total of 522 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 individuals without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
 
-- **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 10-fold reduced validation cohort size. 
+- **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 10-fold reduced validation cohort size. 
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
 $ cd nps-1.0.0/testdata/
 $ tar -zxvf NPS.Test1.tar.gz 
 # This will create the following test data files in nps-1.0.0/testdata/Test1
-# Test1/Test1.summstats.txt (GWAS summary statistics)
+# Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
 # ... 
@@ -263,7 +182,7 @@ $ tar -zxvf NPS.Test1.tar.gz
 
 $ tar -zxvf NPS.Test2.tar.gz 
 # This will create the following test data in nps-1.0.0/testdata/Test2
-# Test2/Test2.summstats.txt (GWAS summary statistics)
+# Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
 # Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
 # ... 
@@ -279,12 +198,6 @@ $ tar -zxvf NPS.Test2.tar.gz
 ### Running NPS on Test set #1 without parallelization
 
 
-### Running NPS on Test set #1 using SGE clusters
-
-
-### Running NPS on Test set #1 using LSF clusters
-
-
 For Test set #1, we provide an instruction on running it on desktop without parallelization or on SGE clusters. For LSF clusters, see the example of [Test set #2](https://github.com/sgchun/nps#running-nps-on-test-set-2). 
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1. `sge/snps_stdgt.job` and `lsf/snps_stdgt.job` scripts run the computation in parallel across all 22 chromosomes. On a desktop computer, `run_all_chroms.sh` can be used to run an SGE job script for all chromosomes one by one sequentially. The first parameter (`testdata/Test1`) is the location of training cohort (.dosage.gz files), the second parameter (`Test1.train`) is the *GenotypeSetID* of training cohort, and the last parameter (`5000`) is the number of samples in the training cohort. 
@@ -294,8 +207,6 @@ $ cd nps-1.0.0/
 # Serial processing (on desktop)
 $ ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
 ```
 After all jobs are completed, `nps_check.sh` script can be used to make sure that all jobs are successful. If failure is detected, `FAIL` message will be printed. Note `nps_check.sh` script can be used on clusters (both SGE and LSF) and with serial processing as follows in the same way: 
 ```bash
@@ -327,12 +238,6 @@ $ ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
 $ ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
 $ ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
-
 # Check the results
 $ ./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
 ```
@@ -345,12 +250,6 @@ $ ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
 $ ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
 $ ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
-
 # Check the results
 $ ./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
 ```
@@ -362,12 +261,6 @@ $ ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
 $ ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
 $ ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
 $ ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
@@ -389,12 +282,6 @@ $ ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 0
 $ ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 20
 $ ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 40
 $ ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
-
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 
 # Check the results
 $ ./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
@@ -439,12 +326,6 @@ $ ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
 $ ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
 $ ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
-
 # Check the results
 $ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
 ```
@@ -457,12 +338,6 @@ $ ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ T
 $ ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
 $ ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
 $ ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
-
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
 # Check the results
 $ ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
@@ -531,6 +406,104 @@ Residual Deviance: 1621 	AIC: 1625
 Done
 
 ```
+
+
+### Running NPS on Test set #1 using SGE clusters
+
+```
+cd nps-1.0.0/
+
+qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
+
+./nps_check.sh stdgt testdata/Test1 Test1.train 
+
+$ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
+
+# Check the results
+$ ./nps_check.sh init testdata/Test1/npsdat/
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
+$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
+
+# Check the results
+$ ./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
+
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
+
+# Check the results
+$ ./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
+
+# Or on SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
+
+# Check the results
+$ ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+
+$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
+$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
+$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
+$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
+
+# Check the results
+$ ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
+
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
+
+# Check the results
+$ ./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+
+$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
+$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
+$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
+$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
+
+# Check the results
+$ ./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
+
+# Optional 
+$ Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+
+$ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
+
+$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
+$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
+$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
+$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
+
+# Check the results
+$ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
+
+# SGE cluster
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
+
+# Check the results
+$ ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
+
+# Calculate the overall prediction accuray in the validation cohort 
+# Same on clusters and for serial processing (no parallelization)
+$ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
+
+```
+### Running NPS on Test set #1 using LSF clusters
+
+
 
 ### Running NPS on Test set #2
 
@@ -676,3 +649,85 @@ Done
 ```
 
 
+
+## How to prepare training and validation cohorts for NPS
+We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
+
+### Using UK Biobank as a training cohort
+UK Biobank data consist of the following files: 
+- **ukb_imp_chrN_v3.bgen**: imputed allelic dosages for chrN
+- **ukb_mfi_chrN_v3.txt**: marker information for ukb_imp_chrN_v3.bgen
+- **ukb31063.sample**: bgen sample file for the entire cohort 
+
+Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
+```bash
+qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
+```
+The output files will be stored in `<work_dir>/`.
+
+Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done by running the following: 
+```bash
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
+```  
+
+Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *MINIMAL* format with training cohort data and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format: 
+```bash
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+```
+
+After that, we need to filter out SNPs that were flagged for removal during the above harmonization step by running the following: 
+```bash
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
+```
+
+Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`, which keeps tracks of the IDs of all training cohort samples: 
+```bash
+ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
+```
+
+Overall, the job scripts will automatially generate the following NPS input files: 
+- `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
+- `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
+- `<work_dir>/<training_cohort_name>.fam`
+
+**Note:**
+* common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.
+* The job scripts in `ukbb_support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
+* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `ukbb_support/harmonize_summstats.R` can take memory up to ~8GB. `ukbb_support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
+
+### Using a different cohort as a training cohort 
+
+To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
+```bash
+qsub -t 1-22 ukbb_support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
+```
+Internally, `ukbb_support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
+
+The rest of steps are straight-forward and similar to processing UK Biobank data: 
+```bash
+qsub -l h_vmem=4G -t 1-22 ukbb_support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
+Rscript ukbb_support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+qsub -l h_vmem=4G -t 1-22 ukbb_support/filter_variants.job <work_dir> <training_cohort_name>
+ukbb_support/make_fam.sh <work_dir> <training_cohort_name>
+```
+
+### Using UK Biobank for validation as well as training cohorts
+UK Biobank can be split into two and used as a validation as well as training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort data can be prepared for NPS with UK Biobank in the following steps: 
+```
+cp <training_cohort_name>.UKBB_rejected_SNPIDs <validation_cohort_name>.UKBB_rejected_SNPIDs
+
+qsub -t 1-22 ukbb_support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
+qsub -t 1-22 ukbb_support/filter_variants.job <work_dir> <validation_cohort_name>
+ukbb_support/make_fam.sh <work_dir> <validation_cohort_name>
+```
+The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `ukbb_support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
+
+### Using a validation cohort that are independent from a training cohort
+
+To run NPS on a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` and `lsf/nps_harmonize_val.job` scripts. Let us  assuming that the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
+```
+qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
+```
+* Note: load qctool
+* Note: file names chromN.<cohort_name>.dosage.gz 
