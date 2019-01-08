@@ -961,4 +961,4 @@ To run NPS on a cohort that is independent from a training cohort, we provide `s
 qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
 ```
 * **Note: nps_harmonize_val.job use qctool internally. The codes may need to be modified to load qctool module.**
-* **Note: The generated file names will be as chrom*N*.*<cohort_name>*.dosage.gz. The DatasetTag will be just *<cohort_name>*.
+* **Note: The generated file names will be as chromN.<cohort_name>.dosage.gz. The DatasetTag will be just <cohort_name>.**
