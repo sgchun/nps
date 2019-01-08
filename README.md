@@ -268,7 +268,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-6. **Define a partitioning scheme.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions to set-up. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, therefore, last two arguments are `10` and `10`: 
+6. **Partition the rest of data** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions to set-up. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, therefore, last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
@@ -411,9 +411,9 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > Residual Deviance: 1621 	AIC: 1625  
    > Done  
 
-
-
 ### Running NPS on Test set #1 using SGE clusters
+
+To run NPS on SGE clusters, please run the following steps. All steps have to be run on the top-level NPS directory (`nps-1.0.0/`) and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. 
 
 ```
 cd nps-1.0.0/
@@ -457,7 +457,7 @@ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
 # Check the results
 ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
 
-# Define partitioning boundaries
+# Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
@@ -466,7 +466,7 @@ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
 # Check the results
 ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
 
-
+# Caculate partitioned risk scores in the training cohort
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
@@ -475,6 +475,7 @@ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 # Check the results
 ./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
 
+# Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
@@ -483,11 +484,12 @@ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
 # Check the results
 ./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
 
-# Optional 
+# (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
-# Optional 
+# (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 
+# Convert back to per-SNP effect sizes
 qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
 qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
 qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
@@ -496,6 +498,7 @@ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
 # Check the results
 ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
 
+# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
@@ -504,45 +507,155 @@ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1
 # Check the results
 ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
 
+# Calculate overall polygenic scores and report prediction accuracies
 Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
 ```
 
 ### Running NPS on Test set #1 using LSF clusters
 
+Running on LSF clusters is similar. We provide the job scripts in `lsf/` directory.
 
+```
+cd nps-1.0.0/
 
-### Running NPS on Test set #2
+# Standardize genotypes
+bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test1 Test1.train
 
-We provide the instruction to run on Test set #2 with LSF. Running it on SGE clusters will be similar. For ~5,000,000 genome-wide SNPs, we recommend to use the window size of 4,000 SNPs, and window shifts of 0, 1,000, 2,000, and 3,000 SNPs. In addition, some of NPS steps now require large memory space. For the most of data we tested, 4GB memory limit is sufficient to run individual NPS tasks. The memory limit can be specified by `-R 'rusage[mem=4000]'` in LSF and `-l h_vmem=4G` in SGE clusters. 
+# Check the results
+./nps_check.sh stdgt testdata/Test1 Test1.train
+
+# Configure
+Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
+
+# Check the results
+./nps_check.sh init testdata/Test1/npsdat/
+
+# Transform data to the decorrelate eigenlocus space
+bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 0
+bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 20
+bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 40
+bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60
+
+# Prune correlations across windows
+bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 0
+bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 20
+bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 40
+bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
+
+# Separate the GWAS-significant partition
+bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 0
+bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 20
+bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 40
+bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+
+# Define partitioning boundaries for the rest of data
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
+
+# Check the results
+./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60
+
+# Caculate partitioned risk scores in the training cohort
+bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 0
+bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 20
+bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 40
+bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+
+# Estimate per-partition shrinkage weights
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
+
+# (Optional) Report the overall AUC of prediction in the training cohort
+Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+# (Optional) Generate a plot of overall shrinkage curves
+Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
+
+# Convert back to per-SNP effect sizes
+bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 0
+bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 20
+bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 40
+bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
+
+# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
+bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
+bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
+
+# Check the results
+./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
+
+# Calculate overall polygenic scores and report prediction accuracies
+Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
+```
+
+### Running NPS on Test set #2 using SGE clusters
+
+For Test set #2 and real data, it is not practical to run it on desktop computures for heavy computational demand. Running NPS on Test set #2 is similar to the case of Test set #1. However, since Test set #2 has a total of ~5,000,000 genome-wide common SNPs, we recommend to use the window size of **4,000 SNPs**. And accordingly, window shifts should be set to **0, 1,000, 2,000, and 3,000 SNPs**. 
+
+**Note: Some of NPS steps now require large memory space. For the most of data we tested, 4GB memory limit is sufficient to run individual NPS tasks. The memory limit can be specified by `-l h_vmem=4G`.**
 
 ```bash
-bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
+cd nps-1.0.0/
 
-./nps_check.sh stdgt testdata/Test2/ Test2.train 
+# Standardize genotypes
+qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
 
-Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat 
+# Check the results
+./nps_check.sh stdgt testdata/Test2/ Test2.train
 
+# This step requires large memory space.
+Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/T\
+est2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testda\
+ta/Test2/npsdat
+
+# Check the results
 ./nps_check.sh init testdata/Test2/npsdat/
 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 3000 
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 3000
 
+# Check the results
 ./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 3000 
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 3000
 
+# Check the results
 ./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 3000
 
+# Check the results
 ./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
 
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
@@ -550,6 +663,160 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 
+# Check the results
+./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
+
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 3000
+
+# Check the results
+./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
+
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000
+Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000
+
+# Check the results
+./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
+
+Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000
+
+Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000
+
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 3000
+
+# Check the results
+./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
+
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
+
+# Check the results
+./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
+
+Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.\
+fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000
+```
+
+The following AUC is reported in the training cohort by `nps_train_AUC.R`:
+> Data: 2500 controls < 2500 cases.  
+> Area under the curve: 0.7843  
+> 95% CI: 0.7718-0.7968 (DeLong)  
+
+The shrinkage curve generated by `nps_plot_shrinkage.R` is [here](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
+
+`nps_val.R` reports the following overall prediction accuracy in the validation cohort: 
+> Non-Parametric Shrinkage 1.0.0  
+> Validation cohort:  
+> Total  5000 samples  
+> 240  case samples  
+> 4760  control samples  
+> 0  samples with missing phenotype (-9)  
+> Includes TotalLiability  
+> Checking a prediciton model (winshift = 0 )...  
+> Observed-scale R2 = 0.04862955   
+> Liability-scale R2 = 0.2303062   
+> Checking a prediciton model (winshift = 1000 )...  
+> Observed-scale R2 = 0.04994584  
+> Liability-scale R2 = 0.2298484  
+> Checking a prediciton model (winshift = 2000 )...  
+> Observed-scale R2 = 0.05150205  
+> Liability-scale R2 = 0.2268046  
+> Checking a prediciton model (winshift = 3000 )...  
+> Observed-scale R2 = 0.05258402  
+> Liability-scale R2 = 0.2298871  
+>  
+>  
+>  
+> Producing a combined prediction model...OK (saved in testdata/Test2/Test2.val.5K.phen.nps_score )  
+> Observed-scale R2 = 0.05253146  
+> Liability-scale R2 = 0.2376991  
+> Loading required package: pROC  
+> Type 'citation("pROC")' for a citation.  
+>  
+> Attaching package: ‘pROC’  
+>  
+> The following objects are masked from ‘package:stats’:  
+>  
+> cov, smooth, var  
+>  
+> AUC:  
+>  
+> Call:  
+> roc.default(controls = prisk[vlY == 0], cases = prisk[vlY ==     1], ci = TRUE)  
+>   
+> Data: 4760 controls < 240 cases.  
+> Area under the curve: 0.7886  
+> 95% CI: 0.7617-0.8154 (DeLong)  
+> Loading required package: DescTools  
+> Nagelkerke's R2 = 0.1668188   
+>  
+> Call:  glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
+>  
+> Coefficients:  
+> (Intercept)        prisk  
+>     -5.2888       0.2387  
+>  
+> Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual  
+> Null Deviance:      1926  
+> Residual Deviance: 1652         AIC: 1656  
+> Done  
+
+### Running NPS on Test set #2 using LSF clusters
+
+
+```bash
+cd nps-1.0.0/
+
+bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
+
+# Check the results
+./nps_check.sh stdgt testdata/Test2/ Test2.train 
+
+# This step requires large memory space.  
+Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat 
+
+# Check the results
+./nps_check.sh init testdata/Test2/npsdat/
+
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 3000 
+
+# Check the results
+./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
+
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 3000 
+
+# Check the results
+./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
+
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
+
+# Check the results
+./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
+
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
+Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
+
+# Check the results
 ./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
@@ -557,12 +824,16 @@ bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
 
+# Check the results
 ./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000 
+
+# Check the results
+./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
 
 Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000 
 
@@ -583,6 +854,7 @@ bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
 
+# Check the results
 ./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
 
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
@@ -590,69 +862,13 @@ bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Tes
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
 
+# Check the results
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
 Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000 
 ```
 
-`npsR/nps_val.R` reports the following performance statistics in the validation cohort. 
-```
-Non-Parametric Shrinkage 1.0.0 
-Validation cohort:
-Total  5000 samples
-240  case samples
-4760  control samples
-0  samples with missing phenotype (-9)
-Includes TotalLiability
-Checking a prediciton model (winshift = 0 )...
-Observed-scale R2 = 0.04862955 
-Liability-scale R2 = 0.2303062 
-Checking a prediciton model (winshift = 1000 )...
-Observed-scale R2 = 0.04994584 
-Liability-scale R2 = 0.2298484 
-Checking a prediciton model (winshift = 2000 )...
-Observed-scale R2 = 0.05150205 
-Liability-scale R2 = 0.2268046 
-Checking a prediciton model (winshift = 3000 )...
-Observed-scale R2 = 0.05258402 
-Liability-scale R2 = 0.2298871 
 
-
-
-Producing a combined prediction model...OK (saved in testdata/Test2/Test2.val.5K.phen.nps_score )
-Observed-scale R2 = 0.05253146 
-Liability-scale R2 = 0.2376991 
-Loading required package: pROC
-Type 'citation("pROC")' for a citation.
-
-Attaching package: ‘pROC’
-
-The following objects are masked from ‘package:stats’:
-
-    cov, smooth, var
-
-AUC:
-
-Call:
-roc.default(controls = prisk[vlY == 0], cases = prisk[vlY ==     1], ci = TRUE)
-
-Data: 4760 controls < 240 cases.
-Area under the curve: 0.7886
-95% CI: 0.7617-0.8154 (DeLong)
-Loading required package: DescTools
-Nagelkerke's R2 = 0.1668188 
-
-Call:  glm(formula = vlY ~ prisk, family = binomial(link = "logit"))
-
-Coefficients:
-(Intercept)        prisk  
-    -5.2888       0.2387  
-
-Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual
-Null Deviance:      1926 
-Residual Deviance: 1652         AIC: 1656
-Done
-```
 
 
 
