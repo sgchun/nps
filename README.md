@@ -314,12 +314,10 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
      
      **Note: true prediction accuracy has be measured in independent out-of-sample validation cohort.** 
    
-   * `npsR/nps_plot_shrinkage.R` plots the overall curve of GWAS effect sizes re-weighted by per-partition shrinkage. The plot of NPS shrinkage curves will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`). 
+   * `npsR/nps_plot_shrinkage.R` plots the overall curve of GWAS effect sizes re-weighted by per-partition shrinkage. The plot of NPS shrinkage curves will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [See the plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
      ```
      Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
      ```
-     
-     For test case #1, see [(Test1.nps.pdf)](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf).
 
 8. **Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
    ```bash
@@ -389,7 +387,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    >   
    > The following objects are masked from ‘package:stats’:  
    >   
-   >     cov, smooth, var  
+   > cov, smooth, var  
    >   
    > AUC:  
    >   
@@ -420,94 +418,95 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
 ```
 cd nps-1.0.0/
 
+# Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
 
+# Check the results
 ./nps_check.sh stdgt testdata/Test1 Test1.train 
 
-$ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
+# Configure
+Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
 
 # Check the results
-$ ./nps_check.sh init testdata/Test1/npsdat/
+./nps_check.sh init testdata/Test1/npsdat/
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
-$ qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
-
-# Check the results
-$ ./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
-
-
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
+# Transform data to the decorrelate eigenlocus space
+qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
+qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
+qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
+qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
 
 # Check the results
-$ ./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
+./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
 
-# Or on SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-
-# Check the results
-$ ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
-
-$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
-$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
-$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
-$ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
+# Prune correlations across windows
+qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
+qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
+qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
+qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
 
 # Check the results
-$ ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
+./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
 
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
-
-# Check the results
-$ ./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
-
-$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
-$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
-$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
-$ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
+# Separate the GWAS-significant partition
+qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
+qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
+qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
+qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
 
 # Check the results
-$ ./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
+./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+
+# Define partitioning boundaries
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
+Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
+
+# Check the results
+./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
+
+
+qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
+qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
+qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
+qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
+
+# Check the results
+./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
+Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
+
+# Check the results
+./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
 
 # Optional 
-$ Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+# Optional 
+Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 
-$ Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
-
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
-$ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
-
-# Check the results
-$ ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
-
-# SGE cluster
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
-$ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
+qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
+qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
+qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
+qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
 
 # Check the results
-$ ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
+./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
 
-# Calculate the overall prediction accuray in the validation cohort 
-# Same on clusters and for serial processing (no parallelization)
-$ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
+# Check the results
+./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
+
+Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
 ```
+
 ### Running NPS on Test set #1 using LSF clusters
 
 
