@@ -6,12 +6,12 @@ For citation:
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
 
-For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
+For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
 1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
-   ```shell_session
+   ```bash
    tar -zxvf nps-1.0.0.tar.gz
    cd nps-1.0.0/
    make
@@ -23,14 +23,14 @@ For inquiries on using the software, please contact: Sung Chun (sgchun@bwh.harva
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
-   ```shell_session
+   ```bash
    Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
    In case that you prefer to install the R extensions in your home directory (e.g. ~/R), please do the following instead:
 
-   ```shell_session
+   ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", "~/R", repos="http://cran.r-project.org")' 
    
@@ -113,7 +113,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*TrainSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
+2. **Training genotypes in the QCTOOL dosage format.** Genotype data of the training cohort are expected to follow the "dosage" format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotypes are split by chromosomes, and for each chromosome, the file is named as "chrom*N*.*DataSetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns specifying the marker and rest of columns reporting its allelic dosage in each individual as follows:
 
    ```
    chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
@@ -229,18 +229,20 @@ The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs
 
 To run NPS on a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` and `lsf/nps_harmonize_val.job` scripts. Let us  assuming that the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
 ```
-qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> 
+qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
 ```
+* Note: load qctool
+* Note: file names chromN.<cohort_name>.dosage.gz 
 
 ## Running NPS 
 
 ### Test cases
-We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is a relatively small dataset (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resource: NPS will generate up to 1 TB of intermediary data and take 1/2 day to a day to run on computer clusters (the exact overall running time will depend on the degree of parallelization).  
+We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is a relatively small dataset (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediary data and can take 1/2 day to a day on computer clusters.  
 
-Both simulation datasets were generated using our multivariate-normal simulator. See our NPS manuscript for the details.   
+Both simulation datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly,   
 - **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in the 100,449 SNPs. Note that this is unrealistic assumption; causal SNPs cannot be accurately tagged with such a sparse SNP set. The fraction of causal SNP is 0.005 (a total of 522 SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
 
-- **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 1/10-fold reduced validation cohort size. 
+- **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The valiation cohort is 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 10-fold reduced validation cohort size. 
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
@@ -274,7 +276,14 @@ $ tar -zxvf NPS.Test2.tar.gz
 # Test2/Test2.val.5K.phen (validation cohort phenotypes)
 ```
 
-### Running NPS on Test set #1
+### Running NPS on Test set #1 without parallelization
+
+
+### Running NPS on Test set #1 using SGE clusters
+
+
+### Running NPS on Test set #1 using LSF clusters
+
 
 For Test set #1, we provide an instruction on running it on desktop without parallelization or on SGE clusters. For LSF clusters, see the example of [Test set #2](https://github.com/sgchun/nps#running-nps-on-test-set-2). 
 
