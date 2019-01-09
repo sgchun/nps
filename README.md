@@ -901,11 +901,9 @@ Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclu
 qsub -l h_vmem=4G -t 1-22 support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
 ```
 The command arguments are: 
-* file path to bgen files: `<path_to_ukbb>/ukb_imp_chr#_v3.bgen` with chromosome number replacing `#`
-* file path to marker information files: `<path_to_ukbb>/ukb_mfi_chr#_v3.txt` with chromosome number replacing `#`
-* work directory: `<work_dir>`, where output files will be saved. 
-
-Note that rare variants contribute only a small portion of heritability, but the memory requirement scales up quadratically with the number of SNPs and the computational time increases in quadratic to cubic order of the number of SNPs.    
+* file path to bgen files: `<path_to_ukbb>/ukb_imp_chr#_v3.bgen` with chromosome numbers replacing `#`
+* file path to marker information files: `<path_to_ukbb>/ukb_mfi_chr#_v3.txt` with chromosome numbers replacing `#`
+* work directory: `<work_dir>`, where output files will be saved.    
 
 Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the filtered genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done as follows: 
 
@@ -941,16 +939,16 @@ After that, we need to filter out SNPs in the training genotype files that were 
 qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
 ```
 
-Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`, which keeps tracks of the IDs of all training cohort samples: 
+Finally, the following step will create `<work_dir>/<training_cohort_name>.QC2.fam`, which keeps tracks of the IDs of all training cohort samples: 
 ```bash
-support/make_fam.sh <work_dir> <training_cohort_name>
+support/make_fam.sh <work_dir> <training_cohort_name>.QC2
 ```
-We use the sample names in the column header of training genotype dosage file to fill in both FID and IID of .fam file. 
+Here, we extract the sample IDs from the column header of training genotype dosage file and use them to fill **both FID and IID** of .fam file. 
 
 Overall, the job scripts will automatially generate the following set of NPS input files: 
 - `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
 - `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
-- `<work_dir>/<training_cohort_name>.fam`
+- `<work_dir>/<training_cohort_name>.QC2.fam`
 
 **Note:**
 * `common_snps.job` and `filter_samples.job` use bgen and qctool, respectively. The job scripts may need to be moditifed to load these modules.
@@ -979,8 +977,8 @@ Rscript support/harmonize_summstats.R <summary_statistics_file> <work_dir> <trai
 # Run extra variant filtering
 qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
 
-# Generate .fam file
-support/make_fam.sh <work_dir> <training_cohort_name>
+# Generate .fam file with identical IIDs and FIDs
+support/make_fam.sh <work_dir> <training_cohort_name>.QC2
 ```
 
 ### Using UK Biobank for a validation as well as a training cohort
@@ -995,8 +993,8 @@ qsub -t 1-22 support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir
 # Run extra variant filtering with <work_dir>/<validation_cohort_name>.UKBB_rejected_SNPIDs
 qsub -t 1-22 support/filter_variants.job <work_dir> <validation_cohort_name>
 
-# Generate .fam file
-support/make_fam.sh <work_dir> <validation_cohort_name>
+# Generate .fam file with identical IIDs and FIDs
+support/make_fam.sh <work_dir> <validation_cohort_name>.QC2
 ```
 The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while harmonizing the GWAS summary statistics with training cohort data. This file has to be copied to the validation cohort so that training and validation cohorts will have the same set of markers after running `support/filter_variants.job`.  
 
@@ -1008,7 +1006,11 @@ To help deploying NPS polygenic scores to a cohort that is independent from a tr
 
 This will be done by running `nps_harmonize_val.job` as follows: 
 ```
+# Generate <work_dir>/chromN.<cohort_name>.dosage.gz files
 qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file> <work_dir> <cohort_name>
+
+# Generate <work_dir>/<cohort_name>.fam file with identical IIDs and FIDs
+support/make_fam.sh <work_dir> <cohort_name>
 ```
 
 The command arguments are: 
@@ -1020,3 +1022,4 @@ The command arguments are:
 **Note:**
 * `nps_harmonize_val.job` relies on **qctool** internally. The job script may need to be modified to load the module.
 * This script will generate harmonized genotype files named as "chrom*N*.*<cohort_name>*.dosage.gz". DatasetTag to designate this files in NPS will be just *<cohort_name>*.
+* Currently, `support/make_fam.sh` produces .fam files with identical FID and IID, which are extracted from .dosage.gz files. 
