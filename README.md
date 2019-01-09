@@ -6,7 +6,10 @@ For citation:
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
 
-For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), Nathan Stitziel (nstitziel@wustl.edu) or Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
+For inquiries on software, please contact: 
+* Sung Chun (sgchun@bwh.harvard.edu)
+* Nathan Stitziel (nstitziel@wustl.edu) 
+* Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
 1. Download and unpack NPS package as below. Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
@@ -17,18 +20,18 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
    make
    ```
 
-   **Note on computer clusters: If you loaded a GCC module to compile NPS, you need to load the module also in job scripts (`nps_stdgt.job` and `nps_score.job`). stdgt and grs will depend on GCC shared libraries in the run time.**
+   **Note on computer clusters: If you need to load a GCC module to compile NPS, you have to do the same in job scripts `nps_stdgt.job` and `nps_score.job`. stdgt and grs will depend on GCC shared libraries in the run time.**
 
 2. The core NPS module was implemented in R and requires R-3.3 or later (available for download at [https://www.r-project.org/](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
 
-3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's *R2* statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's *R2* will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
+3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's R^2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
    ```bash
    Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   In case that you prefer to install the R extensions in your home directory (e.g. ~/R), please do the following instead:
+   If you need to install the R extensions in the home directory (e.g. ~/R), please do the following instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -39,7 +42,7 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers without parallelization (see `run_all_chroms.sh`), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for SGE and LSF clusters (see `sge/` and `lsf/` directories). You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
 
    ```bash
    ###
@@ -64,20 +67,20 @@ For inquiries on software, please contact: Sung Chun (sgchun@bwh.harvard.edu), N
 
    **Note: Do not blindly use the above lines. The details will depend on specific system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these software or edit the job scripts (`support/*.job`) to load necessary modules. 
+5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these packages or edit the job scripts (`support/*.job`) to load as modules. 
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend to prepare summary statistics in the MINIMAL format and harmonize them with training genotype data using provided scripts. This will automatically convert the summary statistics file into the PREFORMATTED format. See [here](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) for the step-by-step instruction. 
+1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend to prepare summary statistics in the MINIMAL format and harmonize them with training genotype data using provided NPS scripts. This will automatically convert the summary statistics file into the PREFORMATTED format ([step-by-step instruction](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). 
    - The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
-     - **a1** and **a2**: Alleles at each SNP in any order.
-     - **effal**: effect allele. It should be either a1 or a2 allele. 
+     - **a1** and **a2**: alleles at each SNP in any order.
+     - **effal**: effect allele. It should match either a1 or a2 allele. 
      - **pval**: p-value of association. 
      - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. *DO NOT pre-convert them to effect sizes relative to standardized genotypes. NPS will handle this automatically.*
-     - **effaf**: (*Optional*) allele frequency of *effect allele* in the discovery GWAS cohort. If this column is provided, NPS will 1) use it to convert the **effbeta** to effect sizes relative to standardized genotypes and 2) apply an extra QC to compare allele frequency between GWAS and training cohort data. If this information is not available, the reference allele frequencies of training cohort will be used instead. Although this field is optional, we strongly recommend to use this feature if this information is directly available from a GWAS study.* 
+     - **effaf**: (*Optional*) allele frequency of *the effect allele* in the discovery GWAS cohort. If this column is missing, NPS will use the allele frequencies of training cohort instead. Although this is optional, we **strongly recommend to include effaf when available in GWAS summary statistics.** When this column is provided, NPS can apply an extra QC check to cross-check the effect allele frequency between GWAS and training cohort data. 
      ```
      chr	pos	a1	a2	effal	pval	effbeta	effaf
      1	569406	G	A	G	0.8494	0.05191	0.99858
@@ -92,7 +95,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *PREFORMATTED* format is the native format for NPS, and we provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that they are testable without extra conversion steps. This is a tab-delimited text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
+   - The *PREFORMATTED* format is the native format for NPS. We provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that NPS can run on them directly without conversion. This is a tab-delimited text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP. 
@@ -400,15 +403,15 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > Loading required package: DescTools  
    > Nagelkerke's R2 = 0.2693255   
    >   
-   > Call:  glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
+   > Call: &nbsp;glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
    >   
    > Coefficients:  
-   > (Intercept)     prisk    
-   >     -7.2563     0.1908    
+   > (Intercept) &nbsp; &nbsp; &nbsp; &nbsp;prisk    
+   > &nbsp; &nbsp; -7.2563 &nbsp; &nbsp; 0.1908    
    >   
-   > Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual  
-   > Null Deviance:	    2107   
-   > Residual Deviance: 1621 	AIC: 1625  
+   > Degrees of Freedom: 4999 Total (i.e. Null); &nbsp;4998 Residual  
+   > Null Deviance: &nbsp; &nbsp; 2107   
+   > Residual Deviance: 1621 &nbsp;AIC: 1625  
    > Done  
 
 ### Running NPS on Test set #1 using SGE clusters
@@ -768,15 +771,15 @@ The shrinkage curve generated by `nps_plot_shrinkage.R` is [here](https://github
 > Loading required package: DescTools  
 > Nagelkerke's R2 = 0.1668188   
 >  
-> Call: \ glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
+> Call: &nbsp;glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
 >  
 > Coefficients:  
-> (Intercept)        prisk  
->     -5.2888       0.2387  
+> (Intercept) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;prisk  
+> &nbsp; &nbsp; -5.2888 &nbsp; &nbsp; &nbsp; 0.2387  
 >  
 > Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual  
-> Null Deviance: \ \ \ \ \ 1926  
-> Residual Deviance: 1652         AIC: 1656  
+> Null Deviance: &nbsp; &nbsp; &nbsp;1926  
+> Residual Deviance: 1652 &nbsp; &nbsp; &nbsp; &nbsp; AIC: 1656  
 > Done  
 
 ### Running NPS on Test set #2 using LSF clusters
