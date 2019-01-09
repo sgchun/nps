@@ -892,27 +892,51 @@ We take an example of UK Biobank to show how to prepare training and validation 
 
 ### Using UK Biobank as a training cohort
 UK Biobank data consist of the following files: 
-- **ukb_imp_chrN_v3.bgen**: imputed allelic dosages for chrN
-- **ukb_mfi_chrN_v3.txt**: marker information for ukb_imp_chrN_v3.bgen
-- **ukb31063.sample**: bgen sample file for the entire cohort 
+- **ukb_imp_chrN_v3.bgen**: imputed allelic dosages by chromosomes
+- **ukb_mfi_chrN_v3.txt**: marker information by chromosomes
+- **ukb31063.sample**: bgen sample information file for the entire cohort 
 
-Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
+Assuming that UK Biobank dataset is located in `<path_to_ukbb>/`, we first exclude all Indels and SNPs with minor allele frequency < 5% or imputation quality (INFO) score < 0.4 by running the following:   
 ```bash
 qsub -l h_vmem=4G -t 1-22 support/common_snps.job <path_to_ukbb>/ukb_imp_chr#_v3.bgen <path_to_ukbb>/ukb_mfi_chr#_v3.txt <work_dir>
 ```
-The output files will be stored in `<work_dir>/`.
+The command arguments are: 
+* file path to bgen files: `<path_to_ukbb>/ukb_imp_chr#_v3.bgen` with chromosome number replacing `#`
+* file path to marker information files: `<path_to_ukbb>/ukb_mfi_chr#_v3.txt` with chromosome number replacing `#`
+* work directory: `<work_dir>`, where output files will be saved. 
 
-Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done by running the following: 
+Note that rare variants contribute only a small portion of heritability, but the memory requirement scales up quadratically with the number of SNPs and the computational time increases in quadratic to cubic order of the number of SNPs.    
+
+Next, we filter bgen files to include only training cohort samples (as specified in `<sample_id_file>`) and then export the filtered genotypes into dosage files. The `<sample_id_file>` is simply a list of sample IDs, with one sample in each line. This can be done as follows: 
+
 ```bash
 qsub -l h_vmem=4G -t 1-22 support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <training_cohort_name>
 ```  
+The command arguments are: 
+* bgen sample file for the entire cohort: `<path_to_ukbb>/ukb31063.sample`
+* work directory: `<work_dir>`, where output files will be saved
+* file listing the sample IDs for training cohort: `<sample_id_file>`
+* name of the training cohort: `<training_cohort_name>`. Name should not contain a whitespace character. Output files will be named after `<training_cohort_name>`.  
 
-Then, we harmonize GWAS summary statitics with training cohort data. The following step will harmonize `<summary_statistics_file>` in the *MINIMAL* format with training cohort data and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format: 
+Then, we harmonize GWAS summary statitics with training cohort data: 
 ```bash
+# CAUTION: This script uses large memory space.
 Rscript support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
 ```
+The command arguments are: 
+* GWAS summary statistics: `<summary_statistics_file>` in the *MINIMAL* format 
+* work directory: `<work_dir>`, where output files will be saved
+* name of the training cohort: `<training_cohort_name>` used in the previous step with `support/filter_samples.job`
 
-After that, we need to filter out SNPs that were flagged for removal during the above harmonization step by running the following: 
+`support/harmonize_summstats.R` will run QC filters and generate the harmonized GWAS summary statistics in the *PREFORMATTED* format (`<work_dir>/<training_cohort_name>.preformatted_summstats.txt`), which can be now used for core NPS modules. Specifically, the following QCs measures will be taken: 
+* check missing values or numerical underflows in summary statistics
+* remove tri-allelic SNPs
+* assign reference and alternative alleles 
+* remove duplicated markers 
+* restrict to the markers overlapping between GWAS and training data
+* cross-check allele frequencies between datasets if **effaf** is provided in the summary statistics file. Variants with too discordant allele frequencies will be rejected to prevent potential allele flips.
+
+After that, we need to filter out SNPs in the training genotype files that were flagged for removal during the above harmonization step as follows: 
 ```bash
 qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
 ```
@@ -921,50 +945,78 @@ Finally, the following step will create `<work_dir>/<training_cohort_name>.fam`,
 ```bash
 support/make_fam.sh <work_dir> <training_cohort_name>
 ```
+We use the sample names in the column header of training genotype dosage file to fill in both FID and IID of .fam file. 
 
-Overall, the job scripts will automatially generate the following NPS input files: 
+Overall, the job scripts will automatially generate the following set of NPS input files: 
 - `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
 - `<work_dir>/chromN.<training_cohort_name>.QC2.dosage.gz`
 - `<work_dir>/<training_cohort_name>.fam`
 
 **Note:**
-* common_snps.job and filter_samples.job will use bgenix and qctool, respectively. The job scripts may need to be moditifed to load these modules.
-* The job scripts in `support/` directory is for SGE clusters but can be easily modified for LSF or other cluster systems.
-* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on summary statistics, `support/harmonize_summstats.R` can take memory up to ~8GB. `support/harmonize_summstats.R` will terminate abruptly if it runs out of memory.
+* `common_snps.job` and `filter_samples.job` use bgen and qctool, respectively. The job scripts may need to be moditifed to load these modules.
+* The job scripts in `support/` directory is written for SGE clusters but can be easily ported to LSF or other cluster systems.
+* The job scripts use memory space up to 4GB (run with `qsub -l h_vmem=4G`). Depending on data,`support/harmonize_summstats.R` can take memory up to ~8GB. It will terminate abruptly if it runs out of memory.
 
 ### Using a different cohort as a training cohort 
 
-To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** in UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
+To use other cohort as a training cohort, you will need to generate marker information files similar to **ukb_mfi_chrN_v3.txt** of UK Biobank. We can generate these files from bgen files (**<dataset_dir>/chromN.bgen**) as follows:
 ```bash
 qsub -t 1-22 support/make_snp_info.job <dataset_dir>/chrom#.bgen <work_dir>
 ```
-Internally, `support/make_snp_info.job` uses **qctool**, thus the job script may need to be modified to load the module if needed. The marker information files will be named as **<work_dir>/chromN.mfi.txt**. 
+The first parameter (`<dataset_dir>/chrom#.bgen`) is the path to bgen genotype files, with `#` replacing a chromosome number. Internally, `support/make_snp_info.job` relies on **qctool**, thus the job script may need to be modified to load the module if needed. The output marker information files will be saved in `<work_dir>` and named as "**chrom*N*.mfi.txt**". 
 
-The rest of steps are straight-forward and similar to processing UK Biobank data: 
+The rest of steps are straight-forward and similar to using UK Biobank data: 
 ```bash
+# Filter out InDels and SNPs with MAF < 5% or INFO < 0.4
 qsub -l h_vmem=4G -t 1-22 support/common_snps.job <dataset_dir>/chrom#.bgen <work_dir>/chrom#.mfi.txt <work_dir>
+
+# Restrict samples to those specified in <sample_id_file> and export .dosage.gz files
 qsub -l h_vmem=4G -t 1-22 support/filter_samples.job <bgen_sample_file_of_entire_cohort> <work_dir> <sample_id_file> <training_cohort_name>
+
+# Harmonize GWAS summary statistics with training genotype data 
 Rscript support/harmonize_summstats.R <summary_statistics_file> <work_dir> <training_cohort_name>
+
+# Run extra variant filtering
 qsub -l h_vmem=4G -t 1-22 support/filter_variants.job <work_dir> <training_cohort_name>
+
+# Generate .fam file
 support/make_fam.sh <work_dir> <training_cohort_name>
 ```
 
-### Using UK Biobank for validation as well as training cohorts
-UK Biobank can be split into two and used as a validation as well as training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort data can be prepared for NPS with UK Biobank in the following steps: 
+### Using UK Biobank for a validation as well as a training cohort
+UK Biobank can be split into two and used as a validation as well as a training cohort. Assume that `<sample_id_file>` contains the IDs of samples to include in the validation cohort. Then, validation cohort can be prepared for NPS similarly: 
 ```bash
+# import the list of SNPs rejected while harmonizing the training cohort into the validation cohort
 cp <work_dir>/<training_cohort_name>.UKBB_rejected_SNPIDs <work_dir>/<validation_cohort_name>.UKBB_rejected_SNPIDs
 
+# Restrict samples to those specified in <sample_id_file> and export .dosage.gz files
 qsub -t 1-22 support/filter_samples.job <path_to_ukbb>/ukb31063.sample <work_dir> <sample_id_file> <validation_cohort_name>
+
+# Run extra variant filtering with <work_dir>/<validation_cohort_name>.UKBB_rejected_SNPIDs
 qsub -t 1-22 support/filter_variants.job <work_dir> <validation_cohort_name>
+
+# Generate .fam file
 support/make_fam.sh <work_dir> <validation_cohort_name>
 ```
-The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while preparing a training cohort. By coping it into a validation cohort and running `support/filter_variants.job` will make sure that training and validation cohorts will have the same set of markers.  
+The `<training_cohort_name>.UKBB_rejected_SNPIDs` file contains the list of SNPs that were rejected while harmonizing the GWAS summary statistics with training cohort data. This file has to be copied to the validation cohort so that training and validation cohorts will have the same set of markers after running `support/filter_variants.job`.  
 
-### Using a validation cohort that are independent from a training cohort
+### Using a validation cohort that is independent from a training cohort
+To help deploying NPS polygenic scores to a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` ( `lsf/nps_harmonize_val.job` for LSF). This will convert bgen files into the dosage file format and perform the following: 
+* Remove SNPs that were not defined in the trained polygenic score model. 
+* Fill in SNPs that are missing in the validation cohort with 0.
+* Make sure that the validation cohort genotype files and polygenic model have the consistent ordering of markers. 
 
-To run NPS on a cohort that is independent from a training cohort, we provide `sge/nps_harmonize_val.job` and `lsf/nps_harmonize_val.job` scripts. Let us  assuming that the genotype files of this cohort are named as **<dataset_dir>/chromN.bgen**, this can be done as follows:
+This will be done by running `nps_harmonize_val.job` as follows: 
 ```
-qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file_of_entire_cohort> <work_dir> <cohort_name>
+qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file> <work_dir> <cohort_name>
 ```
-* **Note: nps_harmonize_val.job relies on qctool internally. The codes may need to be modified to load qctool module.**
-* **Note: The generated file names will be as chromN.<cohort_name>.dosage.gz. DatasetTag will be just <cohort_name>.**
+
+The command arguments are: 
+* NPS data directory: `<nps_data_dir>` to locate the marker information of trained polygenic risk score
+* file path to bgen files of validation cohort: `<dataset_dir>/chrom#.bgen` with chromosome number replacing `#`. 
+* bgen sample file: `<bgen_sample_file>` contains the sample information of cohort
+* work directory: `<work_dir>`, where output files will be saved. 
+
+**Note:**
+* `nps_harmonize_val.job` relies on **qctool** internally. The job script may need to be modified to load the module.
+* This script will generate harmonized genotype files named as "chrom*N*.*<cohort_name>*.dosage.gz". DatasetTag to designate this files in NPS will be just *<cohort_name>*.
