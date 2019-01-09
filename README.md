@@ -201,7 +201,7 @@ $ tar -zxvf NPS.Test2.tar.gz
 ### Running NPS on Test set #1 without parallelization
 Test set #1 is a small dataset and can be easily tested on modest desktop computers. For instructions on running it on computer clusters, see [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections. NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split into chromosomes and run in parallel. For desktop computers, we provide a script (`run_all_chroms.sh`) to run SGE jobs sequentially, processing one chromosome at a time.  
 
-1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `snps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
+1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
    ```bash
    cd nps-1.0.0/
    
@@ -221,7 +221,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > Checking testdata/Test1/chrom3.Test2.train ...OK  
    > ...  
 
-2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to configure the NPS run: 
+2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to configure an NPS run: 
    ```bash
    Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
    ```
@@ -271,7 +271,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-6. **Partition the rest of data** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions to set-up. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, therefore, last two arguments are `10` and `10`: 
+6. **Partition the rest of data** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, therefore, last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
@@ -305,7 +305,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ```
    
    We also provide two optional utilities: 
-   * `npsR/nps_train_AUC.R` reports the AUC statistics of prediction in training cohort. You need **pROC** package installed to be able to run this. It will combine prediction models of all shifted windows (`0`, `20`, `40` and `60`) and report the overall performance. 
+   * `npsR/nps_train_AUC.R` reports the AUC statistics of prediction in the training cohort. You need **pROC** package installed to run this. It will combine prediction models of all shifted windows (`0`, `20`, `40` and `60`) and report the overall accuracy. 
      ```bash
      Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
      ```
@@ -314,10 +314,8 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
      > Data: 2500 controls < 2500 cases.  
      > Area under the curve: 0.8799  
      > 95% CI: 0.8707-0.8891 (DeLong)  
-     
-     **Note: true prediction accuracy has be measured in independent out-of-sample validation cohort.** 
    
-   * `npsR/nps_plot_shrinkage.R` plots the overall curve of GWAS effect sizes re-weighted by per-partition shrinkage. The plot of NPS shrinkage curves will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [See the plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
+   * `npsR/nps_plot_shrinkage.R` plots the curves of estimated conditional mean effects in the eigenlocus space. The plot will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
      ```
      Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
      ```
@@ -334,7 +332,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ```
    This will generate per-SNP re-weighted effect sizes in files of "testdata/Test1/npsdat/Test1.train.adjbetahat.chrom*N*.txt" for the window shift of 0, and "testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt" for the window shifts of 20, 40 and 60.
 
-9. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores can be calculated for each chromosome and for each individuals in the validation cohort using `sge/nps_score.job` as follows: 
+9. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores can be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
    ```bash
    ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
    ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
@@ -346,18 +344,18 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ```
    Here, the first argument for `sge/nps_score.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetTag for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetTag has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
-   Then, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
+   Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
    ```
    Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
    ```
    The command arguments are: 
    - NPS data directory: `testdata/Test1/npsdat/`
    - directory containing validation genotypes: `testdata/Test1`
-   - IDs of validation samples: `testdata/Test1/Test1.val.5K.fam`
+   - sample IDs of validation cohort: `testdata/Test1/Test1.val.5K.fam`
    - phenotypes of validation samples: `testdata/Test1/Test1.val.5K.phen`
    - window shifts used in the prediction model: `0 20 40 60`. 
    
-   `npsR/nps_val.R` print out the following output on Test case #1. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255. The individual NPS polygenic score is stored in the file `testdata/Test1.val.5K.phen.nps_score`. 
+   `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255. The polygenic risk scores for all individuals in the validation cohort are stored in the file `testdata/Test1.val.5K.phen.nps_score`. 
    > Non-Parametric Shrinkage 1.0.0   
    > Validation cohort:  
    > Total  5000 samples  
@@ -416,7 +414,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
 
 ### Running NPS on Test set #1 using SGE clusters
 
-To run NPS on SGE clusters, please run the following steps. All steps have to be run on the top-level NPS directory (`nps-1.0.0/`) and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. 
+To run NPS on SGE clusters, please run the following steps. All steps have to be run on the top-level NPS directory (`nps-1.0.0/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. 
 
 ```
 cd nps-1.0.0/
@@ -616,9 +614,9 @@ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Tes
 
 ### Running NPS on Test set #2 using SGE clusters
 
-For Test set #2 and real data, it is not practical to run it on desktop computures for heavy computational demand. Running NPS on Test set #2 is similar to the case of Test set #1. However, since Test set #2 has a total of ~5,000,000 genome-wide common SNPs, we recommend to use the window size of **4,000 SNPs**. And accordingly, window shifts should be set to **0, 1,000, 2,000, and 3,000 SNPs**. 
+For Test set #2 and with real data sets, we do not recommend running NPS without parallelization due to heavy computational demand. Otherwise, NPS can be run on Test set #2 similarly as Test set #1. Note: since Test set #2 has a total of ~5,000,000 genome-wide common SNPs, we recommend to use the window size of **4,000 SNPs**. And accordingly, window shifts should be set to **0, 1,000, 2,000, and 3,000 SNPs**. 
 
-**Note: Some of NPS steps now require large memory space. For the most of data we tested, 4GB memory limit is sufficient to run individual NPS tasks. The memory limit can be specified by `-l h_vmem=4G`.**
+**Note: Some of NPS steps now require large memory space. In most cases, 4GB memory limit is sufficient to run individual NPS tasks. The memory limit can be specified by `-l h_vmem=4G`.**
 
 ```bash
 cd nps-1.0.0/
@@ -696,7 +694,6 @@ Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 20
 # (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000
 
-
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 2000
@@ -718,14 +715,14 @@ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2
 Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000
 ```
 
-The following AUC is reported in the training cohort by `nps_train_AUC.R`:
+`nps_train_AUC.R` will report the following AUC in the training cohort:
 > Data: 2500 controls < 2500 cases.  
 > Area under the curve: 0.7843  
 > 95% CI: 0.7718-0.7968 (DeLong)  
 
-The shrinkage curve generated by `nps_plot_shrinkage.R` is [here](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
+`nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
 
-`nps_val.R` reports the following overall prediction accuracy in the validation cohort: 
+`nps_val.R` will report the following overall prediction accuracy in the validation cohort: 
 > Non-Parametric Shrinkage 1.0.0  
 > Validation cohort:  
 > Total  5000 samples  
