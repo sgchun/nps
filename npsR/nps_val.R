@@ -92,6 +92,25 @@ if (any(duplicated(paste(vlphen$FID, vlphen$IID, sep=":")))) {
 
 rownames(vlphen) <- paste(vlphen$FID, vlphen$IID, sep=":")
 
+# No sample IDs match 
+if (length(intersect(rownames(vlphen), paste(vlfam[, 1], vlfam[, 2], sep=":")))
+    == 0) {
+    stop("IID/FID does not match between .fam and phenotype files")
+}
+
+# samples in .fam but not phenotype file
+missing.entry <- setdiff(paste(vlfam[, 1], vlfam[, 2], sep=" "),
+                           paste(vlphen$FID, vlphen$IID, sep=" "))
+
+if (length(missing.entry) > 0) {
+    cat("FID IID\n")
+    cat(paste(missing.entry, collapse="\n"))
+    cat("\n")
+    stop("The above samples declared in ", valfamfile,
+         " are missing in the phenotype file: ",
+         valphenofile)
+}
+
 vlphen <- vlphen[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
 
 vlphen$Outcome[is.na(vlphen$Outcome)] <- -9
