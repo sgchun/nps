@@ -943,7 +943,7 @@ Finally, the following step will create `<work_dir>/<training_cohort_name>.QC2.f
 ```bash
 support/make_fam.sh <work_dir> <training_cohort_name>.QC2
 ```
-Here, we extract the sample IDs from the column header of training genotype dosage file and use them to fill **both FID and IID** of .fam file. 
+Here, we extract the sample IDs from the column header of training genotype dosage file and fill **both FID and IID** of .fam file with the same sample IDs. *If this behavior is not desirable, the .fam file has to be manually created.*
 
 Overall, the job scripts will automatially generate the following set of NPS input files: 
 - `<work_dir>/<training_cohort_name>.preformatted_summstats.txt`
