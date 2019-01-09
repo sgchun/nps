@@ -22,7 +22,7 @@ For inquiries on software, please contact:
 
    **Note on computer clusters: If you need to load a GCC module to compile NPS, you have to do the same in job scripts `nps_stdgt.job` and `nps_score.job`. stdgt and grs will depend on GCC shared libraries in the run time.**
 
-2. The core NPS module was implemented in R and requires R-3.3 or later (available for download at [https://www.r-project.org/](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend to use R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
+2. The core NPS module was implemented in R and requires R-3.3 or later (available for download at [https://www.r-project.org/](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend using R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
 
 3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's R^2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
@@ -42,7 +42,7 @@ For inquiries on software, please contact:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend to run it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
 
    ```bash
    ###
@@ -67,12 +67,12 @@ For inquiries on software, please contact:
 
    **Note: Do not blindly use the above lines. The details will depend on specific system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these packages or edit the job scripts (`support/*.job`) to load as modules. 
+5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these packages or edit the job scripts (`support/*.job`) to load them as modules. 
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
 
-1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend to prepare summary statistics in the MINIMAL format and harmonize them with training genotype data using provided NPS scripts. This will automatically convert the summary statistics file into the PREFORMATTED format ([step-by-step instruction](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). 
+1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend preparing summary statistics in the MINIMAL format and harmonize them with training genotype data using provided NPS scripts. This will automatically convert the summary statistics file into the PREFORMATTED format ([step-by-step instruction](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). 
    - The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
      - **chr**: chromosome number. NPS expects only chromosomes 1-22.
      - **pos**: base position of SNP.
@@ -80,7 +80,7 @@ To run NPS, you need the following set of input files:
      - **effal**: effect allele. It should match either a1 or a2 allele. 
      - **pval**: p-value of association. 
      - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. *DO NOT pre-convert them to effect sizes relative to standardized genotypes. NPS will handle this automatically.*
-     - **effaf**: (*Optional*) allele frequency of *the effect allele* in the discovery GWAS cohort. If this column is missing, NPS will use the allele frequencies of training cohort instead. Although this is optional, we **strongly recommend to include effaf when it is available from a GWAS study.** When this column is provided, NPS will run a QC check for the consistency of the effect allele frequencies  between GWAS and training cohort data. 
+     - **effaf**: (*Optional*) allele frequency of *the effect allele* in the discovery GWAS cohort. If this column is missing, NPS will use the allele frequencies of training cohort instead. Although this is optional, we **strongly recommend including effaf when it is available from a GWAS study.** When this column is provided, NPS will run a QC check for the consistency of the effect allele frequencies  between GWAS and training cohort data. 
      ```
      chr	pos	a1	a2	effal	pval	effbeta	effaf
      1	569406	G	A	G	0.8494	0.05191	0.99858
@@ -98,7 +98,7 @@ To run NPS, you need the following set of input files:
    - The *PREFORMATTED* format is the native format for NPS. We provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that NPS can run on them directly without conversion. This is a tab-delimited text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
      - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
      - **pos**: base position of SNP.
-     - **ref** and **alt**: reference and alternative alleles of SNP. 
+     - **ref** and **alt**: reference and alternative alleles of SNP, respectively.
      - **reffreq**: allele frequency of reference allele in the discovery GWAS cohort. 
      - **pval**: p-value of association. 
      - **effalt**: estimated *per-allele* effect size of *the alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to *the standardized genotype* internally using **reffreq**.  
@@ -133,7 +133,7 @@ To run NPS, you need the following set of input files:
    ...
    ```
    
-   To match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). NPS ignores **SNPID** and **rsid**. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers are expected to be in the order of **position**. 
+   To match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). NPS ignores **SNPID** and **rsid**. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers are expected to be ordered by the **position**. 
 
 3. **Training sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
    ```
@@ -143,7 +143,7 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 0 0 0 -9
    trainF58 trainI58 0 0 0 -9
    ```
-4. **Training phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be **Outcome** with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
+4. **Training phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be "**Outcome**" with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
    ```
    FID   IID    Outcome
    trainF2  trainI2  0
@@ -159,17 +159,18 @@ To run NPS, you need the following set of input files:
 ## Running NPS 
 
 ### Test cases
-We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediate data and can take 1/2 day to a day on computer clusters with linear-algebra acceleration.
+We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from the Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can complete in less than 1 hour in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediate data and can take 1/2 day to a day on computer clusters with linear-algebra acceleration.
 
 Both simulated datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly:    
-- **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in the 100,449 SNPs. Note that this is an unrealistic assumption; causal SNPs cannot be directly genotyped or accurately tagged with such a sparse SNP set. The fraction of causal SNP is 0.005 (a total of 522 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 individuals without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
+- **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in the 100,449 SNPs. Note that this is an unrealistic assumption; with such a sparse SNP set, causal SNPs cannot be directly genotyped or accurately tagged. The fraction of causal SNP is 0.005 (a total of 522 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 individuals without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
 
 - **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 10-fold reduction in validation cohort size. 
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
-$ cd nps-1.0.0/testdata/
-$ tar -zxvf NPS.Test1.tar.gz 
+cd nps-1.0.0/testdata/
+
+tar -zxvf NPS.Test1.tar.gz 
 # This will create the following test data files in nps-1.0.0/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
@@ -183,7 +184,7 @@ $ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.fam (validation cohort sample IDs)
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 
-$ tar -zxvf NPS.Test2.tar.gz 
+tar -zxvf NPS.Test2.tar.gz 
 # This will create the following test data in nps-1.0.0/testdata/Test2
 # Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
@@ -199,7 +200,7 @@ $ tar -zxvf NPS.Test2.tar.gz
 ```
 
 ### Running NPS on Test set #1 without parallelization
-Test set #1 is a small dataset and can be easily tested on modest desktop computers. For instructions on running it on computer clusters, see [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections. NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split into chromosomes and run in parallel. For desktop computers, we provide a script (`run_all_chroms.sh`) to run SGE jobs sequentially, processing one chromosome at a time.  
+Test set #1 is a small dataset and can be easily tested on modest desktop computers. For instructions on running it on computer clusters, see [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections below. NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split into chromosomes and run in parallel. For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to run SGE cluster jobs sequentially on a desktop computer, processing one chromosome at a time.  
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
    ```bash
@@ -208,7 +209,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
 
-   * Note: If you use [NPS support scripts](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) to harmonize training data, *DatasetTag* will be "*CohortName*.QC2" as the genotype files will be named as chrom*N*.*CohortName*.QC2.dosage.gz.
+   * Note: If you use [NPS support scripts](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) to harmonize training cohort data with summary statistics, *DatasetTag* will be "*CohortName*.QC2" as the genotype files will be named as chrom*N*.*CohortName*.QC2.dosage.gz.
 
    After all jobs are completed, `nps_check.sh` script can be used to verify that all jobs were successfully completed:
    ```bash
@@ -234,10 +235,10 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
     - analysis window size: `80` SNPs. The window size of 80 SNPs for ~100,000 genome-wide SNPs is comparable to 4,000 SNPs for ~5,000,000 genome-wide SNPs. 
     - directory to store intermediate data: `testdata/Test1/npsdat`. The NPS configuration and all intermediate data will be stored here.
 
-   The set-up can be double-checked by running: 
+   The set-up can be double-checked by running:  
    `./nps_check.sh init testdata/Test1/npsdat/`
 
-3. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps in NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend to run NPS four times on shifted windows and merge the results in the last step. For the window shift, we recommend the shifts of 0, 1/WINSZ, 2/WINSZ and 3/WINSZ SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
+3. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
    ```bash
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
