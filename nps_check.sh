@@ -1,10 +1,14 @@
 #! /bin/bash 
 
-if [ $# -eq 0 ]; then
+if [ $# -lt 2 ]; then
     echo "Usage: nps_check.sh nps_command ..." 
     echo "nps_command:"
     echo "    stdgt traindir traintag"
     echo "    init workdir"
+    echo "    auto workdir winshift1 winshift2 ..."
+    echo "    score workdir valdir valtag winshift1 winshift2 ..."
+    echo ""
+    echo "\"nps_check auto\" can detect the following checks:"
     echo "    decor workdir winshift1 winshift2 ..."
     echo "    prune workdir winshift1 winshift2 ..."
     echo "    gwassig workdir winshift1 winshift2 ..."
@@ -12,13 +16,117 @@ if [ $# -eq 0 ]; then
     echo "    part workdir winshift1 winshift2 ..."
     echo "    weight workdir winshift1 winshift2 ..."
     echo "    back2snpeff workdir winshift1 winshift2 ..."
-    echo "    score workdir valdir valtag winshift1 winshift2 ..."
+
 
     exit 1
 fi
 
 step=$1
 status=0
+
+
+if [ $step == "auto" ]; then 
+
+    workdir=$2
+
+    echo "NPS data directory: $workdir"
+
+    # back2snpeff
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep adjbetahat | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh back2snpeff ${cmdargs[@]}
+	exit $?
+    fi
+
+    # weight
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep PTwt | grep -v tail | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh weight ${cmdargs[@]}
+	exit $?
+    fi
+
+    # part
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep trPT | grep -v tail | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh part ${cmdargs[@]}
+	exit $?
+    fi
+
+    # prep_part
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep part.RDS | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh prep_part ${cmdargs[@]}
+	exit $?
+    fi
+
+    # gwassig
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep pruned.tailfix.table | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	# always check prune and decor as well
+	./nps_check.sh decor ${cmdargs[@]}
+
+	if [ $? != 0 ]; then 
+	    exit $?
+	fi
+
+	./nps_check.sh prune ${cmdargs[@]}
+
+	if [ $? != 0 ]; then 
+	    exit $?
+	fi
+
+	./nps_check.sh gwassig ${cmdargs[@]}
+	exit $?
+    fi
+
+    # prune
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep pruned.table | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh prune ${cmdargs[@]}
+	exit $?
+    fi
+
+    # decor
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep Q.RDS | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh decor ${cmdargs[@]}
+	exit $?
+    fi
+
+    # init
+    auto=`ls -t $workdir/args.RDS $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/*.pruned.tailfix.table $workdir/*trPT* $workdir/*.adjbetahat.* $workdir/*part.RDS $workdir/*PTwt.RDS 2> /dev/null | head -n 1 | grep args.RDS | wc -l `
+
+    if [ $auto != 0 ]; then
+	cmdargs=( $@ )
+	cmdargs=("${cmdargs[@]:1}")
+	./nps_check.sh init $workdir
+	exit $?
+    fi
+
+    echo "ERROR: cannot automatically figure out the previous step"
+    exit 1
+fi
 
 if [ $step == "stdgt" ]; then
     echo "Verifying nps_stdgt:"
@@ -72,6 +180,7 @@ if [ $step == "stdgt" ]; then
     exit $status
 
 elif [ $step == "init" ]; then
+    echo "Verifying nps_$step:"
 
     if [ $# -ne 2 ]; then
 	echo "Usage: nps_check.sh init workdir"
