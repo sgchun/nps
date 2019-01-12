@@ -169,14 +169,18 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 		echo -n "Checking timestamp..."
 		
-		decorfile=`ls -t $workdir/win.*.Q.RDS | head -n 1`
-		outdated=`find $workdir/ -name "win.*.pruned.table" ! -newer "$decorfile" | wc -l`
+		for chrom in `seq 1 22`
+		do 
 
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated pruning data)"
-		    exit 1
-		fi
-		
+		    decorfile=`ls -t $workdir/win.$chrom.*.Q.RDS | head -n 1`
+		    outdated=`find $workdir/ -name "win.$chrom.*.pruned.table" ! -newer "$decorfile" | wc -l`
+
+		    if [ $outdated != 0 ]; then
+			echo "FAIL (outdated pruning data: chr$chrom)"
+			exit 1
+		    fi
+		done
+
 		echo "OK"
 
 	    else
@@ -192,13 +196,17 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 		echo -n "Checking timestamp..."
 
-		decorfile=`ls -t $workdir/win_$winshift.*.Q.RDS | head -n 1`
-		outdated=`find $workdir/ -name "win_$winshift.*.pruned.table" ! -newer "$decorfile" | wc -l`
+		for chrom in `seq 1 22`
+		do 
 
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated pruning data)"
-		    exit 1
-		fi
+		    decorfile=`ls -t $workdir/win_$winshift.$chrom.*.Q.RDS | head -n 1`
+		    outdated=`find $workdir/ -name "win_$winshift.$chrom.*.pruned.table" ! -newer "$decorfile" | wc -l`
+
+		    if [ $outdated != 0 ]; then
+			echo "FAIL (outdated pruning data)"
+			exit 1
+		    fi
+		done
 		
 		echo "OK"
 
@@ -244,37 +252,46 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	    if [ $winshift == 0 ]; then
 
-		prunefile=`ls -t $workdir/win.*.pruned.table | head -n 1`
-		outdated=`find $workdir/ -name "win.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
+		for chrom in `seq 1 22`
+		do 
+		    
+		    prunefile=`ls -t $workdir/win.$chrom.*.pruned.table | head -n 1`
+		    outdated=`find $workdir/ -name "win.$chrom.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
 
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated gwassig data)"
-		    exit 1
-		fi
+		    if [ $outdated != 0 ]; then
+			echo "FAIL (outdated gwassig data)"
+			exit 1
+		    fi
 
-		outdated=`find $workdir/ -name "tail_betahat.*.table" ! -newer "$prunefile" | wc -l`
+		    outdated=`find $workdir/ -name "tail_betahat.$chrom.table" ! -newer "$prunefile" | wc -l`
+		    
+		    if [ $outdated != 0 ]; then
+			echo "FAIL (outdated gwassig data)"
+			exit 1
+		    fi
 
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated gwassig data)"
-		    exit 1
-		fi
+		    if [ -f "$workdir/trPT.$chrom.tail.RDS" ]; then
+			outdated=`find $workdir/ -name "trPT.$chrom.tail.RDS" ! -newer "$prunefile" | wc -l`
 
-		outdated=`find $workdir/ -name "trPT.*.tail.RDS" ! -newer "$prunefile" | wc -l`
-
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated gwassig data)"
-		    exit 1
-		fi
-
+			if [ $outdated != 0 ]; then
+			    echo "FAIL (outdated gwassig data)"
+			    exit 1
+			fi
+		    fi
+		done
 	    else
 
-		prunefile=`ls -t $workdir/win_$winshift.*.pruned.table | head -n 1`
-		outdated=`find $workdir/ -name "win_$winshift.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
+		for chrom in `seq 1 22`
+		do 
 
-		if [ $outdated != 0 ]; then
-		    echo "FAIL (outdated gwassig data)"
-		    exit 1
-		fi
+		    prunefile=`ls -t $workdir/win_$winshift.$chrom.*.pruned.table | head -n 1`
+		    outdated=`find $workdir/ -name "win_$winshift.$chrom.*.pruned.tailfix.table" ! -newer "$prunefile" | wc -l`
+
+		    if [ $outdated != 0 ]; then
+			echo "FAIL (outdated gwassig data)"
+			exit 1
+		    fi
+		done
 	    fi
 
 	    echo "OK"
