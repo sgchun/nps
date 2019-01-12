@@ -1,0 +1,49 @@
+###
+# ADD CODES TO LOAD R MODULE HERE
+###
+
+# nps_decor.job
+Rscript npsR/nps_decor.R $1 $LSB_JOBINDEX $2 > $1/log/nps_decor.Rout.$2.$LSB_JOBINDEX
+
+logfile="$1/log/nps_decor.Rout.$2.$LSB_JOBINDEX"
+
+if [ ! -f $logfile ]; then
+    "nps_decor FAILED: STOP"
+    exit 1
+fi
+	
+last=`tail -n 1 $logfile`
+
+if [ "$last" != "Done" ]; then
+    "nps_decor FAILED: STOP"
+    exit 1
+fi
+
+# nps_prune.job
+Rscript npsR/nps_prune.R $1 $LSB_JOBINDEX $2 > $1/log/nps_prune.Rout.$2.$LSB_JOBINDEX
+
+logfile="$1/log/nps_prune.Rout.$2.$LSB_JOBINDEX"
+
+if [ ! -f $logfile ]; then
+    "nps_prune FAILED: STOP"
+    exit 1
+fi
+	
+last=`tail -n 1 $logfile`
+
+if [ "$last" != "Done" ]; then
+    "nps_prune FAILED: STOP"
+    exit 1
+fi
+
+# nps_gwassig.job
+if [ $2 -eq "0" ]
+then 
+    rm -vf $1/win.$LSB_JOBINDEX.*.pruned.tailfix.table
+    rm -vf $1/trPT.$LSB_JOBINDEX.tail.RDS
+    rm -vf $1/tail_betahat.$LSB_JOBINDEX.table
+else 
+    rm -vf $1/win_$2.$LSB_JOBINDEX.*.pruned.tailfix.table
+fi
+
+Rscript npsR/nps_gwassig.R $1 $LSB_JOBINDEX $2 > $1/log/nps_gwassig.Rout.$2.$LSB_JOBINDEX

@@ -37,19 +37,19 @@ if [ $step == "stdgt" ]; then
 	echo -n "Checking $filepre ..."
 
 	if [ ! -s $filepre.meandos ]; then
-	    echo "FAIL: .meandos missing"
+	    echo "FAIL: .meandos missing or empty"
 	    status=1
 	    continue
 	fi
 
 	if [ ! -s $filepre.snpinfo ]; then
-	    echo "FAIL: .snpinfo missing"
+	    echo "FAIL: .snpinfo missing or empty"
 	    status=1
 	    continue
 	fi
 
 	if [ ! -s $filepre.stdgt.gz ]; then
-	    echo "FAIL: .stdgt.gz missing"
+	    echo "FAIL: .stdgt.gz missing or empty"
 	    status=1
 	    continue
 	fi
@@ -64,6 +64,10 @@ if [ $step == "stdgt" ]; then
 
 	echo "OK"
     done
+
+    if [ $status != 0 ]; then 
+	echo "FAILED"
+    fi
     
     exit $status
 
@@ -99,7 +103,7 @@ elif [ $step == "init" ]; then
     # older log files
     outdated=`find $workdir/log/ -name "*.Rout.*" ! -newer "$workdir/args.RDS" | wc -l`
     if [ $outdated -gt 0 ]; then
-	echo "WARNING: Potentially outdated log files in $workdir/log/"
+	echo "WARNING: Outdated log files in $workdir/log/"
 	echo "$outdated Rout files are found older than $workdir/args.RDS"
     fi
 
@@ -144,6 +148,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 	done
 
 	if [ $status != 0 ]; then
+	    echo "FAILED"
 	    exit $status
 	fi
 
@@ -201,6 +206,39 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	elif [ $step == "gwassig" ]; then
 
+	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
+
+	    # check tail_betahat files
+	    for chrom in `seq 1 22`
+	    do 
+		tailbetahatfile="$workdir/tail_betahat.$chrom.table"
+		
+		echo -n "Checking $tailbetahatfile ..."
+
+		M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
+		M2=`cat $tailbetahatfile | wc -l`
+
+		if [ ! -s $tailbetahatfile ]; then
+		    echo "FAIL (missing or empty)"
+		    status=1
+		    continue
+		fi
+
+		if [ $M1 != $M2 ]; then
+		    echo "FAIL (incomplete)"
+		    status=1
+		    continue
+		fi
+
+		echo "OK"
+	    done
+		
+	    if [ $status != 0 ]; then
+		echo "FAILED"
+		exit $status
+	    fi
+
 	    # check timestamp
 	    echo -n "Checking timestamp..."
 
@@ -255,7 +293,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		echo -n "Checking $trPT ..."
 
 		if [ ! -s $trPT ]; then
-		    echo "FAIL (missing)"
+		    echo "FAIL (missing or empty)"
 		    status=1
 		    continue
 		fi
@@ -267,6 +305,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 	    done
 
 	    if [ $status != 0 ]; then
+		echo "FAILED"
 		exit $status
 	    fi
 	    
@@ -301,7 +340,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		echo -n "Checking $snpeff ..."
 
 		if [ ! -s $snpeff ]; then
-		    echo "FAIL (missing)"
+		    echo "FAIL (missing or empty)"
 		    status=1
 		    continue
 		fi
@@ -319,6 +358,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 	    done
 
 	    if [ $status != 0 ]; then 
+		echo "FAILED"
 		exit $status
 	    fi
 	    
@@ -374,7 +414,7 @@ elif [ $step == "prep_part" ]; then
 	echo -n "Checking $workdir/$partfile ..."
 
 	if [ ! -s $workdir/$partfile ]; then
-	    echo "FAIL (missing)"
+	    echo "FAIL (missing or empty)"
 	    exit 1
 	fi
 
@@ -415,7 +455,7 @@ elif [ $step == "weight" ]; then
 	    echo -n "Checking S0 weight ..."
 
 	    if [ ! -s "$workdir/PTwt.tail.RDS" ]; then
-		echo "FAIL (missing $workdir/PTwt.tail.RDS)"
+		echo "FAIL (missing or empty $workdir/PTwt.tail.RDS)"
 		exit 1
 	    fi
 
@@ -428,7 +468,7 @@ elif [ $step == "weight" ]; then
 
 	echo -n "Checking partition weights ..."
 	if [ ! -s "$ptwtfile" ]; then
-	    echo "FAIL (missing)"
+	    echo "FAIL (missing or empty)"
 	    exit 1
 	fi
 	
@@ -494,7 +534,7 @@ elif [ $step == "score" ]; then
 	    echo -n "Checking $scorefile ..."
 
 	    if [ ! -s $scorefile ]; then
-		echo "FAIL (missing)"
+		echo "FAIL (missing or empty)"
 		status=1
 		continue
 	    fi
@@ -514,6 +554,7 @@ elif [ $step == "score" ]; then
 	done
 
 	if [ $status != 0 ]; then 
+	    echo "FAILED"
 	    exit $status
 	fi
 	
