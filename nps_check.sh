@@ -24,6 +24,19 @@ fi
 step=$1
 status=0
 
+# Check Rscript and R version
+Rver=`Rscript -e 'cat(version$major, "\n")' | tail -n 1`
+Rver_string=`Rscript -e 'cat(version$version.string, "\n")' | tail -n 1`
+
+if [ $? != 0 ]; then 
+   echo "ERROR: cannot run Rscript"
+   exit 2
+fi
+
+if [ $Rver -lt 3 ]; then 
+   echo "ERROR: R-3.0 or later is required: $Rver_string"
+   exit 2
+fi 
 
 if [ $step == "auto" ]; then 
 
