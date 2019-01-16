@@ -238,7 +238,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    The set-up can be double-checked by running:  
    `./nps_check.sh init testdata/Test1/npsdat/`
 
-3. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by decorrelating the data, pruning across windows and separating out the GWAS-significant partition. The three consecutive steps - **3.1.** `nps_decor.job`, **3.2.** `nps_prune.job` and **3.3** `nps_gwassig.job` - can be launched in a single command in the following way: 
+3. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune_gwassig.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
 
    ```bash
    ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
@@ -250,42 +250,6 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
    ```
    
-   The description of individual steps and parameters are as below. 
-
-   3.1. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
-        ```bash
-        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
-        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
-        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
-        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
-        
-        # Check the results of last step
-        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
-        ```
-
-   3.2. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space by running `nps_prune.job` job. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
-
-        ```bash
-        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
-        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
-        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
-        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
-        
-        # Check the results of last step
-        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-        ```
-
-   3.3. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
-        ```bash
-        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-        
-        # Check the results of last step
-        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-        ```
-
 4. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
@@ -321,7 +285,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
      
      With test set #1, the reported AUC in the training cohort is as follows: 
      > Data: 2500 controls < 2500 cases.  
-     > Area under the curve: 0.8799  
+     > Area under the curve: **0.8799**  
      > 95% CI: 0.8707-0.8891 (DeLong)  
    
    * `npsR/nps_plot_shrinkage.R` plots the curves of estimated conditional mean effects in the eigenlocus space. The plot will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
@@ -440,32 +404,14 @@ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testda
 # Check the results
 ./nps_check.sh init testdata/Test1/npsdat/
 
-# Transform data to the decorrelate eigenlocus space
-qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 0 
-qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 20 
-qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 40 
-qsub -cwd -t 1-22 sge/nps_decor.job testdata/Test1/npsdat/ 60 
+# Set up the decorrelate eigenlocus space 
+qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0 
+qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20 
+qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40 
+qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60 
 
-# Check the results
-./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
-
-# Prune correlations across windows
-qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 0
-qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 20
-qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 40
-qsub -cwd -t 1-22 sge/nps_prune.job testdata/Test1/npsdat/ 60
-
-# Check the results
-./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
-
-# Separate the GWAS-significant partition
-qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-
-# Check the results
-./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
 
 # Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
@@ -473,26 +419,20 @@ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
 
-# Check the results
-./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
-
 # Calculate partitioned risk scores in the training cohort
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
 qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 
-# Check the results
-./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
 # Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
-
-# Check the results
-./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
@@ -505,8 +445,8 @@ qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
 qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
 qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
 
-# Check the results
-./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
@@ -514,7 +454,7 @@ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
-# Check the results
+# Check the results of nps_score
 ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
 
 # Calculate overall polygenic scores and report prediction accuracies
@@ -541,31 +481,13 @@ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testda
 ./nps_check.sh init testdata/Test1/npsdat/
 
 # Transform data to the decorrelate eigenlocus space
-bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 0
-bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 20
-bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 40
-bsub -J decor[1-22] lsf/nps_decor.job testdata/Test1/npsdat/ 60
+bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
+bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20
+bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40
+bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
 
-# Check the results
-./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60
-
-# Prune correlations across windows
-bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 0
-bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 20
-bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 40
-bsub -J prune[1-22] lsf/nps_prune.job testdata/Test1/npsdat/ 60
-
-# Check the results
-./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
-
-# Separate the GWAS-significant partition
-bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 0
-bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 20
-bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 40
-bsub -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test1/npsdat/ 60
-
-# Check the results
-./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
 # Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10
@@ -573,26 +495,20 @@ Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
 
-# Check the results
-./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60
-
 # Calculate partitioned risk scores in the training cohort
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 0
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 20
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 40
 bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 60
 
-# Check the results
-./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
 # Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40
 Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
-
-# Check the results
-./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
@@ -605,8 +521,8 @@ bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 20
 bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 40
 bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 60
 
-# Check the results
-./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
+# Check the results of last step
+./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
@@ -614,7 +530,7 @@ bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Tes
 bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
 bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
 
-# Check the results
+# Check the results of nps_score
 ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
 
 # Calculate overall polygenic scores and report prediction accuracies
@@ -646,32 +562,14 @@ Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testda
 # Check the results
 ./nps_check.sh init testdata/Test2/npsdat/
 
-# Transform data to the decorrelate eigenlocus space
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor.job testdata/Test2/npsdat/ 3000
+# Set up the decorrelate eigenlocus space
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 0
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 1000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 2000
+qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 3000
 
-# Check the results
-./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Prune correlations across windows
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_prune.job testdata/Test2/npsdat/ 3000
-
-# Check the results
-./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Separate the GWAS-significant partition
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_gwassig.job testdata/Test2/npsdat/ 3000
-
-# Check the results
-./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
@@ -679,26 +577,20 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 
-# Check the results
-./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
-
 # Calculate partitioned risk scores in the training cohort
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 0
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 1000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 2000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 3000
 
-# Check the results
-./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000
-
-# Check the results
-./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000
@@ -711,8 +603,8 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 10
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 2000
 qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 3000
 
-# Check the results
-./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Convert back to per-SNP effect sizes
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
@@ -720,7 +612,7 @@ qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
 qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
 
-# Check the results
+# Check the results of nps_score
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
@@ -729,7 +621,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 
 `nps_train_AUC.R` will report the following AUC in the training cohort:
 > Data: 2500 controls < 2500 cases.  
-> Area under the curve: 0.7843  
+> Area under the curve: **0.7843**  
 > 95% CI: 0.7718-0.7968 (DeLong)  
 
 `nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf) and save it to a pdf file (`Test1.nps.pdf`). 
@@ -813,32 +705,14 @@ Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testda
 # Check the results
 ./nps_check.sh init testdata/Test2/npsdat/
 
-# Transform data to the decorrelate eigenlocus space
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor.job testdata/Test2/npsdat/ 3000 
+# Set up the decorrelate eigenlocus space
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 0 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 1000 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 2000 
+bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 3000 
 
-# Check the results
-./nps_check.sh decor testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Prune correlations across windows
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J prune[1-22] lsf/nps_prune.job testdata/Test2/npsdat/ 3000 
-
-# Check the results
-./nps_check.sh prune testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Separate the GWAS-significant partition
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J gwassig[1-22] lsf/nps_gwassig.job testdata/Test2/npsdat/ 3000 
-
-# Check the results
-./nps_check.sh gwassig testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Define partitioning boundaries for the rest of data
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
@@ -846,26 +720,20 @@ Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
 
-# Check the results
-./nps_check.sh prep_part testdata/Test2/npsdat/ 0 1000 2000 3000
-
 # Calculate partitioned risk scores in the training cohort
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
 bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
 
-# Check the results
-./nps_check.sh part testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Estimate per-partition shrinkage weights
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000 
 Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000 
-
-# Check the results
-./nps_check.sh weight testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000 
@@ -879,8 +747,8 @@ bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
 bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
 
-# Check the results
-./nps_check.sh back2snpeff testdata/Test2/npsdat/ 0 1000 2000 3000
+# Check the results of last step
+./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
@@ -888,7 +756,7 @@ bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Tes
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
 bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
 
-# Check the results
+# Check the results of nps_score
 ./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
