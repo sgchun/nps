@@ -610,8 +610,7 @@ elif [ $step == "weight" ]; then
 	    exit 1
 	fi
 	
-	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(\":NPS:\\t\", dim(PTwt), sep='')" | grep -F ':NPS:' | cut -f2 `
-	dim=`echo $dim | sed 's/ / x /g'`
+	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(\":NPS:\\t\", paste(dim(PTwt), collapse=' x '), sep='')" | grep -F ':NPS:' | cut -f2 `
 
 	echo "OK ($dim)"
 
