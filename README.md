@@ -212,6 +212,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    * Note: If you use [NPS support scripts](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) to harmonize training cohort data with summary statistics, *DatasetTag* will be "*CohortName*.QC2" as the genotype files will be named as chrom*N*.*CohortName*.QC2.dosage.gz.
 
    After all jobs are completed, `nps_check.sh` script can be used to verify that all jobs were successfully completed:
+   
    ```bash
    ./nps_check.sh stdgt testdata/Test1 Test1.train 
    ```
@@ -223,6 +224,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > ...  
 
 2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to configure an NPS run: 
+
    ```bash
    Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
    ```
@@ -236,7 +238,10 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
     - directory to store intermediate data: `testdata/Test1/npsdat`. The NPS configuration and all intermediate data will be stored here.
 
    The set-up can be double-checked by running:  
-   `./nps_check.sh init testdata/Test1/npsdat/`
+   
+   ```bash
+   ./nps_check.sh init testdata/Test1/npsdat/
+   ```
 
 3. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune_gwassig.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
 
