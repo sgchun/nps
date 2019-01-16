@@ -8,7 +8,7 @@ if [ $# -lt 2 ]; then
     echo "    auto workdir winshift1 winshift2 ..."
     echo "    score workdir valdir valtag winshift1 winshift2 ..."
     echo ""
-    echo "\"nps_check auto\" can detect the following checks:"
+    echo "Note: \"nps_check.sh auto\" will figure out the following checks by itself:"
     echo "    decor workdir winshift1 winshift2 ..."
     echo "    prune workdir winshift1 winshift2 ..."
     echo "    gwassig workdir winshift1 winshift2 ..."
@@ -25,8 +25,8 @@ step=$1
 status=0
 
 # Check Rscript and R version
-Rver=`Rscript -e 'cat(version$major, "\n")' | tail -n 1`
-Rver_string=`Rscript -e 'cat(version$version.string, "\n")' | tail -n 1`
+Rver=`Rscript -e 'cat(":NPS:\t", version$major, "\n", sep='')' | grep -F ':NPS:' | cut -f2`
+Rver_string=`Rscript -e 'cat(":NPS:\t", version$version.string, "\n", sep='')' | grep -F ':NPS:' | cut -f2`
 
 if [ $? != 0 ]; then 
    echo "ERROR: cannot run Rscript"
@@ -209,7 +209,7 @@ elif [ $step == "init" ]; then
 	exit 1
     fi
     
-    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"VERSION\"]]);" | tail -n 1`
+    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"VERSION\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
     
     echo "OK (version $ver)"
 
@@ -258,7 +258,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		continue
 	    fi
 	
-	    last=`tail -n 1 $logfile`
+	    last=`grep -w Done $logfile | tail -n 1`
 
 	    if [ "$last" != "Done" ]; then
 		echo "FAIL (incomplete)"
@@ -336,8 +336,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	elif [ $step == "gwassig" ]; then
 
-	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
-	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
+	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
 
 	    # check tail_betahat files
 	    for chrom in `seq 1 22`
@@ -346,14 +346,14 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		
 		echo -n "Checking $tailbetahatfile ..."
 
-		M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
-		M2=`cat $tailbetahatfile | wc -l`
-
 		if [ ! -s $tailbetahatfile ]; then
 		    echo "FAIL (missing or empty)"
 		    status=1
 		    continue
 		fi
+
+		M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l`
+		M2=`cat $tailbetahatfile | wc -l`
 
 		if [ $M1 != $M2 ]; then
 		    echo "FAIL (incomplete)"
@@ -437,7 +437,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		    continue
 		fi
 
-		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(dim(trPT));" | tail -n 1`
+		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(\":NPS:\\t\", dim(trPT), sep='');" | grep -F ':NPS:' | cut -f2 `
 		dim=`echo $dim | sed 's/ / x /g'`
 
 		echo "OK ($dim)"
@@ -464,8 +464,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 
 	elif [ $step == "back2snpeff" ]; then 
 
-	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
-	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traindir\"]]);" | tail -n 1`
+	    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+	    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
 
 	    for chrom in `seq 1 22`
 	    do 
@@ -611,7 +611,7 @@ elif [ $step == "weight" ]; then
 	    exit 1
 	fi
 	
-	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(dim(PTwt));" | tail -n 1`
+	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(\":NPS:\\t\", dim(PTwt), sep='')" | grep -F ':NPS:' | cut -f2 `
 	dim=`echo $dim | sed 's/ / x /g'`
 
 	echo "OK ($dim)"
@@ -657,7 +657,7 @@ elif [ $step == "score" ]; then
 	echo "----- Shifted by $winshift -----"
 
 
-	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(args[[\"traintag\"]]);" | tail -n 1`
+	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
 
 	if [ $winshift == 0 ]; then
 	    modtag=$traintag

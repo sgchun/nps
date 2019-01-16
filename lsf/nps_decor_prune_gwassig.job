@@ -11,8 +11,8 @@ if [ ! -f $logfile ]; then
     "nps_decor FAILED: STOP"
     exit 1
 fi
-	
-last=`tail -n 1 $logfile`
+
+last=`grep -w Done $logfile | tail -n 1`
 
 if [ "$last" != "Done" ]; then
     "nps_decor FAILED: STOP"
@@ -28,8 +28,8 @@ if [ ! -f $logfile ]; then
     "nps_prune FAILED: STOP"
     exit 1
 fi
-	
-last=`tail -n 1 $logfile`
+
+last=`grep -w Done $logfile | tail -n 1`
 
 if [ "$last" != "Done" ]; then
     "nps_prune FAILED: STOP"
