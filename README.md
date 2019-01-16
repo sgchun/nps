@@ -200,7 +200,9 @@ tar -zxvf NPS.Test2.tar.gz
 ```
 
 ### Running NPS on test set #1 without parallelization
-Test set #1 is a small dataset and can be easily tested on modest desktop computers. For instructions on running it on computer clusters, see [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections below. NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split into chromosomes and run in parallel. For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to run SGE cluster jobs sequentially on a desktop computer, processing one chromosome at a time.  
+NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split by chromosomes and run in parallel. For instructions on running it on computer clusters, move onto [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections after finishing this section. 
+
+For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to drive SGE cluster jobs sequentially, by processing one chromosome at a time. Test set #1 is a small dataset and can be tested on modest desktop computers without parallelization. The instructions below are based on the scenario that you will run the test set #1 on a desktop computer.
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
    ```bash
@@ -321,6 +323,8 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
    ```
    Here, the first argument for `sge/nps_score.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetTag for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetTag has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
+   
+   *Note that instead of `./nps_check.sh last`, `./nps_check.sh score` has to be run in order to verify the results of nps_score jobs.*
    
    Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
    ```
