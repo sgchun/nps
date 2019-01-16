@@ -12,7 +12,7 @@ For inquiries on software, please contact:
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz) [Release Note](https://github.com/sgchun/nps/releases/tag/1.0.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
    tar -zxvf nps-1.0.1.tar.gz
@@ -31,7 +31,7 @@ For inquiries on software, please contact:
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   If you need to install the R extensions in the home directory (e.g. ~/R), please do the following instead:
+   To run the above commands, you will need the root privilege to install files in the default system path. If this is not ideal, You can install the R extensions in your home directory (e.g. ~/R). For this, please do the following instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -73,8 +73,8 @@ For inquiries on software, please contact:
 To run NPS, you need the following set of input files: 
 
 1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend preparing summary statistics in the MINIMAL format and harmonize them with training genotype data using provided NPS scripts. This will automatically convert the summary statistics file into the PREFORMATTED format ([step-by-step instruction](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). 
-   - The MINIMAL format is a tab-delimited text file with the following seven or eight columns: 
-     - **chr**: chromosome number. NPS expects only chromosomes 1-22.
+   - The MINIMAL format is a *tab-delimited* text file with the following seven or eight columns: 
+     - **chr**: chromosome number. NPS expects only chromosomes 1-22. *Only chromosome numbers are expected.*
      - **pos**: base position of SNP.
      - **a1** and **a2**: alleles at each SNP in any order.
      - **effal**: effect allele. It should match either a1 or a2 allele. 
@@ -95,8 +95,8 @@ To run NPS, you need the following set of input files:
      ...
      ```
      
-   - The *PREFORMATTED* format is the native format for NPS. We provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that NPS can run on them directly without conversion. This is a tab-delimited text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
-     - **chr**: chromosome name starting with "chr." NPS expects only chromosomes chr1-chr22.
+   - The *PREFORMATTED* format is the native format for NPS. We provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that NPS can run on them directly without conversion. This is a *tab-delimited* text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
+     - **chr**: chromosome name starting with "chr." NPS expects only chromosomes 1-22. *Chromosomes should be designated by "chr1", ..., "chr22".*
      - **pos**: base position of SNP.
      - **ref** and **alt**: reference and alternative alleles of SNP, respectively.
      - **reffreq**: allele frequency of reference allele in the discovery GWAS cohort. 
@@ -117,7 +117,7 @@ To run NPS, you need the following set of input files:
      ```
      When summary statistics are provided in this format, NPS will not run automatic data harmonization procedures. The user needs to ensure that the summary statistics file does not include InDels, tri-allelic SNPs or duplicated markers and that no SNP in training genotypes files has missing summary statistics. If these requirements are violated, NPS will report an error and terminate. 
 
-2. **Training genotypes in the qctool dosage format.** NPS expects genotype data of the training cohort in the dosage file format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DatasetTag*.dosage.gz." These files are space-delimited compressed text files with the first six columns providing the marker information and rest of columns specifying the allelic dosage of that marker in each individual:
+2. **Training genotypes in the qctool dosage format.** NPS expects genotype data of the training cohort in the dosage file format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DatasetTag*.dosage.gz." These files are *space-delimited* compressed text files with the first six columns providing the marker information and rest of columns specifying the allelic dosage of that marker in each individual:
 
    ```
    chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
@@ -135,13 +135,13 @@ To run NPS, you need the following set of input files:
    
    To match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). NPS ignores **SNPID** and **rsid**. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers are expected to be ordered by the **position**. 
 
-3. **Training sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space-separated* six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
+3. **Training sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space- or tab-separated* six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
    ```
-   trainF2 trainI2 0 0 0 -9
-   trainF3 trainI3 0 0 0 -9
-   trainF39 trainI39 0 0 0 -9
-   trainF41 trainI41 0 0 0 -9
-   trainF58 trainI58 0 0 0 -9
+   trainF2  trainI2  0  0  0 -9
+   trainF3  trainI3  0  0  0 -9
+   trainF39 trainI39 0  0  0 -9
+   trainF41 trainI41 0  0  0 -9
+   trainF58 trainI58 0  0  0 -9
    ```
 4. **Training phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be "**Outcome**" with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
    ```
@@ -356,7 +356,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    - phenotypes of validation samples: `testdata/Test1/Test1.val.5K.phen`
    - window shifts used in the prediction model: `0 20 40 60`. 
    
-   `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1.val.5K.phen.nps_score`. 
+   `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
    > Non-Parametric Shrinkage 1.0.1   
    > Validation cohort:  
    > Total  5000 samples  
@@ -364,22 +364,22 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    > 4729  control samples  
    > 0  samples with missing phenotype (-9)  
    > Includes TotalLiability  
-   > Checking a prediciton model (winshift = 0 )...  
+   > Checking a prediction model (winshift = 0 )...  
    > Observed-scale R2 = 0.08795757   
    > Liability-scale R2 = 0.4207207   
-   > Checking a prediciton model (winshift = 20 )...  
+   > Checking a prediction model (winshift = 20 )...  
    > Observed-scale R2 = 0.08940181   
    > Liability-scale R2 = 0.4150352   
-   > Checking a prediciton model (winshift = 40 )...  
+   > Checking a prediction model (winshift = 40 )...  
    > Observed-scale R2 = 0.08912039   
    > Liability-scale R2 = 0.4187129   
-   > Checking a prediciton model (winshift = 60 )...  
+   > Checking a prediction model (winshift = 60 )...  
    > Observed-scale R2 = 0.09010319   
    > Liability-scale R2 = 0.4182834   
    >   
    >   
    >   
-   > Producing a combined prediction model...OK (saved in **testdata/Test1.val.5K.phen.nps_score** )  
+   > Producing a combined prediction model...OK (saved in **testdata/Test1/Test1.val.5K.phen.nps_score** )  
    > Observed-scale R2 = 0.09048684   
    > Liability-scale R2 = 0.4244738   
    > Loading required package: pROC  
@@ -734,16 +734,16 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 > 4760  control samples  
 > 0  samples with missing phenotype (-9)  
 > Includes TotalLiability  
-> Checking a prediciton model (winshift = 0 )...  
+> Checking a prediction model (winshift = 0 )...  
 > Observed-scale R2 = 0.04862955   
 > Liability-scale R2 = 0.2303062   
-> Checking a prediciton model (winshift = 1000 )...  
+> Checking a prediction model (winshift = 1000 )...  
 > Observed-scale R2 = 0.04994584  
 > Liability-scale R2 = 0.2298484  
-> Checking a prediciton model (winshift = 2000 )...  
+> Checking a prediction model (winshift = 2000 )...  
 > Observed-scale R2 = 0.05150205  
 > Liability-scale R2 = 0.2268046  
-> Checking a prediciton model (winshift = 3000 )...  
+> Checking a prediction model (winshift = 3000 )...  
 > Observed-scale R2 = 0.05258402  
 > Liability-scale R2 = 0.2298871  
 >  
