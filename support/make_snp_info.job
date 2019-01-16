@@ -10,10 +10,10 @@ QCTOOL=qctool
 # use .qctool-2.0-rc2
 
 # (erisone.partners.org)
-module add glibc
-module add gcc/6.3.0 
+# module add glibc
+# module add gcc/6.3.0 
 
-QCTOOL=~/Tools/qctool_v2.0.1/qctool_v2.0.1
+# QCTOOL=~/Tools/qctool_v2.0.1/qctool_v2.0.1
 
 #####
 
