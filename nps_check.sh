@@ -5,10 +5,10 @@ if [ $# -lt 2 ]; then
     echo "nps_command:"
     echo "    stdgt traindir traintag"
     echo "    init workdir"
-    echo "    auto workdir winshift1 winshift2 ..."
+    echo "    last workdir winshift1 winshift2 ..."
     echo "    score workdir valdir valtag winshift1 winshift2 ..."
     echo ""
-    echo "Note: \"nps_check.sh auto\" will figure out the following checks by itself:"
+    echo "Note: \"nps_check.sh last\" will figure out the following checks by itself:"
     echo "    decor workdir winshift1 winshift2 ..."
     echo "    prune workdir winshift1 winshift2 ..."
     echo "    gwassig workdir winshift1 winshift2 ..."
@@ -38,7 +38,7 @@ if [ $Rver -lt 3 ]; then
    exit 2
 fi 
 
-if [ $step == "auto" ]; then 
+if [ $step == "last" ]; then 
 
     workdir=$2
 
