@@ -12,7 +12,7 @@ For inquiries on software, please contact:
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz) [Release Note](https://github.com/sgchun/nps/releases/tag/1.0.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.0.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
    tar -zxvf nps-1.0.1.tar.gz
@@ -238,18 +238,32 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    The set-up can be double-checked by running:  
    `./nps_check.sh init testdata/Test1/npsdat/`
 
-3. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
+3. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by decorrelating the data, pruning across windows and separating out the GWAS-significant partition. The three consecutive steps - **3.1.** `nps_decor.job`, **3.2.** `nps_prune.job` and **3.3** `nps_gwassig.job` - can be launched in a single command in the following way: 
+
+   ```bash
+   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
+   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20
+   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40
+   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
+   
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
+   ```
+   
+   The description of individual steps and parameters are as below. 
+
+3.1. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
    ```bash
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
    
-   # Check the results
-   ./nps_check.sh decor testdata/Test1/npsdat/ 0 20 40 60 
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
    ```
 
-4. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space by running `nps_prune.job` job. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
+3.2. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space by running `nps_prune.job` job. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
 
    ```bash
    ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
@@ -257,30 +271,27 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
    
-   # Check the results
-   ./nps_check.sh prune testdata/Test1/npsdat/ 0 20 40 60
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-5. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
+3.3. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
    ```bash
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
    
-   # Check the results
-   ./nps_check.sh gwassig testdata/Test1/npsdat/ 0 20 40 60
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-6. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
+4. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
-   
-   # Check the results
-   ./nps_check.sh prep_part testdata/Test1/npsdat/ 0 20 40 60 
    ```
    
    Then, partitioned genetic risk scores will be calculated using training samples with `nps_part.job`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
@@ -290,19 +301,16 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
    
-   # Check the results
-   ./nps_check.sh part testdata/Test1/npsdat/ 0 20 40 60
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-7. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
+5. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
    ```bash
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
-   
-   # Check the results
-   ./nps_check.sh weight testdata/Test1/npsdat/ 0 20 40 60
    ```
    
    We also provide two optional utilities: 
@@ -321,19 +329,19 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
      Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
      ```
 
-8. **Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
+6. **Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
    ```bash
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
    
-   # Check the results
-   ./nps_check.sh back2snpeff testdata/Test1/npsdat/ 0 20 40 60
+   # Check the results of last step
+   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
    This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.adjbetahat.chrom*N*.txt and testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as in the summary statistics (testdata/Test1/npsdat/harmonized.summstats.txt). 
 
-9. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
+7. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
    ```bash
    ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
    ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
