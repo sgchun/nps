@@ -252,39 +252,39 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    
    The description of individual steps and parameters are as below. 
 
-3.1. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
-   ```bash
-   ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
-   ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
-   ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
-   ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
-   ```
+   3.1. **Transform data to the decorrelated "eigenlocus" space.** This is one of the most time-consuming steps of NPS. The first argument to `nps_decor.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`. 
+        ```bash
+        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 0
+        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 20
+        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 40
+        ./run_all_chroms.sh sge/nps_decor.job testdata/Test1/npsdat/ 60
+        
+        # Check the results of last step
+        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
+        ```
 
-3.2. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space by running `nps_prune.job` job. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
+   3.2. **Prune correlations across windows.** This step prunes the correlation between genotypes across adjacent windows in the eigenlocus space by running `nps_prune.job` job. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
 
-   ```bash
-   ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
-   ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
-   ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
-   ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-   ```
+        ```bash
+        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 0
+        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 20
+        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 40
+        ./run_all_chroms.sh sge/nps_prune.job testdata/Test1/npsdat/ 60
+        
+        # Check the results of last step
+        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
+        ```
 
-3.3. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
-   ```bash
-   ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
-   ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
-   ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
-   ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-   ```
+   3.3. **Separate GWAS-significant partition.** The partition of GWAS-significant associations will be separated out from the rest of association signals. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). 
+        ```bash
+        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 0
+        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 20
+        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 40
+        ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/ 60
+        
+        # Check the results of last step
+        ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
+        ```
 
 4. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
