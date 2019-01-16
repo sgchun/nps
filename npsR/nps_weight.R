@@ -71,6 +71,15 @@ trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
 trphen <- read.delim(trainphenofile, sep="\t", header=TRUE,
                      stringsAsFactors=FALSE)
 
+if (ncol(trfam) != 6) {
+    # re-try with tab delimination
+
+    trfam <- read.delim(trainfamfile, sep="\t", header=FALSE,
+                        stringsAsFactors=FALSE)
+}
+
+ASSERT(ncol(trfam) == 6)
+
 rownames(trphen) <- paste(trphen$FID, trphen$IID, sep=":")
 trphen <- trphen[paste(trfam[, 1], trfam[, 2], sep=":"), ]
 

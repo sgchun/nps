@@ -183,8 +183,15 @@ trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
 trphen <- read.delim(trainphenofile, sep="\t", header=TRUE,
                      stringsAsFactors=FALSE)
 
+if (ncol(trfam) != 6) {
+    # re-try with tab delimination
+
+    trfam <- read.delim(trainfamfile, sep="\t", header=FALSE,
+                        stringsAsFactors=FALSE)
+}
+
 if (ncol(trfam) != 6) {    
-    stop("Space-delimited 6-column FAM format expected:", trainfamfile)
+    stop("Space or tab-delimited 6-column FAM format expected:", trainfamfile)
 }
 
 if (length(intersect(colnames(trphen), 

@@ -69,8 +69,15 @@ if (!file.exists(valphenofile)) {
 vlfam <- read.delim(valfamfile, sep=" ", header=FALSE,
                     stringsAsFactors=FALSE)
 
+if (ncol(vlfam) != 6) {
+    # re-try with tab delimination
+
+    vlfam <- read.delim(valfamfile, sep="\t", header=FALSE,
+                        stringsAsFactors=FALSE)
+}
+
 if (ncol(vlfam) != 6) {    
-    stop(valfamfile, " does not have standard 6 columns (space-delimited)")
+    stop(valfamfile, " does not have standard 6 columns (space or tab-delimited)")
 }
 
 if (any(duplicated(paste(vlfam[, 1], vlfam[, 2], sep=":")))) {
@@ -141,7 +148,7 @@ if (sum(vlphen$Outcome == 0) <= 1) {
 # genetic risks
 for (WINSHIFT in list.WINSHIFT) {
 
-    cat("Checking a prediciton model (winshift =", WINSHIFT, ")...\n")
+    cat("Checking a prediction model (winshift =", WINSHIFT, ")...\n")
 
     vlY <- vlphen$Outcome
 
