@@ -2,8 +2,6 @@ VERSION <- "1.0.0"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
-library(MASS)
-
 # Cut-off for corss-window pruning
 CXWCOR.CO <- 0.3
 

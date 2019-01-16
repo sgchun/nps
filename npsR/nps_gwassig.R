@@ -2,8 +2,6 @@ VERSION <- "1.0.0"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
-library(MASS)
-
 # Cut-off for small lambda
 LAMBDA.CO <- 0.5
 # P-value threshold for the GWAS-significant tail partition

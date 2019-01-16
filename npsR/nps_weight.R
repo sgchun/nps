@@ -2,8 +2,6 @@ VERSION <- "1.0.0"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
-library(MASS)
-
 ASSERT <- function(test) {
     if (length(test) == 0) {
         stop(paste("ASSERT fail for empty conditional:",
