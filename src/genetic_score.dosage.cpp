@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
 
   if (argc != 4) {
 
-    cerr << "Usage: " << argv[0] << " <N> <M> <beta file>" 
+    cerr << "NPS v1.0.1" << endl 
+	 << "Usage: " << argv[0] << " <N> <M> <beta file>" 
 	 << endl; 
 
     return 1; 

@@ -12,11 +12,11 @@ For inquiries on software, please contact:
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.0.0](https://github.com/sgchun/nps/archive/1.0.0.tar.gz)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
-   tar -zxvf nps-1.0.0.tar.gz
-   cd nps-1.0.0/
+   tar -zxvf nps-1.0.1.tar.gz
+   cd nps-1.0.1/
    make
    ```
 
@@ -168,10 +168,10 @@ Both simulated datasets were generated using our multivariate-normal simulator (
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
-cd nps-1.0.0/testdata/
+cd nps-1.0.1/testdata/
 
 tar -zxvf NPS.Test1.tar.gz 
-# This will create the following test data files in nps-1.0.0/testdata/Test1
+# This will create the following test data files in nps-1.0.1/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
@@ -185,7 +185,7 @@ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 
 tar -zxvf NPS.Test2.tar.gz 
-# This will create the following test data in nps-1.0.0/testdata/Test2
+# This will create the following test data in nps-1.0.1/testdata/Test2
 # Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
 # Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
@@ -204,7 +204,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
    ```bash
-   cd nps-1.0.0/
+   cd nps-1.0.1/
    
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
@@ -357,7 +357,7 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
    - window shifts used in the prediction model: `0 20 40 60`. 
    
    `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1.val.5K.phen.nps_score`. 
-   > Non-Parametric Shrinkage 1.0.0   
+   > Non-Parametric Shrinkage 1.0.1   
    > Validation cohort:  
    > Total  5000 samples  
    > 271  case samples  
@@ -415,10 +415,10 @@ Test set #1 is a small dataset and can be easily tested on modest desktop comput
 
 ### Running NPS on test set #1 using SGE clusters
 
-To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.0.0/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
+To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.0.1/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
 
 ```
-cd nps-1.0.0/
+cd nps-1.0.1/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
@@ -518,7 +518,7 @@ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Tes
 Running NPS on LSF clusters is similar. We provide the job scripts in `lsf/` directory.
 
 ```
-cd nps-1.0.0/
+cd nps-1.0.1/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test1 Test1.train
@@ -621,7 +621,7 @@ NPS can be run on test set #2 similarly as test set #1 except:
 * For test set #2 and real data sets, we do not recommend running NPS without parallelization because of heavy computational requirements.
 
 ```bash
-cd nps-1.0.0/
+cd nps-1.0.1/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
@@ -727,7 +727,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 `nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf) and save it to a pdf file (`Test1.nps.pdf`). 
 
 `nps_val.R` will report the following overall prediction accuracy in the validation cohort: 
-> Non-Parametric Shrinkage 1.0.0  
+> Non-Parametric Shrinkage 1.0.1  
 > Validation cohort:  
 > Total  5000 samples  
 > 240  case samples  
@@ -788,7 +788,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 Running NPS on LSF is similar to running it on SGE clusters. The memory limit is specified by `bsub -R 'rusage[mem=4000]'`.
 
 ```bash
-cd nps-1.0.0/
+cd nps-1.0.1/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
