@@ -437,8 +437,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "gwassig" ] || [
 		    continue
 		fi
 
-		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(\":NPS:\\t\", dim(trPT), sep='');" | grep -F ':NPS:' | cut -f2 `
-		dim=`echo $dim | sed 's/ / x /g'`
+		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(\":NPS:\\t\", paste(dim(trPT), collapse=' x '), sep='');" | grep -F ':NPS:' | cut -f2 `
 
 		echo "OK ($dim)"
 	    done
