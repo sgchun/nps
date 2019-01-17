@@ -14,7 +14,7 @@ For inquiries on software, please contact:
 The current version is 1.0.1. The followings were changed with this version: 
 - Fixed an issue that nps_check.sh fails to verify job results in some distributions of R.   
 - nps_decor.job, nps_prune.job and nps_gwassig.job were marged into a single job: nps_decor_prune_gwassig.job. 
-- Added "nps_check.sh last" to automatically figure out the last step to check
+- Added "nps_check.sh last" to automatically figure out the last step to check once NPS was initialized.
 
 ## How to Install
 1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.0.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
