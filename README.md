@@ -31,17 +31,18 @@ For inquiries on software, please contact:
    
    When a new version (`<version#>`) of NPS is released, you can catch up with the changes by running the following: 
    ```bash
-   cd nps-1.0.1
+   cd nps/
    
    # Preserve local changes you made
    git stash 
    
-   # Apply the changes in the new release
+   # Update the codes to the new release in GitHub
    git checkout tags/<version#> 
    
    # Bring back your local change
    git stash pop
    
+   # Recompile C++ codes
    make
    ```
 
