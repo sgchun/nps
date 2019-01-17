@@ -20,7 +20,7 @@ For inquiries on software, please contact:
    make
    ```
    
-   Or, alternatively, you can "clone" the NPS repository from GitHub. Once your local repository is set up in this way, you can catch up with the changes in the master NPS respository while keeping your local modification on job scripts. To set up the git repository: 
+   Or, alternatively, you can "clone" the NPS repository from GitHub. Once your local repository is set up in this way, this has a benefit that you can catch up with new changes in the master NPS respository while keeping local modifications in your job scripts. To set up the git repository: 
    
    ```bash
    git clone https://github.com/sgchun/nps nps-1.0.1
@@ -29,7 +29,7 @@ For inquiries on software, please contact:
    make
    ```
    
-   When a new version of NPS is released, please do the following: 
+   When a new version (`<version#>`) of NPS is released, you can catch up with the changes by running the following: 
    ```bash
    cd nps-1.0.1
    
