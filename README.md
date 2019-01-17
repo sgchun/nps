@@ -31,7 +31,7 @@ For inquiries on software, please contact:
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   To run the above commands, you will need the root privilege to install files in the default system path. If this is not ideal, You can install the R extensions in your home directory (e.g. ~/R). For this, please do the following instead:
+   To run the above commands, you will need the root privilege to install files in the default system path. If this is not ideal, you can install the R extensions in your home directory (e.g. ~/R). For this, please do the following instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -42,7 +42,7 @@ For inquiries on software, please contact:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly as in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
 
    ```bash
    ###
@@ -310,7 +310,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    # Check the results of last step
    ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
-   This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.adjbetahat.chrom*N*.txt and testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as in the summary statistics (testdata/Test1/npsdat/harmonized.summstats.txt). 
+   This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.adjbetahat.chrom*N*.txt and testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as the order of SNPs in the summary statistics file (testdata/Test1/npsdat/harmonized.summstats.txt). 
 
 7. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
    ```bash
@@ -324,7 +324,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ```
    Here, the first argument for `sge/nps_score.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetTag for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetTag has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
-   *Note that instead of `./nps_check.sh last`, `./nps_check.sh score` has to be run in order to verify the results of nps_score jobs.*
+   *Note that instead of* `./nps_check.sh last`, `./nps_check.sh score` *has to be run in order to verify the results of nps_score jobs.*
    
    Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
    ```
@@ -413,7 +413,7 @@ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testda
 # Check the results
 ./nps_check.sh init testdata/Test1/npsdat/
 
-# Set up the decorrelate eigenlocus space 
+# Set up the decorrelated eigenlocus space 
 qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0 
 qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20 
 qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40 
@@ -422,7 +422,7 @@ qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
 # Check the results of last step
 ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
 
-# Define partitioning boundaries for the rest of data
+# Define partitioning boundaries
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
@@ -445,6 +445,7 @@ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+
 # (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 
@@ -489,7 +490,7 @@ Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testda
 # Check the results
 ./nps_check.sh init testdata/Test1/npsdat/
 
-# Transform data to the decorrelate eigenlocus space
+# Set up the decorrelate eigenlocus space
 bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
 bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20
 bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40
@@ -498,7 +499,7 @@ bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
 # Check the results of last step
 ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
 
-# Define partitioning boundaries for the rest of data
+# Define partitioning boundaries
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10
@@ -521,6 +522,7 @@ Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
 
 # (Optional) Report the overall AUC of prediction in the training cohort
 Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
+
 # (Optional) Generate a plot of overall shrinkage curves
 Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
 
@@ -580,7 +582,7 @@ qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/np
 # Check the results of last step
 ./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
-# Define partitioning boundaries for the rest of data
+# Define partitioning boundaries 
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
@@ -633,7 +635,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 > Area under the curve: **0.7843**  
 > 95% CI: 0.7718-0.7968 (DeLong)  
 
-`nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf) and save it to a pdf file (`Test1.nps.pdf`). 
+`nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test2.nps.pdf) and save it to a pdf file (`Test2.nps.pdf`). 
 
 `nps_val.R` will report the following overall prediction accuracy in the validation cohort: 
 > Non-Parametric Shrinkage 1.0.1  
@@ -723,7 +725,7 @@ bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testda
 # Check the results of last step
 ./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
 
-# Define partitioning boundaries for the rest of data
+# Define partitioning boundaries 
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
 Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
