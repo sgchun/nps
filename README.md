@@ -19,6 +19,31 @@ For inquiries on software, please contact:
    cd nps-1.0.1/
    make
    ```
+   
+   Or, alternatively, you can "clone" the NPS repository from GitHub. Once your local repository is set up in this way, you can catch up with the changes in the master NPS respository while keeping your local modification on job scripts. To set up the git repository: 
+   
+   ```bash
+   git clone https://github.com/sgchun/nps nps-1.0.1
+   cd nps-1.0.1
+   git checkout tags/1.0.1
+   make
+   ```
+   
+   When a new version of NPS is released, please do the following: 
+   ```bash
+   cd nps-1.0.1
+   
+   # Preserve local changes you made
+   git stash 
+   
+   # Apply the changes in the new release
+   git checkout tags/<version#> 
+   
+   # Bring back your local change
+   git stash pop
+   
+   make
+   ```
 
    **Note on computer clusters: If you need to load a GCC module to compile NPS, you have to do the same in job scripts `nps_stdgt.job` and `nps_score.job`. stdgt and grs will depend on GCC shared libraries in the run time.**
 
