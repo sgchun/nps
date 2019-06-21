@@ -925,7 +925,7 @@ To help deploying NPS polygenic scores to a cohort that is independent from a tr
 This will be done by running `nps_harmonize_val.job` as follows: 
 ```
 # Generate <work_dir>/chromN.<cohort_name>.dosage.gz files
-qsub -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file> <work_dir> <cohort_name>
+qsub -t 1-22 -l h_vmem=4G sge/nps_harmonize_val.job <nps_data_dir> <dataset_dir>/chrom#.bgen <bgen_sample_file> <work_dir> <cohort_name>
 
 # Generate <work_dir>/<cohort_name>.fam file with identical IIDs and FIDs
 support/make_fam.sh <work_dir> <cohort_name>
