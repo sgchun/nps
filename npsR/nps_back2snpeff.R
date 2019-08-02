@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -232,15 +232,19 @@ ASSERT(M.chr == length(wt.betahat))
 
 
 # add tail betahats
-betahat.tail.chr <-
-    read.delim(paste(tempprefix, "tail_betahat.", CHR, ".table",
-                     sep=''), header=FALSE, sep="\t")[, 1]
+tailbetahatfile <- paste(tempprefix, "tail_betahat.", CHR, ".table",
+                         sep='')
 
-ASSERT(length(betahat.tail.chr) == M.chr)
+if (file.exists(tailbetahatfile)) {
+    
+    betahat.tail.chr <-
+        read.delim(tailbetahatfile, header=FALSE, sep="\t")[, 1]
 
-wt.betahat <- wt.betahat + betahat.tail.chr * PTwt.tail 
+    ASSERT(length(betahat.tail.chr) == M.chr)
 
+    wt.betahat <- wt.betahat + betahat.tail.chr * PTwt.tail
 
+}
 
 # se: discovery af 
 #    wt.betahat <- wt.betahat / se[snpIdx0 + c(1:M.chr)]

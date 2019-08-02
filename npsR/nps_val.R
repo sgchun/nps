@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -125,24 +125,46 @@ ASSERT(all(vlphen$IID == vlfam[, 2]))
 
 cat("Validation cohort:\n")
 cat("Total ", nrow(vlfam), "samples\n")
-cat(sum(vlphen$Outcome == 1), " case samples\n")
-cat(sum(vlphen$Outcome == 0), " control samples\n")
 cat(sum(vlphen$Outcome == -9), " samples with missing phenotype (-9)\n")
+
+binary.phen <- TRUE
+
+if (length(setdiff(vlphen$Outcome, c(0, 1, -9))) != 0) {
+    cat(sum(vlphen$Outcome != -9),
+        " samples with non-missing QUANTITATIVE phenotype values\n")
+
+    if (!is.numeric(vlphen$Outcome)) {
+        stop("phenotype values are not numeric: Outcome :", valphenofile)
+    }
+
+    binary.phen <- FALSE
+
+} else {
+    cat(sum(vlphen$Outcome != -9),
+        " samples with non-missing BINARY phenotype values\n")
+    
+    cat("    ", sum(vlphen$Outcome == 1), " case samples\n")
+    cat("    ", sum(vlphen$Outcome == 0), " control samples\n")
+
+    binary.phen <- TRUE
+}
 
 if ("TotalLiability" %in% colnames(vlphen)) {
     cat("Includes TotalLiability\n")
 }
 
-if (nrow(vlphen) <= 1) {
-    stop("Invalid validation cohort size: N=", nrow(vlphen))
+if ((nrow(vlphen) <= 1) || (sum(vlphen$Outcome != -9) <= 1)) {
+    stop("Invalid validation cohort size: N=", sum(vlphen$Outcome != -9))
 }
 
-if (sum(vlphen$Outcome == 1) <= 1) {
-    stop("Too few cases")
-}
+if (binary.phen) {
+    if (sum(vlphen$Outcome == 1) <= 1) {
+        stop("Too few cases: N_case=", sum(vlphen$Outcome == 1))
+    }
 
-if (sum(vlphen$Outcome == 0) <= 1) {
-    stop("Too few controls")
+    if (sum(vlphen$Outcome == 0) <= 1) {
+        stop("Too few controls: N_control=", sum(vlphen$Outcome == 0))
+    }
 }
 
 # genetic risks
@@ -177,15 +199,15 @@ for (WINSHIFT in list.WINSHIFT) {
     
     }
 
-    prisk <- prisk[vlY >= 0] 
-    vlL <- vlphen$TotalLiability[vlY >= 0]	
-    vlY <- vlY[vlY >= 0]
+    prisk <- prisk[vlY != -9] 
+    vlY <- vlY[vlY != -9]
     
     # R2 observed scale
     cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
 
     # R2 liability scale
     if ("TotalLiability" %in% colnames(vlphen)) {
+        vlL <- vlphen$TotalLiability[vlY != -9]	
         cat("Liability-scale R2 =", cor(vlL, prisk)**2, "\n")
     }
 }
@@ -222,18 +244,18 @@ for (WINSHIFTx in list.WINSHIFT) {
     }
 }
 
-prisk <- prisk[vlY >= 0] 
-vlL <- vlphen$TotalLiability[vlY >= 0]	
-vlY <- vlY[vlY >= 0]
+prisk <- prisk[vlY != -9] 
+vlY <- vlY[vlY != -9]
 
-if (cor(vlY, prisk) < 0) {
-    cat("WARNING: auto-correct sign flip: ", cor(vlY, prisk), "\n")
-
-    prisk <- - prisk
-}
+# DEPRECATED 
+# if ((cor(vlY, prisk) < 0) {
+#     cat("WARNING: auto-correct sign flip: ", cor(vlY, prisk), "\n")
+# 
+#     prisk <- - prisk
+# }
 
 filename <- paste(valphenofile, ".nps_score", sep='')
-df.out <- cbind(vlphen[vlphen$Outcome >= 0, ], Score=prisk)
+df.out <- cbind(vlphen[vlphen$Outcome != -9, ], Score=prisk)
 write.table(df.out, file=filename,
             row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
 cat("OK (saved in", filename, ")\n")
@@ -241,34 +263,37 @@ cat("OK (saved in", filename, ")\n")
 cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
 
 if ("TotalLiability" %in% colnames(vlphen)) {
+    vlL <- vlphen$TotalLiability[vlY != -9]	
     cat("Liability-scale R2 =", cor(vlL, prisk)**2, "\n")
 }
 
-if (require(pROC)) {
+if (binary.phen) {
+    if (require(pROC)) {
     
-    library(pROC)
+        library(pROC)
 
-    cat("AUC:\n")
-    print(roc(cases=prisk[vlY == 1], controls=prisk[vlY == 0], ci=TRUE))
+        cat("AUC:\n")
+        print(roc(cases=prisk[vlY == 1], controls=prisk[vlY == 0], ci=TRUE))
 
-} else {
-    cat("Skip AUC calculation\n")
-    cat("Please install pROC package to enable this\n")
-}
+    } else {
+        cat("Skip AUC calculation\n")
+        cat("Please install pROC package to enable this\n")
+    }
 
-if (require(DescTools)) {
+    if (require(DescTools)) {
     
-    library(DescTools)
+        library(DescTools)
     
-    mod <- glm(vlY ~ prisk, family=binomial(link="logit"))
+        mod <- glm(vlY ~ prisk, family=binomial(link="logit"))
     
-    cat("Nagelkerke's R2 =", PseudoR2(mod, "Nagelkerke"), "\n")
+        cat("Nagelkerke's R2 =", PseudoR2(mod, "Nagelkerke"), "\n")
+        
+        print(mod)
 
-    print(mod)
-
-} else {
-    cat("Skip Nagelkerke's R2 calculation\n")
-    cat("Please install DescTools package to enable this\n")
+    } else {
+        cat("Skip Nagelkerke's R2 calculation\n")
+        cat("Please install DescTools package to enable this\n")
+    }
 }
 
 cat("Done\n")

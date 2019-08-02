@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -56,9 +56,6 @@ Nt <- part[["Nt"]]
 nLambdaPT <- part[["nLambdaPT"]]
 nEtaPT <- part[["nEtaPT"]]
 
-lambda.q <- part[["lambda.q"]]
-betahatH.q <- part[["betahatH.q"]]
-
 #########################################################################
 
 cat("train fam file:", trainfamfile, "\n")
@@ -98,7 +95,45 @@ trY <- trphen$Outcome
 ASSERT(Nt == length(trY))
 
 if (any(trY == -9)) {
-    stop("Missing outcome (-9) is not allowed")
+    stop("Missing outcome (\"-9\") is not allowed")
+}
+
+use.lda <- TRUE
+
+if (length(unique(trphen$Outcome)) > 2) {
+    # Quantitative phenotypes
+    cat("Quantitative phenotype: Outcome - ")
+
+    use.lda <- FALSE
+
+    if (!is.numeric(trphen$Outcome)) {
+        stop("phenotype values are not numeric: Outcome :", trainphenofile)
+    }
+    
+} else {
+    # Binary phenotypes    
+    cat("Binary phenotype: Outcome - ")
+
+    use.lda <- TRUE
+
+    if (length(setdiff(trphen$Outcome, c(0, 1))) != 0) {
+        print(head(trphen[!(trphen$Outcome %in% c(0, 1)), ]))
+        stop("Only 0 or 1 is expected in Outcome:", trainphenofile)
+    }
+
+    if (sum(trphen$Outcome == 0) == 0) {
+        stop("Must have controls (Outcome = 0):", trainphenofile)
+    }
+
+    if (sum(trphen$Outcome == 1) == 0) {
+        stop("Must have cases (Outcome = 1):", trainphenofile)
+    }
+}
+
+if (use.lda) {
+    cat("Using linear discriminary analysis...\n")
+} else {
+    cat("Using linear regression...\n")
 }
 
 #########################################################################
@@ -129,17 +164,28 @@ PTwt <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
 for (I in 1:nLambdaPT) {
     for (J in 1:nEtaPT) {
         K <- 1
+        
+        if (use.lda) {
             
-        trcaVAR <- var(trPT[trY == 1, I, J, K])
-        trctVAR <- var(trPT[trY == 0, I, J, K])
-        trptVAR <- (trcaVAR + trctVAR) / 2
+            trcaVAR <- var(trPT[trY == 1, I, J, K])
+            trctVAR <- var(trPT[trY == 0, I, J, K])
+            trptVAR <- (trcaVAR + trctVAR) / 2
         
-        trcaMU <- mean(trPT[trY == 1, I, J, K])
-        trctMU <- mean(trPT[trY == 0, I, J, K])
-        
-        PTwt[I, J, K] <- (trcaMU - trctMU) / trptVAR
+            trcaMU <- mean(trPT[trY == 1, I, J, K])
+            trctMU <- mean(trPT[trY == 0, I, J, K])
+            
+            PTwt[I, J, K] <- (trcaMU - trctMU) / trptVAR
+
+        } else {
+            # Use linear regression 
+            x <- trPT[, I, J, K]
+                
+            trlm <- lm(trY ~ x)
+            PTwt[I, J, K] <- trlm$coefficients[2]
+        }
     }
 }
+
 
 if (any(is.nan(PTwt))) {
     cat("WARNING: ", sum(is.nan(PTwt)), "partitions produced NaN\n")
@@ -182,15 +228,25 @@ for (chrom in 1:22) {
 PTwt.tail <- 0
 
 if (any(trPT.tail != 0)) {
+
+    if (use.lda) {
     
-    trcaVAR <- var(trPT.tail[trY == 1])
-    trctVAR <- var(trPT.tail[trY == 0])
-    trptVAR <- (trcaVAR + trctVAR) / 2
+        trcaVAR <- var(trPT.tail[trY == 1])
+        trctVAR <- var(trPT.tail[trY == 0])
+        trptVAR <- (trcaVAR + trctVAR) / 2
     
-    trcaMU <- mean(trPT.tail[trY == 1])
-    trctMU <- mean(trPT.tail[trY == 0])
-    
-    PTwt.tail <- (trcaMU - trctMU) / trptVAR
+        trcaMU <- mean(trPT.tail[trY == 1])
+        trctMU <- mean(trPT.tail[trY == 0])
+        
+        PTwt.tail <- (trcaMU - trctMU) / trptVAR
+
+    } else {
+        # Use linear regression 
+        x <- trPT.tail
+                
+        trlm <- lm(trY ~ x)
+        PTwt.tail <- trlm$coefficients[2]
+    }
 }
 
 #    cat("Weight for S0 =", PTwt.tail, "\n")

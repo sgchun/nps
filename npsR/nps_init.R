@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -227,17 +227,38 @@ if (any(is.na(trphen$Outcome))) {
     stop("NA not allowed in Outcome:", trainphenofile)
 }
 
-if (length(setdiff(trphen$Outcome, c(0, 1))) != 0) {
-    print(head(trphen[!(trphen$Outcome %in% c(0, 1)), ]))
-    stop("Only 0 or 1 is expected in Outcome:", trainphenofile)
-}
+if (length(unique(trphen$Outcome)) > 3) {
+    # Quantitative phenotypes
+    cat("Quantitative phenotype: Outcome\n")
 
-if (sum(trphen$Outcome == 0) == 0) {
-    stop("Must have controls (Outcome = 0):", trainphenofile)
-}
+    if (!is.numeric(trphen$Outcome)) {
+        stop("phenotype values are not numeric: Outcome :", trainphenofile)
+    }
 
-if (sum(trphen$Outcome == 1) == 0) {
-    stop("Must have cases (Outcome = 1):", trainphenofile)
+    if (any(trphen$Outcome == -9)) {
+        stop("NA (\"-9\") not allowed in Outcome (instead use \"-9.00001\" for a quantitative trait value):", trainphenofile)
+    }
+
+} else {
+    # Binary phenotypes    
+    cat("Binary phenotype: Outcome\n")
+
+    if (any(trphen$Outcome == -9)) {
+        stop("NA (\"-9\") not allowed in Outcome:", trainphenofile)
+    }
+
+    if (length(setdiff(trphen$Outcome, c(0, 1))) != 0) {
+        print(head(trphen[!(trphen$Outcome %in% c(0, 1)), ]))
+        stop("Only 0 or 1 is expected in Outcome:", trainphenofile)
+    }
+
+    if (sum(trphen$Outcome == 0) == 0) {
+        stop("Must have controls (Outcome = 0):", trainphenofile)
+    }
+
+    if (sum(trphen$Outcome == 1) == 0) {
+        stop("Must have cases (Outcome = 1):", trainphenofile)
+    }
 }
 
 ##################################################################

@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -210,6 +210,8 @@ partdata <- list()
 partdata[["Nt"]] <- Nt
 partdata[["nLambdaPT"]] <- nLambdaPT
 partdata[["nEtaPT"]] <- nEtaPT
+
+partdata[["nVars"]] <- nBetahatH
 
 partdata[["lambda.q"]] <- lambda.q
 partdata[["betahatH.q"]] <- betahatH.q

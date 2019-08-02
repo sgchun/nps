@@ -1,4 +1,4 @@
-VERSION <- "1.0.1"
+VERSION <- "1.0.2"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -160,7 +160,20 @@ for (WINSHIFT in WINSHIFT.list) {
 
 }
 
-library(pROC)
+cat("\n\n\n")
+cat("R^2 :\n")
+cat(cor(trY, predY0)**2)
+# print(cor.test(trY, predY0))
 
-cat("AUC :\n")
-print(roc(cases=predY0[trY == 1], controls=predY0[trY == 0], ci=TRUE))
+if (length(unique(trY)) >= 2) {
+    # Quantitative phenotypes
+    cat("Quantitative phenotype: Outcome - Skip AUC calculation\n")
+    
+    # Done
+} else {
+
+    library(pROC)
+
+    cat("AUC :\n")
+    print(roc(cases=predY0[trY == 1], controls=predY0[trY == 0], ci=TRUE))
+}
