@@ -7,7 +7,7 @@ For citation:
 > BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
 
 For inquiries on software, please contact: 
-* Sung Chun (sung.g.chun@gmail.com)
+* Sung Chun (SungGook.Chun@childrens.harvard.edu)
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
