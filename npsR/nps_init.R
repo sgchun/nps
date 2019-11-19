@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -112,8 +112,25 @@ summstat.SNPID <- paste(summstat.chr, ":", summstat$pos,
                         "_", summstat$ref, "_", summstat$alt,
                         sep='')
 
+if (!dir.exists(tempprefix)) {
+    dir.create(tempprefix)
+}
+
+if (!dir.exists(paste(tempprefix, "/log", sep=''))) {
+    dir.create(paste(tempprefix, "/log", sep=''))
+} else {
+    log.files <- paste(tempprefix, "/log", "/nps_*.Rout.*", sep='')
+    cat("Removing log files: ", log.files, "...")
+    unlink(log.files)
+    cat(" OK\n")
+}
+
+
 # train allele freq
 trfrq.combined <- NULL
+
+trainfreqfile <-
+    paste(tempprefix, "/", traintag, ".meandos", sep='')
 
 # snp info
 trSNPID <- c()
@@ -131,6 +148,16 @@ for (CHR in 1:22) {
 
         stop("Invalid .meandos header: ", meandosfile)
     }
+
+    # Save AAF
+    trainfreqfile.chr <- paste(trainfreqfile, ".", CHR, sep='')
+        
+    cat("Copying training AAF file to: ", trainfreqfile.chr, "...")
+
+    write.table(trfrq, file=trainfreqfile.chr,
+                sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
+
+    cat(" OK\n")
 
     trfrq.combined <- rbind(trfrq.combined, trfrq)
 
@@ -264,31 +291,6 @@ if (length(unique(trphen$Outcome)) > 3) {
 ##################################################################
 # SAVE
 
-if (!dir.exists(tempprefix)) {
-    dir.create(tempprefix)
-}
-
-if (!dir.exists(paste(tempprefix, "/log", sep=''))) {
-    dir.create(paste(tempprefix, "/log", sep=''))
-} else {
-    log.files <- paste(tempprefix, "/log", "/nps_*.Rout.*", sep='')
-    cat("Removing log files: ", log.files, "...")
-    unlink(log.files)
-    cat(" OK\n")
-}
-
-# Save combined AAF
-trainfreqfile <-
-    paste(tempprefix, "/", traintag, ".meandos", sep='')
-
-cat("Dumping merged training AAF file: ", trainfreqfile, "...")
-
-write.table(trfrq.combined, file=trainfreqfile,
-            sep="\t", row.names=FALSE, col.names=TRUE, quote=FALSE)
-
-cat(" OK\n")
-
-
 # Save summary statistics
 summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
 
@@ -301,7 +303,7 @@ write.table(summstat[, c("chr", "pos", "ref", "alt", "reffreq", "pval",
 cat(" OK\n")
 
 # SAve config
-cat("Writing config file ", trainfreqfile, "...")
+cat("Writing config file ...")
 
 args <- list()
 
@@ -314,6 +316,10 @@ args[["trainfreqfile"]] <- trainfreqfile
 args[["trainphenofile"]] <- trainphenofile
 args[["traintag"]] <- traintag
 args[["WINSZ"]] <- WINSZ
+# Cut-off for lambda of projection
+args[["LAMBDA.CO"]] <- 10
+# Cut-off for corss-window pruning
+args[["CXWCOR.CO"]] <- 0.3
 
 saveRDS(args, file=paste(tempprefix, "args.RDS", sep=''))
 cat(" OK\n\n")

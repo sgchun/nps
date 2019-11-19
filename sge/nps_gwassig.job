@@ -1,14 +1,9 @@
 ###
 # ADD CODES TO LOAD R MODULE HERE
+#
+# Broad institute: 
+# source /broad/software/scripts/useuse
+# use OpenblasR
 ###
 
-if [ $2 -eq "0" ]
-then 
-    rm -vf $1/win.$SGE_TASK_ID.*.pruned.tailfix.table
-    rm -vf $1/trPT.$SGE_TASK_ID.tail.RDS
-    rm -vf $1/tail_betahat.$SGE_TASK_ID.table
-else 
-    rm -vf $1/win_$2.$SGE_TASK_ID.*.pruned.tailfix.table
-fi
-
-Rscript npsR/nps_gwassig.R $1 $SGE_TASK_ID $2 > $1/log/nps_gwassig.Rout.$2.$SGE_TASK_ID
+Rscript npsR/nps_gwassig.R $1 $SGE_TASK_ID > $1/log/nps_gwassig.Rout.$SGE_TASK_ID

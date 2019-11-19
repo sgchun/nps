@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -108,12 +108,8 @@ for (WINSHIFT in WINSHIFT.list) {
 
     cat("winshift =", WINSHIFT, "...\n")
 
-    if (WINSHIFT == 0) {
-        part <- readRDS(paste(tempprefix, "part.RDS", sep=''))
-    } else {
-        part <-
-            readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
-    }
+    part <-
+        readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
     Nt <- part[["Nt"]]
     nLambdaPT <- part[["nLambdaPT"]]
@@ -125,27 +121,16 @@ for (WINSHIFT in WINSHIFT.list) {
 
     for (chrom in 1:22) {
 
-        if (WINSHIFT == 0) {
-
-            trPT.chr <-
-                readRDS(paste(tempprefix, "trPT.", chrom, ".RDS", sep=''))
-        
-        } else {
-            trPT.chr <-
-                readRDS(paste(tempprefix, "win_", WINSHIFT, ".trPT.", chrom,
-                              ".RDS", sep=''))
-        }
+        trPT.chr <-
+            readRDS(paste(tempprefix, "win_", WINSHIFT, ".trPT.", chrom,
+                          ".RDS", sep=''))
 
         trPT <- trPT + trPT.chr
     }
 
 
-    if (WINSHIFT == 0) {
-        PTwt <- readRDS(paste(tempprefix, "PTwt.RDS", sep=''))
-    } else {
-        PTwt <-
-            readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
-    }
+    PTwt <-
+        readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
 
 
     for (I in 1:nLambdaPT) {
@@ -165,7 +150,7 @@ cat("R^2 :\n")
 cat(cor(trY, predY0)**2)
 # print(cor.test(trY, predY0))
 
-if (length(unique(trY)) >= 2) {
+if (length(unique(trY)) > 2) {
     # Quantitative phenotypes
     cat("Quantitative phenotype: Outcome - Skip AUC calculation\n")
     

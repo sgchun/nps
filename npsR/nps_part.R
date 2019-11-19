@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -48,11 +48,7 @@ if (is.nan(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
 #########################################################################
 
 # Load partition data 
-if (WINSHIFT == 0) {
-    part <- readRDS(paste(tempprefix, "part.RDS", sep=''))
-} else {
-    part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
-}
+part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
 Nt <- part[["Nt"]]
 nLambdaPT <- part[["nLambdaPT"]]
@@ -80,21 +76,13 @@ if (WINSHIFT == 0) {
 while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
 
     print(I)
-
-    windata <- readRDS(paste(winfilepre, ".RDS", sep=''))
     
-    wintab <- read.delim(paste(winfilepre, ".pruned", ".table", sep=''),
-                         header=TRUE, sep="\t")
+    windata <- readRDS(paste(winfilepre, ".RDS", sep=''))
 
-    tailfixfile <- paste(winfilepre, ".pruned", ".tailfix.table", sep='')
+    tailfixfile <- paste(winfilepre, ".pruned", ".table", sep='')
                              
-    if (file.exists(tailfixfile)) {
-        # override
-        cat("Using window data residualized on GWAS-sig SNPs:",
-            tailfixfile, "\n")
-        
-        wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
-    }
+    wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
+
 
     lambda0 <- wintab$lambda
     etahat0 <- wintab$etahat
@@ -102,10 +90,25 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     QX0 <- windata[["Q0.X"]]
 
     etahat0 <- etahat0[lambda0 > 0]
-    QX0 <- QX0[, lambda0 > 0]
+    QX0 <- QX0[, lambda0 > 0, drop=FALSE]
     lambda0 <- lambda0[lambda0 > 0]
+
+    ## FIXME
+    etahat0 <- etahat0[lambda0 > 10]
+    QX0 <- QX0[, lambda0 > 10, drop=FALSE]
+    lambda0 <- lambda0[lambda0 > 10]
+    ##
     
     Nq <- length(etahat0)
+
+    if (Nq == 0) {
+        # move on to next iteration
+        I <- I + 1
+        
+        winfilepre <-
+            paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
+        next
+    }
     
     ASSERT(nrow(QX0) == Nt)
     ASSERT(ncol(QX0) == Nq)
@@ -139,23 +142,14 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     # move on to next iteration
     I <- I + 1
     
-    if (WINSHIFT == 0) {
-        winfilepre <-
-            paste(tempprefix, "win.", CHR, ".", I, sep='')
-    } else {
-        winfilepre <-
-            paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
-    }
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
     
 }
 
 # save
-if (WINSHIFT == 0) {
-    saveRDS(trPT, file=paste(tempprefix, "trPT.", CHR, ".RDS", sep=''))
-} else {
-    saveRDS(trPT,
-            file=paste(tempprefix, "win_", WINSHIFT, ".trPT.", CHR, ".RDS",
-                sep=''))
-}
+saveRDS(trPT,
+        file=paste(tempprefix, "win_", WINSHIFT, ".trPT.", CHR, ".RDS",
+                   sep=''))
 
 cat("Done\n")

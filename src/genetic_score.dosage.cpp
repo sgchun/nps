@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
   assert(N > 0);
   assert(M > 0);
 
+  cerr << "Read beta file: "  << betafp << endl;
 
   // load beta file 
   int i = 0;
@@ -64,6 +65,8 @@ int main(int argc, char *argv[]) {
   }
 
   betafile.close();
+
+  cerr << "Done reading beta file" << endl;
 
   assert(i == M);
 

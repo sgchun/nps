@@ -16,15 +16,16 @@ chrom=$SGE_TASK_ID
 # If you loaded a GCC module to compile grs, you also need to load 
 # the GCC module here. 
 # 
+# Broad institute: 
+# source /broad/software/scripts/useuse
+# use GCC-5.2
+# use OpenblasR
+
 ###
 
 traintag=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
 
-if [ $winshift == 0 ]; then
-    modtag=$traintag
-else
-    modtag="$traintag.win_${winshift}"
-fi
+modtag="$traintag.win_${winshift}"
 
 prefix="$valdir/chrom${chrom}.${valtag}"
 

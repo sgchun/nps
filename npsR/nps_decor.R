@@ -1,9 +1,6 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
-
-# Cut-off for small lambda
-LAMBDA.CO <- 0.5
 
 ASSERT <- function(test) {
     if (length(test) == 0) {
@@ -39,6 +36,7 @@ summstatfile <- args[["summstatfile"]]
 traindir <- args[["traindir"]] 
 traintag <- args[["traintag"]]
 WINSZ <- args[["WINSZ"]]
+LAMBDA.CO <- args[["LAMBDA.CO"]]
 
 # Rest of command args
 CHR <- as.numeric(cargs[2])
@@ -56,240 +54,215 @@ if (is.nan(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
 #########################################################################
 
 # Read summary stats (discovery cohort)
-summstat <- read.delim(summstatfile, header=TRUE, stringsAsFactors=FALSE,
-                       sep="\t")
-# dim(summstat)
+summstat.chr <- read.delim(paste(summstatfile, ".", CHR, sep=''),
+                           header=TRUE, stringsAsFactors=FALSE,
+                           sep="\t")
+# dim(summstat.chr)
 
-cat("Converting effect sizes relative to standardized genotypes...")
-
-se <- sqrt(2 * summstat$reffreq * (1 - summstat$reffreq))
-
-std.effalt <- summstat$effalt * se
-
-cat(" OK\n")
 
 ########################
 
 etahat.all <- c()
 eval.all <- c()                         # lambda
 
-chrom <- 1
-snpIdx0 <- 0
 
-for (chrom in 1:22) {
+M.chr <- nrow(summstat.chr)
 
-    M.chr <- sum(summstat$chr == paste('chr', chrom, sep=''))
 
-    if (chrom > CHR) {
-        break 
-    }
-
-    if (chrom < CHR) {
-        snpIdx0 <- snpIdx0 + M.chr
-        next
-    }
-
-    cat("Processing chr", chrom, "...\n")
-#    cat("Starting from snpIdx offset", snpIdx0, "\n")
+cat("Processing chr", CHR, "...\n")
     
-    
-    # stdgt dosage (uncompressed)    
+## stdgt dosage (uncompressed)    
 #    stdgt.file <-
-#       file(paste(traindir, "/chrom", chrom, ".", traintag, ".stdgt",
+#       file(paste(traindir, "/chrom", CHR, ".", traintag, ".stdgt",
 #                  sep=''), open="rb")
 
-    stdgt.file <-
-        gzfile(paste(traindir, "/chrom", chrom, ".", traintag,
-                     ".stdgt.gz", sep=''), open="rb")
-    
-    I <- 1 
-    snpIdx <- 1
-    X0 <- NULL
+stdgt.file <-
+    gzfile(paste(traindir, "/chrom", CHR, ".", traintag,
+                 ".stdgt.gz", sep=''), open="rb")
 
-    while ((snpIdx + WINSZ) <= M.chr) {
+I <- 1 
+snpIdx <- 1
+X0 <- NULL
 
-        if (I == 1 & WINSHIFT > 0) {
-            span <- WINSZ - WINSHIFT
+while ((snpIdx + WINSZ) <= M.chr) {
 
-            cat("size of first window: m=", span, "\n")
+    if (I == 1 & WINSHIFT > 0) {
+        span <- WINSZ - WINSHIFT
             
-        } else {
-            span <- WINSZ
-        }
-
-        cat(I, "\n")
-
-        X0v <- readBin(stdgt.file, "double", n=(span * Nt))
-        X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
-        rm(X0v)
-
-        pos.cur <-
-            summstat$pos[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
+        cat("size of first window: m=", span, "\n")
         
-        betahat.cur <-
-            std.effalt[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-
-        ld0 <- (t(X0) %*% X0) / (Nt - 1)
-
-        for (J in 1:span) {
-            
-            pos.J <- pos.cur[J]
-            
-            for (K in 1:span) {
-
-                pos.dist <- abs(pos.J - pos.cur[K])
-                
-                if (pos.dist > 500000) {
-                    ld0[J, K] <- 0
-                }
-            }
-        }
-
-        # SE ~ 1/sqrt(Nt), 5 SD
-        ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
-
-        s0 <- eigen(ld0, symmetric=TRUE)
-
-        ASSERT(!is.null(s0))
-        rm(ld0)
-
-        Q0 <- s0$vectors
-
-        lambda0 <- s0$values[s0$values > LAMBDA.CO]
-        
-        Q0 <- Q0[, s0$values > LAMBDA.CO]
-
-        # in contrast to manuscript, qX0 was not divided by sqrt(lambda0) here
-        # thus, backconversion code to beta scale does not divide by
-        # sqrt(lambda0) either.
-        qX0 <- X0 %*% Q0
-
-        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
-
-        windata <- list()
-    
-        windata[["eigen"]] <- s0
-        windata[["Q0.X"]] <- qX0
-        windata[["etahat0"]] <- etahat0
-
-        if (WINSHIFT == 0) {
-            winfilepre <-
-                paste(tempprefix, "win.", chrom, ".", I, sep='')
-        } else {
-            winfilepre <-
-                paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                      sep='')
-        }
-        
-        saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
-        rm(windata)
-
-        write.table(
-            data.frame(lambda=lambda0, etahat=etahat0),
-            file=paste(winfilepre, ".table", sep=''),
-            quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-
-        saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
-
-        etahat.all <- c(etahat.all, etahat0)
-        eval.all <- c(eval.all, lambda0)
-        
-
-        # move on to next iteration
-        I <- I + 1
-        snpIdx <- snpIdx + span
-        X0 <- NULL
-        gc()
-    }
-
-    # last chunk
-    min.span <- max(WINSZ / 40, 10)
-    
-    if ((snpIdx + min.span) <= M.chr) {
-        
-        span <- M.chr - snpIdx + 1
-
-        cat("size of last window: m=", span, "\n")
-            
-        X0v <- readBin(stdgt.file, "double", n=(span * Nt))
-        X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
-        rm(X0v)
-
-        pos.cur <-
-            summstat$pos[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-        
-        betahat.cur <-
-            std.effalt[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-
-        ld0 <- (t(X0) %*% X0) / (Nt - 1)
-
-        for (J in 1:span) {
-            
-            pos.J <- pos.cur[J]
-            
-            for (K in 1:span) {
-
-                pos.dist <- abs(pos.J - pos.cur[K])
-                
-                if (pos.dist > 500000) {
-                    ld0[J, K] <- 0
-                }
-            }
-        }
-
-        # SE ~ 1/sqrt(Nt), 5 SD
-        ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
-
-        s0 <- eigen(ld0, symmetric=TRUE)
-
-        ASSERT(!is.null(s0))
-        rm(ld0)
-
-        Q0 <- s0$vectors
-
-        lambda0 <- s0$values[s0$values > LAMBDA.CO]
-        
-        Q0 <- Q0[, s0$values > LAMBDA.CO]
-
-        qX0 <- X0 %*% Q0
-
-        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
-
-        windata <- list()
-    
-        windata[["eigen"]] <- s0
-        windata[["Q0.X"]] <- qX0
-        windata[["etahat0"]] <- etahat0
-
-        if (WINSHIFT == 0) {
-            winfilepre <-
-                paste(tempprefix, "win.", chrom, ".", I, sep='')
-        } else {
-            winfilepre <-
-                paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                      sep='')
-        }
-        
-        saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
-        rm(windata)
-
-        write.table(
-            data.frame(lambda=lambda0, etahat=etahat0),
-            file=paste(winfilepre, ".table", sep=''),
-            quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-
-        saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
-
-        etahat.all <- c(etahat.all, etahat0)
-        eval.all <- c(eval.all, lambda0)
     } else {
-        span <- M.chr - snpIdx + 1
-        cat("Ignore SNPs at the end of chromosome: m=", span, "\n")
+        span <- WINSZ
     }
 
-    snpIdx0 <- snpIdx0 + M.chr
+    cat(I, "\n")
 
-    close(stdgt.file)    
+    X0v <- readBin(stdgt.file, "double", n=(span * Nt))
+    X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
+    rm(X0v)
+
+    pos.cur <-
+        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
+        
+    betahat.cur <-
+        summstat.chr$std.effalt[snpIdx:(snpIdx + span - 1)]
+
+    ld0 <- (t(X0) %*% X0) / (Nt - 1)
+
+#        for (J in 1:span) {
+#
+#            pos.J <- pos.cur[J]
+#            
+#            for (K in 1:span) {
+#
+#                pos.dist <- abs(pos.J - pos.cur[K])
+#                
+#                if (pos.dist > 500000) {
+#                    ld0[J, K] <- 0
+#                }
+#            }
+#        }
+
+    ## SE ~ 1/sqrt(Nt), 5 SD
+    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
+
+    s0 <- eigen(ld0, symmetric=TRUE)
+
+    ASSERT(!is.null(s0))
+    rm(ld0)
+    
+    Q0 <- s0$vectors
+
+    lambda0 <- s0$values[s0$values > LAMBDA.CO]
+    
+    Q0 <- Q0[, s0$values > LAMBDA.CO, drop=FALSE]
+
+    # in contrast to manuscript, qX0 was not divided by sqrt(lambda0) here
+    # thus, backconversion code to beta scale does not divide by
+    # sqrt(lambda0) either.
+    qX0 <- X0 %*% Q0
+
+    if (length(lambda0) == 0) {
+        etahat0 <- c()
+    } else {
+        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
+    }
+
+    windata <- list()
+    
+    windata[["eigen"]] <- s0
+    windata[["Q0.X"]] <- qX0
+    windata[["etahat0"]] <- etahat0
+
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I,
+              sep='')
+        
+    saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
+    rm(windata)
+
+    write.table(
+        data.frame(lambda=lambda0, etahat=etahat0),
+        file=paste(winfilepre, ".table", sep=''),
+        quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
+
+    saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
+
+    etahat.all <- c(etahat.all, etahat0)
+    eval.all <- c(eval.all, lambda0)
+    
+
+    ## move on to next iteration
+    I <- I + 1
+    snpIdx <- snpIdx + span
+    X0 <- NULL
+    gc()
 }
+
+## last chunk
+min.span <- max(WINSZ / 40, 10)
+    
+if ((snpIdx + min.span) <= M.chr) {
+        
+    span <- M.chr - snpIdx + 1
+
+    cat("size of last window: m=", span, "\n")
+            
+    X0v <- readBin(stdgt.file, "double", n=(span * Nt))
+    X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
+    rm(X0v)
+
+    pos.cur <-
+        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
+        
+    betahat.cur <-
+        summstat.chr$std.effalt[snpIdx:(snpIdx + span - 1)]
+    
+    ld0 <- (t(X0) %*% X0) / (Nt - 1)
+
+#        for (J in 1:span) {
+#            
+#            pos.J <- pos.cur[J]
+#            
+#            for (K in 1:span) {
+#
+#                pos.dist <- abs(pos.J - pos.cur[K])
+#                
+#                if (pos.dist > 500000) {
+#                    ld0[J, K] <- 0
+#                }
+#            }
+#        }
+
+    ## SE ~ 1/sqrt(Nt), 5 SD
+    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
+    
+    s0 <- eigen(ld0, symmetric=TRUE)
+    
+    ASSERT(!is.null(s0))
+    rm(ld0)
+    
+    Q0 <- s0$vectors
+    
+    lambda0 <- s0$values[s0$values > LAMBDA.CO]
+    
+    Q0 <- Q0[, s0$values > LAMBDA.CO, drop=FALSE]
+
+    qX0 <- X0 %*% Q0
+
+    if (length(lambda0) == 0) {
+        etahat0 <- c()
+    } else {
+        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
+    }
+
+    windata <- list()
+    
+    windata[["eigen"]] <- s0
+    windata[["Q0.X"]] <- qX0
+    windata[["etahat0"]] <- etahat0
+    
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I,
+              sep='')
+        
+    saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
+    rm(windata)
+
+    write.table(
+        data.frame(lambda=lambda0, etahat=etahat0),
+        file=paste(winfilepre, ".table", sep=''),
+        quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
+
+    saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
+    
+    etahat.all <- c(etahat.all, etahat0)
+    eval.all <- c(eval.all, lambda0)
+} else {
+    span <- M.chr - snpIdx + 1
+    cat("Ignore SNPs at the end of chromosome: m=", span, "\n")
+}
+
+close(stdgt.file)    
 
 cat("Done\n")

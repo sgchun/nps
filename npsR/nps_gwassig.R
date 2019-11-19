@@ -1,9 +1,7 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
-# Cut-off for small lambda
-LAMBDA.CO <- 0.5
 # P-value threshold for the GWAS-significant tail partition
 TAIL.THR <- 5E-8
 
@@ -27,8 +25,8 @@ ASSERT <- function(test) {
 
 cargs <- commandArgs(trailingOnly=TRUE)
 
-if (length(cargs) != 3) {
-    stop("Usage: Rscript nps_split_gwassig.R <work dir> <chrom> <WINSHIFT>")
+if (length(cargs) != 2) {
+    stop("Usage: Rscript nps_split_gwassig.R <work dir> <chrom>")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -49,12 +47,6 @@ if (!(CHR %in% 1:22)) {
     stop("invalid chrom", CHR)
 }
 
-WINSHIFT <- as.numeric(cargs[3])
-
-if (is.nan(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
-    stop("Invalid shift:", cargs[3])
-}
-
 #########################################################################
 
 # Read summary stats (discovery)
@@ -62,351 +54,167 @@ summstat <- read.delim(summstatfile, header=TRUE, stringsAsFactors=FALSE,
                        sep="\t")
 # dim(summstat)
 
-se <- sqrt(2 * summstat$reffreq * (1 - summstat$reffreq))
+## se <- sqrt(2 * summstat$reffreq * (1 - summstat$reffreq))
+## std.effalt <- summstat$effalt * se
 
-std.effalt <- summstat$effalt * se
+std.effalt <-
+    abs(qnorm(summstat$pval/2, lower.tail=TRUE))*sign(summstat$effalt)
 
-chrom <- 1
-snpIdx0 <- 0
+summstat <- cbind(summstat, std.effalt=std.effalt)
 
-for (chrom in 1:22) {
+chr.str <- paste('chr', CHR, sep='')
 
-    M.chr <- sum(summstat$chr == paste('chr', chrom, sep=''))
+summstat.chr <- summstat[summstat$chr == chr.str, ]
 
-    if (chrom > CHR) {
-        break 
-    }
+M.chr <- nrow(summstat.chr)
 
-    if (chrom < CHR) {
-        snpIdx0 <- snpIdx0 + M.chr
-        next
-    }
 
-#    print(chrom)
-    cat("Starting from snpIdx offset", snpIdx0, "\n")
+#####
+## Scan starting from the most associated SNPs
 
-    # Scan the tail-p-value regions 
-    summstat.chr <- summstat[summstat$chr == paste('chr', chrom, sep=''), ]
-    std.effalt.chr <- std.effalt[(snpIdx0 + 1):(snpIdx0 + M.chr)]
-    pval.chr <- summstat.chr$pval
-   
-    start.idx <- c()
-    end.idx <- c()
-    betahat.tail.chr <- rep(0, M.chr)
+pval.chr <- summstat.chr$pval
+
+start.idx <- c()
+end.idx <- c()
+betahat.tail.chr <- rep(0, M.chr)
+
+# for trPT of tails 
+X.trPT <- NULL
+betahat.trPT <- c()
     
-    while (min(pval.chr) < TAIL.THR) {
+while (min(pval.chr) < TAIL.THR) {
 
-        pick1 <- which.min(pval.chr)[1]
-        pick1.chrpos <- summstat.chr$pos[pick1]
+    ## Focal SNP
+    pick1 <- which.min(pval.chr)[1]
+    pick1.chrpos <- summstat.chr$pos[pick1]
+
+    cat(pick1.chrpos, "-", min(pval.chr), "\n")
             
-        betahat.tail.chr[pick1] <- std.effalt.chr[pick1]
+    betahat.tail.chr[pick1] <- summstat.chr$std.effalt[pick1]
         
-        begin <- max(which.min(pval.chr)[1] - WINSZ, 1)
-        end <- min(which.min(pval.chr)[1] + WINSZ, nrow(summstat.chr))
+    begin <- max(which.min(pval.chr)[1] - WINSZ, 1)
+    end <- min(which.min(pval.chr)[1] + WINSZ, M.chr)
 
-        start.idx <- c(start.idx, begin)
-        end.idx <- c(end.idx, end)
-            
-#        pval.chr[begin:end] <- 1
-        # 500 kb window
-        pval.chr[ abs(summstat.chr$pos - pick1.chrpos) < 500000 ] <- 1
+    start.idx <- c(start.idx, begin)
+    end.idx <- c(end.idx, end)
+
+    ## LD-adjust the std.effalt around the focal SNP
+
+    stdgt.file <-
+        gzfile(paste(traindir, "/chrom", CHR, ".", traintag,
+                     ".stdgt.gz", sep=''), open="rb")
+
+    ## Seek to the "begin" pos
+    X2 <- 1
+
+    while ( (X2 + 1000) < begin ) {
+        readBin(stdgt.file, "double", n=(Nt*1000))
+        X2 <- X2 + 1000
     }
 
-    print(data.frame(start=start.idx, end=end.idx,
-              bp=(summstat.chr$pos[end.idx] - summstat.chr$pos[start.idx])))
-
-    if (WINSHIFT == 0) {
-        write.table(data.frame(betahat.tail.chr),
-                    file=paste(tempprefix, "tail_betahat.", chrom, ".table",
-                               sep=''),
-                    row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-
-    } 
-
-    if (length(start.idx) == 0) {
-        cat("No tail\nDone\n")
-
-        q(save="no")
+    while (X2 < begin) {
+        readBin(stdgt.file, "double", n=Nt)
+        X2 <- X2 + 1
     }
-
-    # Save tail-p-value SNPs
-    X.tail <- NULL
-    betahat.tail <- c()
-
-    std.effalt.chr.adjusted <- std.effalt.chr
-
-    for (X in 1:length(start.idx)) {
-        begin <- start.idx[X]
-        end <- end.idx[X]
-
-        stdgt.file <-
-            gzfile(paste(traindir, "/chrom", chrom, ".", traintag,
-                         ".stdgt.gz", sep=''), open="rb")
-
-        # seek
-        X2 <- 1
-
-        while ( (X2 + 1000) < begin ) {
-            readBin(stdgt.file, "double", n=(Nt*1000))
-            X2 <- X2 + 1000
-        }
-
-        while (X2 < begin) {
-            readBin(stdgt.file, "double", n=Nt)
-            X2 <- X2 + 1
-        }
         
-        ASSERT(X2 == begin)
+    ASSERT(X2 == begin)
 
-        # read genotypes
-        span <- (end - begin + 1)
-        X0v <- readBin(stdgt.file, "double", n=(span * Nt))
-        X0 <- matrix(X0v, nrow=Nt, ncol=span)
-        rm(X0v)
+    ## Read training genotypes
+    span <- (end - begin + 1)
+    X0v <- readBin(stdgt.file, "double", n=(span * Nt))
+    X0 <- matrix(X0v, nrow=Nt, ncol=span)
+    rm(X0v)
 
-        pos.cur <- summstat.chr$pos[begin:end]
+    ## Get the reference LD matrix
+    pos.win <- summstat.chr$pos[begin:end]
 
-        ld0 <- (t(X0) %*% X0) / (Nt - 1)
+    ld0 <- (t(X0) %*% X0) / (Nt - 1)
 
-        for (J in 1:span) {
+#    for (J in 1:span) {
+#            
+#        pos.J <- pos.win[J]
+#            
+#        for (K in 1:span) {
+#
+#            pos.dist <- abs(pos.J - pos.win[K])
+#                
+#            if (pos.dist > 500000) {
+#                ld0[J, K] <- 0
+#            }
+#        }
+#    }
+
+    # SE ~ 1/sqrt(Nt), 5 SD
+    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
+
+    ## Treat the tail effect as a fixed effect and correct it
+    pick1 <- which.min(pval.chr[begin:end])[1]
+    betahat.win <- summstat.chr$std.effalt[begin:end]
+    
+    X.trPT <- cbind(X.trPT, X0[, pick1])
+    betahat.trPT <- c(betahat.trPT, betahat.win[pick1])
             
-            pos.J <- pos.cur[J]
+    # calculate residual effects
+    tailbeta <- rep(0, span)
+    tailbeta[pick1] <- betahat.win[pick1]
+
+    # fix for numerical error in ld0[pick1, pick1]
+    ld0 <- ld0 / ld0[pick1, pick1]
             
-            for (K in 1:span) {
+    betahat.win.tailfix <-
+        betahat.win - ld0 %*% as.matrix(tailbeta)
 
-                pos.dist <- abs(pos.J - pos.cur[K])
-                
-                if (pos.dist > 500000) {
-                    ld0[J, K] <- 0
-                }
-            }
-        }
-
-        # SE ~ 1/sqrt(Nt), 5 SD
-        ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
-
-        # Treat the tail effect as a fixed effect and correct it
-        pval.cur <- summstat.chr$pval[begin:end]
-        betahat.cur <- std.effalt.chr.adjusted[begin:end]
-        pick1 <- which.min(pval.cur)[1]
-
-        X.tail <- cbind(X.tail, X0[, pick1])
-        betahat.tail <- c(betahat.tail, betahat.cur[pick1])
-            
-        # calculate residual effects
-        tailbeta <- rep(0, span)
-        tailbeta[pick1] <- betahat.cur[pick1]
-
-        # fix for numerical error in ld0[pick1, pick1]
-        ld0 <- ld0 / ld0[pick1, pick1]
-            
-        betahat.cur.tailfix <-
-            betahat.cur - ld0 %*% as.matrix(tailbeta)
-
-#        cat("tail fix: residual=", betahat.cur.tailfix[pick1], "\n")
+#        cat("tail fix: residual=", betahat.win.tailfix[pick1], "\n")
 #        print(ld0 %*% as.matrix(tailbeta))
 
-        std.effalt.chr.adjusted[begin:end] <- betahat.cur.tailfix
-        
-        close(stdgt.file)
-        gc()
-    }
-    
-    
-    # stdgt dosage 
-    stdgt.file <-
-        gzfile(paste(traindir, "/chrom", chrom, ".", traintag,
-                     ".stdgt.gz", sep=''), open="rb")
-    
-    I <- 1 
-    snpIdx <- 1
-    X0 <- NULL
+    summstat.chr$std.effalt[begin:end] <- betahat.win.tailfix
 
-    while ((snpIdx + WINSZ) <= M.chr) {
-
-        print(I)
-
-        if (I == 1 & WINSHIFT > 0) {
-            span <- WINSZ - WINSHIFT
-
-            cat("First WINSZ:", span, "\n")
-            
-        } else {
-            span <- WINSZ
-        }
-
-        X0v <- readBin(stdgt.file, "double", n=(span * Nt))
-        X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
-        rm(X0v)
-
-        betahat.cur <-
-            std.effalt[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-        betahat.cur.adjusted <-
-            std.effalt.chr.adjusted[snpIdx:(snpIdx + span - 1)]
-        pos.cur <-
-            summstat$pos[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-
-        if (any(betahat.cur != betahat.cur.adjusted)) {
-
-            cat("Update window ", I, "\n")
-            
-            # Load projection data
-            if (WINSHIFT == 0) {
-                winfilepre <-
-                    paste(tempprefix, "win.", chrom, ".", I, sep='')
-            } else {
-                winfilepre <-
-                    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                          sep='')
-            }
-        
-            windata <- readRDS(paste(winfilepre, ".RDS", sep=''))
-        
-            s0 <- windata[["eigen"]]
-
-            ASSERT(!is.null(s0))
-
-            Q0 <- s0$vectors        
-            Q0 <- Q0[, s0$values > LAMBDA.CO]
-            lambda0 <- s0$values[s0$values > LAMBDA.CO]
-
-            etahat0 <-
-                t(Q0) %*% as.matrix(betahat.cur.adjusted) / sqrt(lambda0)
-
-            rm(windata)
-            
-            # pruned
-            if (WINSHIFT == 0) {
-                winfilepre <-
-                    paste(tempprefix, "win.", chrom, ".", I, ".pruned", sep='')
-            } else {
-                winfilepre <-
-                    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                          ".pruned", sep='')
-            }
-
-            df.tailfix.pruned <- 
-                read.delim(paste(winfilepre, ".table", sep=''),
-                           sep="\t", header=TRUE, stringsAsFactors=FALSE)
-
-            ASSERT(nrow(df.tailfix.pruned) == length(lambda0))
-            ASSERT(ncol(df.tailfix.pruned) == 2)
-            ASSERT(all(abs(df.tailfix.pruned$lambda - lambda0) < 0.00001 | 
-                       df.tailfix.pruned$lambda == 0))
-            
-            df.tailfix.pruned$etahat <- etahat0
-            df.tailfix.pruned$etahat[df.tailfix.pruned$lambda == 0] <- 0
-
-            write.table(df.tailfix.pruned, 
-                        file=paste(winfilepre, ".tailfix.table", sep=''),
-                        quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-
-        }
-
-        
-        # move on to next iteration
-        I <- I + 1
-        snpIdx <- snpIdx + span
-        X0 <- NULL
-        gc()
-    }
-
-    # last chunk
-    min.span <- max(WINSZ / 40, 10)
-    
-    if ((snpIdx + min.span) <= M.chr) {
-        
-        span <- M.chr - snpIdx + 1 
-            
-        X0v <- readBin(stdgt.file, "double", n=(span * Nt))
-        X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
-        rm(X0v)
-
-        betahat.cur <-
-            std.effalt[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-        betahat.cur.adjusted <-
-            std.effalt.chr.adjusted[snpIdx:(snpIdx + span - 1)]
-        pos.cur <-
-            summstat$pos[(snpIdx0 + snpIdx):(snpIdx0 + snpIdx + span - 1)]
-
-        if (any(betahat.cur != betahat.cur.adjusted)) {
-
-            cat("Update window ", I, "\n")
-            
-            # Load projection data
-            if (WINSHIFT == 0) {
-                winfilepre <-
-                    paste(tempprefix, "win.", chrom, ".", I, sep='')
-            } else {
-                winfilepre <-
-                    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                          sep='')
-            }
-        
-            windata <- readRDS(paste(winfilepre, ".RDS", sep=''))
-        
-            s0 <- windata[["eigen"]]
-
-            ASSERT(!is.null(s0))
-
-            Q0 <- s0$vectors        
-            Q0 <- Q0[, s0$values > LAMBDA.CO]
-            lambda0 <- s0$values[s0$values > LAMBDA.CO]
-
-            etahat0 <-
-                t(Q0) %*% as.matrix(betahat.cur.adjusted) / sqrt(lambda0)
-
-            rm(windata)
-
-            # pruned
-            if (WINSHIFT == 0) {
-                winfilepre <-
-                    paste(tempprefix, "win.", chrom, ".", I, ".pruned", sep='')
-            } else {
-                winfilepre <-
-                    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                          ".pruned", sep='')
-            }
-
-            df.tailfix.pruned <- 
-                read.delim(paste(winfilepre, ".table", sep=''),
-                           sep="\t", header=TRUE, stringsAsFactors=FALSE)
-
-            ASSERT(nrow(df.tailfix.pruned) == length(lambda0))
-            ASSERT(ncol(df.tailfix.pruned) == 2)
-            ASSERT(all(abs(df.tailfix.pruned$lambda - lambda0) < 0.00001 | 
-                       df.tailfix.pruned$lambda == 0))
-            
-            df.tailfix.pruned$etahat <- etahat0
-            df.tailfix.pruned$etahat[df.tailfix.pruned$lambda == 0] <- 0
-
-            write.table(df.tailfix.pruned, 
-                        file=paste(winfilepre, ".tailfix.table", sep=''),
-                        quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-
-        }        
-    }
-
-    snpIdx0 <- snpIdx0 + M.chr
-
+    rm(X0)
     close(stdgt.file)
+    gc()
 
-    # save tail 
-    if (length(betahat.tail) > 0) {
-        cat("Saving trPT for tail\n")
+    ## Mask out LD neighbors of focal SNPs from being selected as
+    ## next focal SNPs
+    
+    pos.mask <- pos.win[abs(ld0[pick1, ]) > 0.3]
+
+#    cat("Mask out -",
+#        paste(pval.chr[summstat.chr$pos %in% pos.mask], collapse=", "),
+#        "\n")
+
+    pval.chr[summstat.chr$pos %in% pos.mask] <- 1
+
+}
+
+## Save betahat info for the tail partition
+
+print(data.frame(start=start.idx, end=end.idx,
+                 bp=(summstat.chr$pos[end.idx] - summstat.chr$pos[start.idx])))
+
+write.table(data.frame(betahat.tail.chr),
+            file=paste(tempprefix, "tail_betahat.", CHR, ".table",
+                       sep=''),
+            row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+
+## Save updated std.effalt
+
+write.table(summstat.chr,
+            file=paste(summstatfile, ".", CHR, sep=''),
+            row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t")
+
+## Save tail 
+if (length(betahat.trPT) > 0) {
+    cat("Saving trPT for tail\n")
         
-        ASSERT(nrow(X.tail) == Nt)
-        ASSERT(ncol(X.tail) == length(betahat.tail))
+    ASSERT(nrow(X.trPT) == Nt)
+    ASSERT(ncol(X.trPT) == length(betahat.trPT))
 
-        prs.tail <- X.tail %*% as.matrix(betahat.tail)
+    prs.tail <- X.trPT %*% as.matrix(betahat.trPT)
 
-        ASSERT(length(prs.tail) == Nt)
+    ASSERT(length(prs.tail) == Nt)
 
-        if (WINSHIFT == 0) {
-            saveRDS(prs.tail, file=paste(tempprefix, "trPT.", CHR, ".tail.RDS",
-                                         sep=''))
-        }
-    }
+    saveRDS(prs.tail, file=paste(tempprefix, "trPT.", CHR, ".tail.RDS",
+                                 sep=''))
 }
 
 cat("Done\n")

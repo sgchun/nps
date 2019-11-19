@@ -7,7 +7,7 @@
 # source /broad/software/scripts/useuse
 # use .qctool-2.0-rc2
 
-QCTOOL=qctool
+# QCTOOL=qctool
 
 # (erisone.partners.org)
 # module add glibc

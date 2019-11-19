@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -56,11 +56,7 @@ cat("Shifts by: ", paste(list.WINSHIFT, collapse=", "), "\n")
 
 WINSHIFT <- list.WINSHIFT[1]
 
-if (WINSHIFT == 0) {
-    part <- readRDS(paste(tempprefix, "part.RDS", sep=''))
-} else {
-    part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
-}
+part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
 nLambdaPT <- part[["nLambdaPT"]]
 nEtaPT <- part[["nEtaPT"]]
@@ -76,15 +72,15 @@ y.end <- 0
 
 for (WINSHIFT in list.WINSHIFT) {
 
-    load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
-               sep=''))
+#    load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
+#               sep=''))
 
-    if (WINSHIFT == 0) {
-        PTwt <- readRDS(paste(tempprefix, "PTwt.RDS", sep=''))
-    } else {
-        PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS",
-                              sep=''))
-    }
+    part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
+    
+    PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
+
+    meanBetahatH <- part[["meanBetahatH"]]
+    betahatH.q <- part[["betahatH.q"]]
 
     x.end.Ix <- pmax(x.end.Ix, meanBetahatH[, nEtaPT, 1] * 1.2)
     x.end.Ix.cap <- pmin(x.end.Ix.cap, betahatH.q[nEtaPT + 1, ], na.rm=TRUE)
@@ -120,15 +116,16 @@ for (Ix in nLambdaPT:1) {
 
     for (WINSHIFT in list.WINSHIFT) {
 
-        load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
-                   sep=''))
+#        load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
+#                   sep=''))
+
+        part <-
+            readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
         
-        if (WINSHIFT == 0) {
-            PTwt <- readRDS(paste(tempprefix, "PTwt.RDS", sep=''))
-        } else {
-            PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS",
-                                  sep=''))
-        }
+        PTwt <-
+            readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
+
+        betahatH.q <- part[["betahatH.q"]]
 
         for (Jx in 1:nEtaPT) {
             Jx.st <- betahatH.q[Jx, Ix]

@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -181,15 +181,9 @@ for (WINSHIFT in list.WINSHIFT) {
         # cat("chr", chr, "\n")
 
         # read per-chrom genetic risk file
-        if (WINSHIFT == 0) {
-            prisk.file <-
-                paste(valdir, "/", traintag, ".predY.chrom", chr, ".txt",
-                      sep='')
-        } else {
-            prisk.file <-
-                paste(valdir, "/", traintag, ".win_", WINSHIFT,
-                      ".predY.chrom", chr, ".txt", sep='')
-        }
+        prisk.file <-
+            paste(valdir, "/", traintag, ".win_", WINSHIFT,
+                  ".predY.chrom", chr, ".txt", sep='')
     
         prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
     
@@ -223,25 +217,24 @@ prisk <- rep(0, length(vlY))
 
 for (WINSHIFTx in list.WINSHIFT) {
 
+    prisk0 <- rep(0, length(vlY))
+
     for (chr in 1:22) {
 
         # read per-chrom genetic risk file
-        if (WINSHIFTx == 0) {
-            prisk.file <-
-                paste(valdir, "/", traintag, ".predY.chrom", chr, ".txt",
-                      sep='')
-        } else {
-            prisk.file <-
-                paste(valdir, "/", traintag, ".win_", WINSHIFTx,
-                      ".predY.chrom", chr, ".txt", sep='')
-        }
+        prisk.file <-
+            paste(valdir, "/", traintag, ".win_", WINSHIFTx,
+                  ".predY.chrom", chr, ".txt", sep='')
 
         prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
 
         ASSERT(length(prisk.chr) == length(vlY))
         
-        prisk <- prisk + prisk.chr            
+        prisk0 <- prisk0 + prisk.chr
+
     }
+
+    prisk <- prisk + prisk0
 }
 
 prisk <- prisk[vlY != -9] 

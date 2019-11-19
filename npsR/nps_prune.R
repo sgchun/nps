@@ -1,9 +1,7 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
-# Cut-off for corss-window pruning
-CXWCOR.CO <- 0.3
 
 ASSERT <- function(test) {
     if (length(test) == 0) {
@@ -34,6 +32,7 @@ tempprefix <- paste(cargs[1], "/", sep='')
 # Read in saved settings
 args <- readRDS(paste(tempprefix, "args.RDS", sep=''))
 WINSZ <- args[["WINSZ"]]
+CXWCOR.CO <- args[["CXWCOR.CO"]] 
 
 CHR <- as.numeric(cargs[2])
 
@@ -58,14 +57,9 @@ I <- 1
 snpIdx <- 1
 
 # central block
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", chrom, ".", I, sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-              sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
+          sep='')
 
 ASSERT(file.exists(paste(winfilepre, ".RDS", sep='')))
 
@@ -77,14 +71,9 @@ wintab0 <- read.delim(paste(winfilepre, ".table", sep=''),
                       header=TRUE, sep="\t")
 
 # read block on the right
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", chrom, ".", (I + 1), sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I + 1),
-              sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I + 1),
+          sep='')
 
 ASSERT(file.exists(paste(winfilepre, ".RDS", sep='')))
     
@@ -117,14 +106,10 @@ for (I0 in which(corcx0 > CXWCOR.CO)) {
 }
 
 # re-write    
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", chrom, ".", I, ".pruned", sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I, ".pruned",
-              sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
+          ".pruned",
+          sep='')
     
 write.table(wintab0, 
             file=paste(winfilepre, ".table", sep=''),
@@ -138,14 +123,10 @@ wintab0 <- wintabR
 I <- I + 2
     
 # next block
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", chrom, ".", I, sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-              sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
+          sep='')
+
     
 while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
 
@@ -155,10 +136,10 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
     windata <- readRDS(file=paste(winfilepre, ".RDS", sep=''))
     QX0 <- cbind(QX0, windata[["Q0.X"]])
     NqR <- ncol(windata[["Q0.X"]])
-    
+
     wintabR <- read.delim(paste(winfilepre, ".table", sep=''),
                           header=TRUE, sep="\t")
-
+    
     Nq <- ncol(QX0) - NqL - NqR
     
     ld.q <- cor(QX0)
@@ -198,15 +179,9 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
     }
 
     # re-write    
-    if (WINSHIFT == 0) {
-        winfilepre <-
-            paste(tempprefix, "win.", chrom, ".", (I - 1), ".pruned",
-                  sep='')
-    } else {
-        winfilepre <-
-            paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),
-                  ".pruned", sep='')
-    }
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),
+              ".pruned", sep='')
     
     write.table(wintab0, 
                 file=paste(winfilepre, ".table", sep=''),
@@ -223,14 +198,9 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
     I <- I + 1
     
     # next block
-    if (WINSHIFT == 0) {
-        winfilepre <-
-            paste(tempprefix, "win.", chrom, ".", I, sep='')
-    } else {
-        winfilepre <-
-            paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                  sep='')
-    }        
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
+              sep='')
 }
 
 # last block
@@ -258,15 +228,9 @@ for (I0 in which(corcx0 > CXWCOR.CO)) {
 }
 
 # re-write    
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", chrom, ".", (I - 1), ".pruned",
-              sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),
-              ".pruned", sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),
+          ".pruned", sep='')
     
 write.table(wintab0, 
             file=paste(winfilepre, ".table", sep=''),

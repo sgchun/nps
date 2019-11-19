@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -52,11 +52,7 @@ if (is.nan(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
 #########################################################################
 
 # Load partition data 
-if (WINSHIFT == 0) {
-    part <- readRDS(paste(tempprefix, "part.RDS", sep=''))
-} else {
-    part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
-}
+part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
 Nt <- part[["Nt"]]
 nLambdaPT <- part[["nLambdaPT"]]
@@ -67,62 +63,36 @@ betahatH.q <- part[["betahatH.q"]]
 
 
 # Read summary stats (discovery)
-summstat <- read.delim(summstatfile, header=TRUE, stringsAsFactors=FALSE,
-                       sep="\t")
-dim(summstat)
-
-se <- sqrt(2 * summstat$reffreq * (1 - summstat$reffreq))
-
-std.effalt <- summstat$effalt * se
-
-summstat <- cbind(summstat, std.effalt=std.effalt)
-
+summstat.chr <- read.delim(paste(summstatfile, ".", CHR, sep=''),
+                           header=TRUE, stringsAsFactors=FALSE,
+                           sep="\t")
+#dim(summstat)
 
 # Use traing AF instead of discovery AF
-trfrq <- read.table(trainfreqfile, header=TRUE)
-tr.se <- sqrt(2 * trfrq$AAF * (1 - trfrq$AAF))
+trfrq.chr <- read.table(paste(trainfreqfile, ".", CHR, sep=''), header=TRUE)
+tr.se.chr <- sqrt(2 * trfrq.chr$AAF * (1 - trfrq.chr$AAF))
 #plot(tr.se, se, cex=0.25)
 #abline(0, 1, col="red")
 
-tr.se.chr <- tr.se[summstat$chr == paste('chr', CHR, sep='')]
+M.chr <- length(tr.se.chr)
 
-cat("M", "CHR", CHR, "=", length(tr.se.chr), "\n")
+ASSERT(M.chr == nrow(summstat.chr))
+
+cat("M", "CHR", CHR, "=", M.chr, "\n")
 
 ########################
 
-if (WINSHIFT == 0) {
-    PTwt <- readRDS(paste(tempprefix, "PTwt.RDS", sep=''))
-} else {
-    PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
-}
+PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
 
 PTwt.tail <- 0    
 
 if (file.exists(paste(tempprefix, "PTwt.tail.RDS", sep=''))) {
     # Need handling for tail 
 
-    if (WINSHIFT == 0) {
-        PTwt.tail <- readRDS(paste(tempprefix, "PTwt.tail.RDS", sep=''))
+    PTwt.tail <- readRDS(paste(tempprefix, "PTwt.tail.RDS", sep=''))
 
-        cat("Load PTwt.tail.RDS: ", PTwt.tail, "\n")
-        
-    } else {
-
-        PTwt.file <- paste(tempprefix, "win_", WINSHIFT, ".PTwt.tail.RDS", sep='')
+    cat("Load PTwt.tail.RDS: ", PTwt.tail, "\n")
     
-        if (file.exists(PTwt.file)) {
-            
-            PTwt.tail <- readRDS(PTwt.file)
-
-            cat("Load ", PTwt.file, ":", PTwt.tail, "\n")
-
-        } else {
-            
-            PTwt.tail <- readRDS(paste(tempprefix, "PTwt.tail.RDS", sep=''))
-
-            cat("Load PTwt.tail.RDS: ", PTwt.tail, "\n")
-        }
-    }
 }
 
 # get weighted betahat back
@@ -131,30 +101,16 @@ wt.betahat <- c()
 
 I <- 1
 
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", CHR, ".", I, sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
-}
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
 
 while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
 
     print(I)
     
-    wintab <- read.delim(paste(winfilepre, ".pruned", ".table", sep=''),
-                         header=TRUE, sep="\t")
-
-    tailfixfile <- paste(winfilepre, ".pruned", ".tailfix.table", sep='')
+    tailfixfile <- paste(winfilepre, ".pruned", ".table", sep='')
                              
-    if (file.exists(tailfixfile)) {
-        # override
-        cat("Using window data residualized on GWAS-sig SNPs: ",
-            tailfixfile, "\n")
-            
-        wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
-    }
+    wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
     
     lambda0 <- wintab$lambda
     etahat0 <- wintab$etahat
@@ -162,10 +118,28 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     Q0 <- readRDS(paste(winfilepre, ".Q.RDS", sep=''))
 
     etahat0 <- etahat0[lambda0 > 0]
-    Q0 <- Q0[, lambda0 > 0]
+    Q0 <- Q0[, lambda0 > 0, drop=FALSE]
     lambda0 <- lambda0[lambda0 > 0]
 
+    ## FIXME
+    etahat0 <- etahat0[lambda0 > 10]
+    Q0 <- Q0[, lambda0 > 10, drop=FALSE]
+    lambda0 <- lambda0[lambda0 > 10]
+    # 
+
     Nq <- length(etahat0)
+
+    if (Nq == 0) {
+        ## No projection left
+        ## move on to next iteration
+
+        I <- I + 1
+
+        winfilepre <-
+            paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
+
+        next
+    }
 
     wt0 <- rep(NA, Nq)
     
@@ -207,18 +181,11 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     # move on to next iteration
     I <- I + 1
 
-    if (WINSHIFT == 0) {
-        winfilepre <-
-            paste(tempprefix, "win.", CHR, ".", I, sep='')
-    } else {
-        winfilepre <-
-            paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
-    }
-    
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
 }
 
 # pad
-M.chr <- sum(summstat$chr == paste('chr', CHR, sep=''))
 
 M.written <- length(wt.betahat)
 
@@ -255,25 +222,6 @@ ASSERT(length(tr.se.chr) == M.chr)
 
 wt.betahat <- wt.betahat / tr.se.chr
 
-
-if (WINSHIFT == 0) {
-
-    ## write.table(data.frame(betahat=wt.betahat),
-    ##             file=paste(traindir, "/", traintag, ".adjbetahat.chrom",
-    ##                 CHR, ".txt", sep=''),
-    ##             quote=FALSE, row.names=FALSE, col.names=FALSE)
-
-    filename <- paste(tempprefix, "/", traintag, ".adjbetahat.chrom",
-                      CHR, ".txt", sep='')
-
-    cat("Saving snpeffs:", filename, "...")
-
-    write.table(data.frame(betahat=wt.betahat),
-                file=filename,
-                quote=FALSE, row.names=FALSE, col.names=FALSE)
-    
-} else {
-    
     ## write.table(data.frame(betahat=wt.betahat),
     ##             file=paste(traindir, "/", traintag, ".win_", WINSHIFT,
     ##                 ".adjbetahat.chrom", CHR, ".txt", sep=''),
@@ -288,7 +236,6 @@ if (WINSHIFT == 0) {
                 file=filename,
                 quote=FALSE, row.names=FALSE, col.names=FALSE)
 
-}
 
 cat("OK\n")
 

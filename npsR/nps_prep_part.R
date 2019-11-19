@@ -1,4 +1,4 @@
-VERSION <- "1.0.2"
+VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
@@ -88,29 +88,15 @@ for (chrom in 1:22) {
 
     I <- 1
 
-    if (WINSHIFT == 0) {
-        winfilepre <-
-            paste(tempprefix, "win.", chrom, ".", I, sep='')
-    } else {
-        winfilepre <-
-            paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
-                  sep='')
-    }
+    winfilepre <-
+        paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I,
+              sep='')
     
     while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
 
-        wintab <- read.delim(paste(winfilepre, ".pruned", ".table", sep=''),
-                             header=TRUE, sep="\t")
-
-        tailfixfile <- paste(winfilepre, ".pruned", ".tailfix.table", sep='')
+        tailfixfile <- paste(winfilepre, ".pruned", ".table", sep='')
                              
-        if (file.exists(tailfixfile)) {
-            # override
-            cat("Using window data residualized on GWAS-sig SNPs: ",
-                tailfixfile, "\n")
-            
-            wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
-        }
+        wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
 
 
         lambda0 <- wintab$lambda
@@ -127,13 +113,8 @@ for (chrom in 1:22) {
         # move on to next iteration
         I <- I + 1
 
-        if (WINSHIFT == 0) {
-            winfilepre <-
-                paste(tempprefix, "win.", chrom, ".", I, sep='')
-        } else {
-            winfilepre <-
-                paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I, sep='')
-        }
+        winfilepre <-
+            paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", I, sep='')
     }
 }
 
@@ -146,6 +127,13 @@ cat("Total number of eigenlocus projections:", length(etahat.all), "\n")
 # variance scale to sd scale
 
 lambda.all <- eval.all
+
+## FIXME
+etahat.all <- etahat.all[lambda.all > 10]
+lambda.all <- lambda.all[lambda.all > 10]
+## 
+
+cat("Total number of eigenlocus projections:", length(etahat.all), "\n")
 
 lambda.q <- w.quant.o2(sqrt(lambda.all), nLambdaPT)
 lambda.q <- lambda.q ** 2
@@ -215,13 +203,10 @@ partdata[["nVars"]] <- nBetahatH
 
 partdata[["lambda.q"]] <- lambda.q
 partdata[["betahatH.q"]] <- betahatH.q
+partdata[["meanBetahatH"]] <- meanBetahatH
 
-if (WINSHIFT == 0) {
-    saveRDS(partdata, paste(tempprefix, "part.RDS", sep=''))
-} else {
-    saveRDS(partdata,
-            paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
-}
+saveRDS(partdata,
+        paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
 save.image(file=paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
                sep=''))
