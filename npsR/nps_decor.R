@@ -124,7 +124,7 @@ while ((snpIdx + WINSZ) <= M.chr) {
 #        }
 
     ## SE ~ 1/sqrt(Nt), 5 SD
-    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
+#    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
 
     s0 <- eigen(ld0, symmetric=TRUE)
 

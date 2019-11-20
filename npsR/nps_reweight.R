@@ -55,7 +55,7 @@ Nt <- part[["Nt"]]
 nLambdaPT <- part[["nLambdaPT"]]
 nEtaPT <- part[["nEtaPT"]]
 lambda.q <- part[["lambda.q"]]
-betahatH.q <- part[["betahatH.q"]
+betahatH.q <- part[["betahatH.q"]]
 
 #########################################################################
 
@@ -316,12 +316,6 @@ for (CHR in 1:22) {
         etahat0 <- etahat0[lambda0 > 0]
         Q0 <- Q0[, lambda0 > 0, drop=FALSE]
         lambda0 <- lambda0[lambda0 > 0]
-
-        ## FIXME
-        etahat0 <- etahat0[lambda0 > 10]
-        Q0 <- Q0[, lambda0 > 10, drop=FALSE]
-        lambda0 <- lambda0[lambda0 > 10]
-        ##
 
         Nq <- length(etahat0)
 

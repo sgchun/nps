@@ -22,8 +22,8 @@ ASSERT <- function(test) {
 
 cargs <- commandArgs(trailingOnly=TRUE)
 
-if (length(cargs) < 3) {
-    stop("Usage: Rscript nps_plot_shrinkage.R <work dir> <plot.pdf> [ <WINSHIFT> ]+")
+if (length(cargs) < 2) {
+    stop("Usage: Rscript nps_plot_shrinkage.R <work dir> <plot.pdf> [ <WINSHIFT> ...]")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -38,23 +38,41 @@ if (substr(plotfile, nchar(plotfile) - 3, nchar(plotfile)) != ".pdf") {
     stop("Invalid pdf file path:", plotfile)
 }
 
-list.WINSHIFT <- c() 
+if (length(cargs) > 2) {
 
-for (carg.WSHIFT in cargs[3:length(cargs)]) {
+    WINSHIFT.list <- as.numeric(cargs[3:length(cargs)])
 
-    WSHIFT <- as.numeric(carg.WSHIFT)
+} else {
 
-    if (is.nan(WSHIFT) || WSHIFT < 0 || WSHIFT > WINSZ) {
-        stop(paste("Invalid shift:", carg.WSHIFT)) 
-    }
+    cat("Detecting window shifts :")
 
-    list.WINSHIFT <- c(list.WINSHIFT, WSHIFT)
+    part.files <- list.files(tempprefix, pattern="*.part.RDS")
+        
+    WINSHIFT.list <-
+        sapply(part.files,
+               function (s) strsplit(s, ".", fixed=TRUE)[[1]][1],
+               simplify=TRUE)
+
+    WINSHIFT.list <-
+        sapply(WINSHIFT.list,
+               function (s) strsplit(s, "_", fixed=TRUE)[[1]][2],
+               simplify=TRUE)
+
+    WINSHIFT.list <- as.numeric(WINSHIFT.list)
+
+    cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
-cat("Write to: ", plotfile, "\n")
-cat("Shifts by: ", paste(list.WINSHIFT, collapse=", "), "\n")
+if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+    any(WINSHIFT.list >= WINSZ)) {
+    stop("Invalid shift:", cargs[2:length(cargs)])
+}
 
-WINSHIFT <- list.WINSHIFT[1]
+
+cat("Write to: ", plotfile, "\n")
+cat("Shifts by: ", paste(WINSHIFT.list, collapse=", "), "\n")
+
+WINSHIFT <- WINSHIFT.list[1]
 
 part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
@@ -70,7 +88,7 @@ x.end.Ix <- rep(0, nLambdaPT)
 x.end.Ix.cap <- rep(NA, nLambdaPT)
 y.end <- 0
 
-for (WINSHIFT in list.WINSHIFT) {
+for (WINSHIFT in WINSHIFT.list) {
 
 #    load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
 #               sep=''))
@@ -114,7 +132,7 @@ for (Ix in nLambdaPT:1) {
     x.seq <- seq(0, min(x.end.Ix[Ix], x.end), min(x.end.Ix[Ix], x.end) / 100)
     y.seq <- rep(0, length(x.seq))
 
-    for (WINSHIFT in list.WINSHIFT) {
+    for (WINSHIFT in WINSHIFT.list) {
 
 #        load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
 #                   sep=''))

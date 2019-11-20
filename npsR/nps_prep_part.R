@@ -128,11 +128,6 @@ cat("Total number of eigenlocus projections:", length(etahat.all), "\n")
 
 lambda.all <- eval.all
 
-## FIXME
-etahat.all <- etahat.all[lambda.all > 10]
-lambda.all <- lambda.all[lambda.all > 10]
-## 
-
 cat("Total number of eigenlocus projections:", length(etahat.all), "\n")
 
 lambda.q <- w.quant.o2(sqrt(lambda.all), nLambdaPT)

@@ -64,14 +64,8 @@ print(CHR)
     
 I <- 1
 
-if (WINSHIFT == 0) {
-    winfilepre <-
-        paste(tempprefix, "win.", CHR, ".", I, sep='')
-} else {
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
-}
-
+winfilepre <-
+    paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
 
 while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
 
@@ -93,12 +87,6 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     QX0 <- QX0[, lambda0 > 0, drop=FALSE]
     lambda0 <- lambda0[lambda0 > 0]
 
-    ## FIXME
-    etahat0 <- etahat0[lambda0 > 10]
-    QX0 <- QX0[, lambda0 > 10, drop=FALSE]
-    lambda0 <- lambda0[lambda0 > 10]
-    ##
-    
     Nq <- length(etahat0)
 
     if (Nq == 0) {

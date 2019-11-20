@@ -22,8 +22,8 @@ ASSERT <- function(test) {
 
 cargs <- commandArgs(trailingOnly=TRUE)
 
-if (length(cargs) < 2) {
-    stop("Usage: Rscript nps_train_AUC.R <work dir> [ <WINSHIFT> ]+")
+if (length(cargs) < 1) {
+    stop("Usage: Rscript nps_train_AUC.R <work dir> [ <WINSHIFT> ...]")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -35,8 +35,30 @@ WINSZ <- args[["WINSZ"]]
 trainfamfile <- args[["trainfamfile"]]
 trainphenofile <- args[["trainphenofile"]]
 
+if (length(cargs) > 1) {
 
-WINSHIFT.list <- as.numeric(cargs[2:length(cargs)])
+    WINSHIFT.list <- as.numeric(cargs[2:length(cargs)])
+
+} else {
+
+    cat("Detecting window shifts :")
+
+    part.files <- list.files(tempprefix, pattern="*.part.RDS")
+        
+    WINSHIFT.list <-
+        sapply(part.files,
+               function (s) strsplit(s, ".", fixed=TRUE)[[1]][1],
+               simplify=TRUE)
+
+    WINSHIFT.list <-
+        sapply(WINSHIFT.list,
+               function (s) strsplit(s, "_", fixed=TRUE)[[1]][2],
+               simplify=TRUE)
+
+    WINSHIFT.list <- as.numeric(WINSHIFT.list)
+
+    cat(paste(WINSHIFT.list, collapse=" "), "\n")
+}
 
 if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {

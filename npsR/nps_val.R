@@ -182,7 +182,7 @@ for (WINSHIFT in list.WINSHIFT) {
 
         # read per-chrom genetic risk file
         prisk.file <-
-            paste(valdir, "/", traintag, ".win_", WINSHIFT,
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
                   ".predY.chrom", chr, ".txt", sep='')
     
         prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
@@ -223,7 +223,7 @@ for (WINSHIFTx in list.WINSHIFT) {
 
         # read per-chrom genetic risk file
         prisk.file <-
-            paste(valdir, "/", traintag, ".win_", WINSHIFTx,
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFTx,
                   ".predY.chrom", chr, ".txt", sep='')
 
         prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
