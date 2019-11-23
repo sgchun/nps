@@ -23,7 +23,7 @@ ASSERT <- function(test) {
 cargs <- commandArgs(trailingOnly=TRUE)
 
 if (length(cargs) < 5) {
-    stop("Usage: Rscript nps_val.R <work dir> <val dir> <val fam file> <val pheno file> [<WINSHIFT>]+...")
+    stop("Usage: Rscript nps_val.R <work dir> <val dir> <val fam file> <val pheno file> [<WINSHIFT> ...]")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -37,17 +37,41 @@ valdir <- cargs[2]
 valfamfile <- cargs[3]
 valphenofile <- cargs[4]
 
-list.WINSHIFT <- c() 
+if (length(cargs) > 4) {
 
-for (carg.WSHIFT in cargs[5:length(cargs)]) {
+    WINSHIFT.list <- as.numeric(cargs[5:length(cargs)])
 
-    WSHIFT <- as.numeric(carg.WSHIFT)
+} else {
 
-    if (is.nan(WSHIFT) || WSHIFT < 0 || WSHIFT > WINSZ) {
-        stop(paste("Invalid shift:", carg.WSHIFT)) 
+    cat("Detecting window shifts :")
+
+    part.files <- list.files(tempprefix, pattern="*.part.RDS")
+        
+    WINSHIFT.list <-
+        sapply(part.files,
+               function (s) strsplit(s, ".", fixed=TRUE)[[1]][1],
+               simplify=TRUE)
+
+    WINSHIFT.list <-
+        sapply(WINSHIFT.list,
+               function (s) strsplit(s, "_", fixed=TRUE)[[1]][2],
+               simplify=TRUE)
+
+    WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
+
+    cat(paste(WINSHIFT.list, collapse=" "), "\n")
+}
+
+if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+    any(WINSHIFT.list >= WINSZ)) {
+    
+    if (length(cargs) > 5) {
+        stop("Invalid shift (window size =", WINSZ, "):",
+             cargs[5:length(cargs)])
+    } else {
+        stop("Invalid shift (window size =", WINSZ, "):",
+             WINSHIFT.list)
     }
-
-    list.WINSHIFT <- c(list.WINSHIFT, WSHIFT)
 }
 
 if (!dir.exists(valdir)) {
@@ -168,7 +192,7 @@ if (binary.phen) {
 }
 
 # genetic risks
-for (WINSHIFT in list.WINSHIFT) {
+for (WINSHIFT in WINSHIFT.list) {
 
     cat("Checking a prediction model (winshift =", WINSHIFT, ")...\n")
 
@@ -215,7 +239,7 @@ vlY <- vlphen$Outcome
 
 prisk <- rep(0, length(vlY))    
 
-for (WINSHIFTx in list.WINSHIFT) {
+for (WINSHIFTx in WINSHIFT.list) {
 
     prisk0 <- rep(0, length(vlY))
 

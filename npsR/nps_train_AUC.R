@@ -55,14 +55,21 @@ if (length(cargs) > 1) {
                function (s) strsplit(s, "_", fixed=TRUE)[[1]][2],
                simplify=TRUE)
 
-    WINSHIFT.list <- as.numeric(WINSHIFT.list)
+    WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
 
     cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
 if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
-    stop("Invalid shift:", cargs[2:length(cargs)])
+    
+    if (length(cargs) > 1) {
+        stop("Invalid shift (window size =", WINSZ, "):",
+             cargs[2:length(cargs)])
+    } else {
+        stop("Invalid shift (window size =", WINSZ, "):",
+             WINSHIFT.list)
+    }
 }
 
 #########################################################################

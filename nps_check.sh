@@ -1,19 +1,19 @@
 #! /bin/bash 
 
-if [ $# -lt 2 ]; then
-    echo "Usage: nps_check.sh nps_command ..." 
-    echo "nps_command:"
-    echo "    last workdir"
+if [ $# -lt 1 ]; then
+    echo "Usage:"
+    echo "    nps_check.sh workdir"
     echo ""
-    echo "Note: \"nps_check.sh last\" will figure out the following checks automatically:"
-    echo "    init workdir"
-    echo "    gwassig workdir"
-    echo "    decor workdir winshift1 [winshift2 ...]"
-    echo "    prune workdir winshift1 [winshift2 ...]"
-    echo "    prep_part workdir winshift1 [winshift2 ...]"
-    echo "    part workdir winshift1 [winshift2 ...]"
-    echo "    reweight workdir winshift1 [winshift2 ...]"
-    echo "    score workdir valtag winshift1 [winshift2 ...]"
+    echo "To manually control nps_check, you can use the following options:"
+    echo "    nps_check.sh stdgt traindir traintag"    
+    echo "    nps_check.sh init workdir"
+    echo "    nps_check.sh gwassig workdir"
+    echo "    nps_check.sh decor workdir winshift1 [winshift2 ...]"
+    echo "    nps_check.sh prune workdir winshift1 [winshift2 ...]"
+    echo "    nps_check.sh prep_part workdir winshift1 [winshift2 ...]"
+    echo "    nps_check.sh part workdir winshift1 [winshift2 ...]"
+    echo "    nps_check.sh reweight workdir winshift1 [winshift2 ...]"
+    echo "    nps_check.sh score workdir valtag winshift1 [winshift2 ...]"
 
     exit 1
 fi
@@ -35,108 +35,137 @@ if [ $Rver -lt 3 ]; then
    exit 2
 fi 
 
-if [ $step == "last" ]; then 
+# Automatic mode
+if [ $# -eq 1 ]; then
+    if [ $step != "stdgt" ] && [ $step != "init" ] && [ $step != "decor" ] && [ $step != "prune" ] && [ $step != "prep_part" ] && [ $step != "part" ] && [ $step != "reweight" ] && [ $step != "score" ]; then
 
-    workdir=$2
+	workdir=$1
 
-    echo "NPS data directory: $workdir"
+	echo "NPS data directory: $workdir"
 
-    # init
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l `
-    
-    if [ $auto != 0 ]; then
-	./nps_check.sh init $workdir
-	exit $?
-    fi
-
-    # auto-detect window shifts
-    echo -n "Detecting window shifts :"
-
-    winshifts=`find $workdir -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
-
-    echo $winshifts
-
-    # score
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .predY.chrom | wc -l `
-
-    if [ $auto != 0 ]; then
-
-	# auto-detect valtag
-	echo -n "Detecting validation dataset tag: "
-	
-	scorefp=`ls -t $workdir/*.predY.chrom*.txt | head -n 1`
-	valtag=`basename $scorefp | sed 's/\.win_[0-9]*\.predY\.chrom[0-9]*\.txt//'`
-	echo $valtag
-
-	./nps_check.sh score $workdir $valtag $winshifts
-	exit $?
-    fi
-    
-    # reweight
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l `
-    
-    if [ $auto != 0 ]; then
-	./nps_check.sh reweight $workdir $winshifts
-	exit $?
-    fi
-
-    # part
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l `
-    
-    if [ $auto != 0 ]; then
-	./nps_check.sh part $workdir $winshifts
-	exit $?
-    fi
-
-    # prep_part
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l `
-
-    if [ $auto != 0 ]; then
-	./nps_check.sh prep_part $workdir $winshifts
-	exit $?
-    fi
-
-    # prune
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l `
-    
-    if [ $auto != 0 ]; then
-	./nps_check.sh decor $workdir $winshifts
-
-	# always check decor as well
-
-	if [ $? != 0 ]; then 
-	    exit $?
+	# work dir
+	if [ ! -d "$workdir" ]; then
+	    echo "ERROR: NPS data directory does not exist: $workdir"
+	    exit 1
 	fi
 
-	./nps_check.sh prune $workdir $winshifts
-
-	if [ $? != 0 ]; then 
+	# init
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l `
+	
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh init $workdir
 	    exit $?
 	fi
 	
-	exit $?
-    fi
+	# auto-detect window shifts
+	echo -n "Detecting window shifts..."
 
-    # decor
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l `
+	numwinshifts=`find $workdir -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l`
 
-    if [ $auto != 0 ]; then
-	./nps_check.sh decor $workdir $winshifts
-	exit $?
-    fi
+	if [ $numwinshifts -eq 0 ]; then
+	    echo " ERROR: autodetect failed"
+	    exit 1
+	else
+	    echo -n ": $numwinshifts shifts detected"
+	fi
+
+	winshifts=`find $workdir -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
+
+	echo -n " ("
+	echo -n $winshifts
+	echo ")"
+
+
+	# score
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .predY.chrom | wc -l `
+
+	if [ $auto != 0 ]; then
+
+	    # auto-detect valtag
+	    echo -n "Detecting validation dataset tag..."
+	    
+	    scorefp=`ls -t $workdir/*.predY.chrom*.txt | head -n 1`
+	    valtag=`basename $scorefp | sed 's/\.win_[0-9]*\.predY\.chrom[0-9]*\.txt//'`
+	    if [ -z "$valtag" ]; then
+		echo " ERROR: autodetect failed"
+		exit 1
+	    else 
+		echo $valtag
+	    fi
+
+	    ./nps_check.sh score $workdir $valtag $winshifts
+	    exit $?
+	fi
     
-    # gwassig
-    auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
+	# reweight
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l `
     
-    if [ $auto != 0 ]; then
-	./nps_check.sh gwassig $workdir
-	exit $?
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh reweight $workdir $winshifts
+	    exit $?
+	fi
+
+	# part
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l `
+    
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh part $workdir $winshifts
+	    exit $?
+	fi
+
+	# prep_part
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l `
+	
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh prep_part $workdir $winshifts
+	    exit $?
+	fi
+
+	# prune
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l `
+    
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh decor $workdir $winshifts
+	    
+	    # always check decor as well
+	    
+	    if [ $? != 0 ]; then 
+		exit $?
+	    fi
+
+	    ./nps_check.sh prune $workdir $winshifts
+
+	    if [ $? != 0 ]; then 
+		exit $?
+	    fi
+	
+	    exit $?
+	fi
+
+	# decor
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l `
+
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh decor $workdir $winshifts
+	    exit $?
+	fi
+	
+	# gwassig
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
+    
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh gwassig $workdir
+	    exit $?
+	fi
+	
     fi
 
     echo "ERROR: cannot automatically figure out the previous step"
     exit 1
 fi
 
+
+# Manual mode 
 if [ $step == "stdgt" ]; then
     echo "Verifying nps_stdgt:"
     
@@ -224,8 +253,9 @@ elif [ $step == "init" ]; then
 
     ./nps_check.sh stdgt $traindir $traintag
     exit $?
+fi
 
-elif [ $step == "gwassig" ]; then
+if [ $step == "gwassig" ]; then
 
     echo "Verifying nps_$step:"
 
