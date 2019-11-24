@@ -23,7 +23,7 @@ ASSERT <- function(test) {
 cargs <- commandArgs(trailingOnly=TRUE)
 
 if (length(cargs) < 5) {
-    stop("Usage: Rscript nps_val.R <work dir> <val dir> <val fam file> <val pheno file> [<WINSHIFT> ...]")
+    stop("Usage: Rscript nps_val.R <work dir> <val dir> <val dataset ID> <val fam file> <val pheno file> [<WINSHIFT> ...]")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -34,12 +34,13 @@ traintag <- args[["traintag"]]
 WINSZ <- args[["WINSZ"]]
 
 valdir <- cargs[2]
-valfamfile <- cargs[3]
-valphenofile <- cargs[4]
+valtag <- cargs[3]
+valfamfile <- cargs[4]
+valphenofile <- cargs[5]
 
-if (length(cargs) > 4) {
+if (length(cargs) > 5) {
 
-    WINSHIFT.list <- as.numeric(cargs[5:length(cargs)])
+    WINSHIFT.list <- as.numeric(cargs[6:length(cargs)])
 
 } else {
 
@@ -67,7 +68,7 @@ if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     
     if (length(cargs) > 5) {
         stop("Invalid shift (window size =", WINSZ, "):",
-             cargs[5:length(cargs)])
+             cargs[6:length(cargs)])
     } else {
         stop("Invalid shift (window size =", WINSZ, "):",
              WINSHIFT.list)
@@ -207,10 +208,35 @@ for (WINSHIFT in WINSHIFT.list) {
         # read per-chrom genetic risk file
         prisk.file <-
             paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                  ".predY.chrom", chr, ".txt", sep='')
-    
-        prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
-    
+                  ".predY.", valtag, ".chrom", chr, ".sscore", sep='')
+
+        prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+
+        if (ncol(prisk.tab) == 5) {
+                                        # PLINK2 generated
+            prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+            ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                       colnames(prisk.tab)))
+            ASSERT(colnames(prisk.tab)[2] == "IID")
+
+            # Reorder IID
+            rownames(prisk.tab) <-
+                paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+
+            prisk.tab <- prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+            ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+            ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+            ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+
+            # get scores
+            prisk.chr <- prisk.tab$SCORE1_AVG
+            
+        } else {
+            prisk.chr <- prisk.tab[, 1]
+        }
+        
         ASSERT(length(prisk.chr) == length(vlY))
     
         prisk <- prisk + prisk.chr
@@ -247,13 +273,38 @@ for (WINSHIFTx in WINSHIFT.list) {
 
         # read per-chrom genetic risk file
         prisk.file <-
-            paste(tempprefix, "/", traintag, ".win_", WINSHIFTx,
-                  ".predY.chrom", chr, ".txt", sep='')
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                  ".predY.", valtag, ".chrom", chr, ".sscore", sep='')
 
-        prisk.chr <- read.delim(prisk.file, header=FALSE, sep="\t")[, 1]
+        prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
 
-        ASSERT(length(prisk.chr) == length(vlY))
+        if (ncol(prisk.tab) == 5) {
+            # PLINK2 generated
+            prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+            ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                       colnames(prisk.tab)))
+            ASSERT(colnames(prisk.tab)[2] == "IID")
+
+            # Reorder IID
+            rownames(prisk.tab) <-
+                paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+
+            prisk.tab <- prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+            ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+            ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+            ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+
+            # get scores
+            prisk.chr <- prisk.tab$SCORE1_AVG
+            
+        } else {
+            prisk.chr <- prisk.tab[, 1]
+        }
         
+        ASSERT(length(prisk.chr) == length(vlY))
+    
         prisk0 <- prisk0 + prisk.chr
 
     }

@@ -34,4 +34,4 @@ N=`zcat $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 
 echo "chr$chrom N=$N M=$M"
 
-zcat $prefix.dosage.gz | ./grs $N $M $moddir/$modtag.adjbetahat.chrom$chrom.txt > $moddir/$modtag.predY.chrom$chrom.txt 
+zcat $prefix.dosage.gz | ./grs $N $M $moddir/$modtag.adjbetahat.chrom$chrom.txt > $moddir/$modtag.predY.$valtag.chrom$chrom.sscore
