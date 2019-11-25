@@ -57,8 +57,7 @@ for winshift in $winshifts
 do
     echo "----- Shifted by $winshift -----"
 
-    #    for chrom in `seq 1 22`
-    for chrom in `seq 20 22`    
+    for chrom in `seq 1 22`
     do
 
 	modtag="$traintag.win_${winshift}"
