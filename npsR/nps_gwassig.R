@@ -211,11 +211,17 @@ if (length(betahat.trPT) > 0) {
 
     prs.tail <- X.trPT %*% as.matrix(betahat.trPT)
 
-    ASSERT(length(prs.tail) == Nt)
 
-    saveRDS(prs.tail, file=paste(tempprefix, "trPT.", CHR, ".tail.RDS",
-                                 sep=''))
+} else {
+    
+    prs.tail <- rep(0, Nt)
+
 }
+
+ASSERT(length(prs.tail) == Nt)
+    
+saveRDS(prs.tail, file=paste(tempprefix, "trPT.", CHR, ".tail.RDS",
+                             sep=''))
 
 cat("Done\n")
 

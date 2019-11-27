@@ -231,7 +231,7 @@ for (WINSHIFT in WINSHIFT.list) {
             ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
 
             # get scores
-            prisk.chr <- prisk.tab$SCORE1_AVG
+            prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
             
         } else {
             prisk.chr <- prisk.tab[, 1]
@@ -265,7 +265,7 @@ vlY <- vlphen$Outcome
 
 prisk <- rep(0, length(vlY))    
 
-for (WINSHIFTx in WINSHIFT.list) {
+for (WINSHIFT in WINSHIFT.list) {
 
     prisk0 <- rep(0, length(vlY))
 
@@ -297,7 +297,7 @@ for (WINSHIFTx in WINSHIFT.list) {
             ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
 
             # get scores
-            prisk.chr <- prisk.tab$SCORE1_AVG
+            prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
             
         } else {
             prisk.chr <- prisk.tab[, 1]
@@ -310,6 +310,7 @@ for (WINSHIFTx in WINSHIFT.list) {
     }
 
     prisk <- prisk + prisk0
+
 }
 
 prisk <- prisk[vlY != -9] 

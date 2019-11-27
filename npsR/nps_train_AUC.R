@@ -119,15 +119,14 @@ for (chrom in 1:22) {
     
     trPT.tail.file <-
         paste(tempprefix, "trPT.", chrom, ".tail.RDS", sep='')
+
+    ASSERT(file.exists(trPT.tail.file))
     
-    if (file.exists(trPT.tail.file)) {
+    cat("Loading S0 partition for chrom", chrom, "...\n")
 
-        cat("Loading S0 partition for chrom", chrom, "...\n")
-
-        trPT.tail.chr <- readRDS(trPT.tail.file)
-        
-        trPT.tail <- trPT.tail + trPT.tail.chr
-    }
+    trPT.tail.chr <- readRDS(trPT.tail.file)
+    
+    trPT.tail <- trPT.tail + trPT.tail.chr
 
 }
 

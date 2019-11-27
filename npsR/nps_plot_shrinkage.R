@@ -96,9 +96,6 @@ y.end <- 0
 
 for (WINSHIFT in WINSHIFT.list) {
 
-#    load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
-#               sep=''))
-
     part <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
     
     PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
@@ -121,15 +118,16 @@ scale <- 1
 
 PTwt.tail.file <- paste(tempprefix, "PTwt.tail.RDS", sep='')
 
-if (file.exists(PTwt.tail.file)) {
-    PTwt.tail <- readRDS(PTwt.tail.file)
+ASSERT(file.exists(PTwt.tail.file))
 
-    if (PTwt.tail > 0) {
-        scale <- 1 / PTwt.tail
-    }
+PTwt.tail <- readRDS(PTwt.tail.file)
+
+if (PTwt.tail > 0) {
+    scale <- 1 / PTwt.tail
+}
 
 #    cat("Rescale y-axis by ", scale, "\n")
-}
+
 
 Ix <- nLambdaPT
 
@@ -139,9 +137,6 @@ for (Ix in nLambdaPT:1) {
     y.seq <- rep(0, length(x.seq))
 
     for (WINSHIFT in WINSHIFT.list) {
-
-#        load(paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT, ".RData",
-#                   sep=''))
 
         part <-
             readRDS(paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))

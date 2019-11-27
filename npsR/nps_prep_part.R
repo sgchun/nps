@@ -241,9 +241,9 @@ for (WINSHIFT in WINSHIFT.list) {
     saveRDS(partdata,
             paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
 
-    save.image(file=paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT,
-                          ".RData",
-                          sep=''))
+#    save.image(file=paste(tempprefix, "nps_prep_part.", "win_", WINSHIFT,
+#                          ".RData",
+#                          sep=''))
 
     cat("OK\n")
 }

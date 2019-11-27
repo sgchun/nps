@@ -192,6 +192,9 @@ for (WINSHIFT in WINSHIFT.list) {
     PTwt <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
 
     for (I in 1:nLambdaPT) {
+
+#        trPT.lambda <- rep(0, Nt) 
+
         for (J in 1:nEtaPT) {
             K <- 1
         
@@ -213,7 +216,17 @@ for (WINSHIFT in WINSHIFT.list) {
                 trlm <- lm(trY ~ x)
                 PTwt[I, J, K] <- trlm$coefficients[2]
             }
+
+#            trPT.lambda <- trPT.lambda + trPT[, I, J, K]
         }
+  
+#        lambda.p <- summary(lm(trPT.lambda ~ trY))$coefficients[2, 4]
+
+#        if (lambda.p > 0.05) {
+#            LAMBDA.CO <- lambda.q[I + 1]
+#            PTwt[I, , ] <- 0
+#            cat("Lambda co =", LAMBDA.CO, "\n")
+#        }
     }
 
 
@@ -240,15 +253,14 @@ for (WINSHIFT in WINSHIFT.list) {
     
         trPT.tail.file <-
             paste(tempprefix, "trPT.", chrom, ".tail.RDS", sep='')
-        
-        if (file.exists(trPT.tail.file)) {
-        
-            cat("Loading S0 partition for chrom", chrom, "...\n")
 
-            trPT.tail.chr <- readRDS(trPT.tail.file)
-            
-            trPT.tail <- trPT.tail + trPT.tail.chr
-        }
+        ASSERT(file.exists(trPT.tail.file))
+        
+        cat("Loading S0 partition for chrom", chrom, "...\n")
+
+        trPT.tail.chr <- readRDS(trPT.tail.file)
+        
+        trPT.tail <- trPT.tail + trPT.tail.chr
     }
 
     PTwt.tail <- 0
@@ -352,6 +364,10 @@ for (WINSHIFT in WINSHIFT.list) {
             Q0 <- Q0[, lambda0 > 0, drop=FALSE]
             lambda0 <- lambda0[lambda0 > 0]
 
+#            etahat0 <- etahat0[lambda0 > LAMBDA.CO]
+#            Q0 <- Q0[, lambda0 > LAMBDA.CO, drop=FALSE]
+#            lambda0 <- lambda0[lambda0 > LAMBDA.CO]
+
             Nq <- length(etahat0)
             
             if (Nq == 0) {
@@ -429,16 +445,14 @@ for (WINSHIFT in WINSHIFT.list) {
         tailbetahatfile <- paste(tempprefix, "tail_betahat.", CHR, ".table",
                                  sep='')
 
-        if (file.exists(tailbetahatfile)) {
+        ASSERT(file.exists(tailbetahatfile))
     
-            betahat.tail.chr <-
-                read.delim(tailbetahatfile, header=FALSE, sep="\t")[, 1]
+        betahat.tail.chr <-
+            read.delim(tailbetahatfile, header=FALSE, sep="\t")[, 1]
             
-            ASSERT(length(betahat.tail.chr) == M.chr)
+        ASSERT(length(betahat.tail.chr) == M.chr)
 
-            wt.betahat <- wt.betahat + betahat.tail.chr * PTwt.tail
-
-        }
+        wt.betahat <- wt.betahat + betahat.tail.chr * PTwt.tail
 
 # se: discovery af 
 #    wt.betahat <- wt.betahat / se[snpIdx0 + c(1:M.chr)]
