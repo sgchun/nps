@@ -19,11 +19,7 @@ chrom=$LSB_JOBINDEX
 
 traintag=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
 
-if [ $winshift == 0 ]; then
-    modtag=$traintag
-else
-    modtag="$traintag.win_${winshift}"
-fi
+modtag="$traintag.win_${winshift}"
 
 prefix="$valdir/chrom${chrom}.${valtag}"
 
