@@ -250,15 +250,19 @@ for (WINSHIFT in WINSHIFT.list) {
     trPT.tail <- rep(0, Nt)
 
     for (chrom in 1:22) {
-    
+
+        cat("Loading S0 partition for chrom", chrom, "...\n")
+        
         trPT.tail.file <-
             paste(tempprefix, "trPT.", chrom, ".tail.RDS", sep='')
 
-        ASSERT(file.exists(trPT.tail.file))
-        
-        cat("Loading S0 partition for chrom", chrom, "...\n")
-
-        trPT.tail.chr <- readRDS(trPT.tail.file)
+# FIXME        
+#        ASSERT(file.exists(trPT.tail.file))
+        if (file.exists(trPT.tail.file)) {
+            trPT.tail.chr <- readRDS(trPT.tail.file)
+        } else {
+            trPT.tail.chr <- rep(0, Nt)
+        }
         
         trPT.tail <- trPT.tail + trPT.tail.chr
     }
