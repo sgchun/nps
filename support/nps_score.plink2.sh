@@ -13,6 +13,7 @@
 # module add R-mkl/3.3.2
 ###
 
+PLINK=plink2
 
 moddir=$1
 valdir=$2
@@ -100,7 +101,7 @@ do
 	    exit 1
 	fi
 
-	plink2 $input --score $moddir/$modtag.adjbetahat_plink2.chrom$chrom.txt 1 2 3 no-mean-imputation --out $moddir/$modtag.predY.$valtag.chrom$chrom --threads 1 --memory 4000
+	$PLINK $input --score $moddir/$modtag.adjbetahat_plink2.chrom$chrom.txt 1 2 3 no-mean-imputation --out $moddir/$modtag.predY.$valtag.chrom$chrom --threads 1 --memory 4000
 	
     done
 done
