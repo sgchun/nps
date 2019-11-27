@@ -22,8 +22,8 @@ ASSERT <- function(test) {
 
 cargs <- commandArgs(trailingOnly=TRUE)
 
-if (length(cargs) < 5) {
-    stop("Usage: Rscript nps_val.R <work dir> <val dir> <val dataset ID> <val fam file> <val pheno file> [<WINSHIFT> ...]")
+if (length(cargs) < 4) {
+    stop("Usage: Rscript nps_val.R <work dir> <val dataset ID> <val fam file> <val pheno file> [<WINSHIFT> ...]")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -33,14 +33,13 @@ args <- readRDS(paste(tempprefix, "args.RDS", sep=''))
 traintag <- args[["traintag"]]
 WINSZ <- args[["WINSZ"]]
 
-valdir <- cargs[2]
-valtag <- cargs[3]
-valfamfile <- cargs[4]
-valphenofile <- cargs[5]
+valtag <- cargs[2]
+valfamfile <- cargs[3]
+valphenofile <- cargs[4]
 
-if (length(cargs) > 5) {
+if (length(cargs) > 4) {
 
-    WINSHIFT.list <- as.numeric(cargs[6:length(cargs)])
+    WINSHIFT.list <- as.numeric(cargs[5:length(cargs)])
 
 } else {
 
@@ -65,10 +64,10 @@ if (length(cargs) > 5) {
 
 if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
-    
-    if (length(cargs) > 5) {
+
+    if (length(cargs) > 4) {
         stop("Invalid shift (window size =", WINSZ, "):",
-             cargs[6:length(cargs)])
+             cargs[5:length(cargs)])
     } else {
         stop("Invalid shift (window size =", WINSZ, "):",
              WINSHIFT.list)
