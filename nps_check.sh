@@ -56,6 +56,14 @@ if [ $# -eq 1 ]; then
 	    ./nps_check.sh init $workdir
 	    exit $?
 	fi
+
+	# gwassig
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
+    
+	if [ $auto != 0 ]; then
+	    ./nps_check.sh gwassig $workdir
+	    exit $?
+	fi
 	
 	# auto-detect window shifts
 	echo -n "Detecting window shifts..."
@@ -147,14 +155,6 @@ if [ $# -eq 1 ]; then
 
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
-	    exit $?
-	fi
-	
-	# gwassig
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
-    
-	if [ $auto != 0 ]; then
-	    ./nps_check.sh gwassig $workdir
 	    exit $?
 	fi
 	
