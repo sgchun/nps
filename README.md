@@ -231,24 +231,21 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh testdata/Test1/npsdat/
    ```
 
-4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune_gwassig.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
+4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
 
    ```bash
-   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
-   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20
-   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40
-   ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
+   ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 0
+   ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 20
+   ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 40
+   ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 60
    
    # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
+   ./nps_check.sh testdata/Test1/npsdat/
    ```
    
 5. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
-   Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
-   Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
-   Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
-   Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
+   Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 10 10 
    ```
    
    Then, partitioned genetic risk scores will be calculated using training samples with `nps_part.job`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
@@ -259,7 +256,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
    
    # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
+   ./nps_check.sh testdata/Test1/npsdat/
    ```
 
 6. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
