@@ -11,58 +11,30 @@ For inquiries on software, please contact:
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
-The current version is 1.0.1. The followings were changed with this version: 
-- Fixed an issue that nps_check.sh fails to verify job results in some distributions of R.   
-- nps_decor.job, nps_prune.job and nps_gwassig.job were marged into a single job: nps_decor_prune_gwassig.job. 
-- Added "nps_check.sh last" to automatically figure out the last step to check once NPS was initialized.
+The current version is 1.1. The followings were changed with this version: 
+- Command line interface was simplified for the useability improvement. 
+- Tracy-Widom distribution is used to truncate lower-rank projection vectors instead of using a fixed eigenvalue threshold. 
+- GWAS peak selection algorithm was improved to better account for conditionally independent signals.
 
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.0.1](https://github.com/sgchun/nps/archive/1.0.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.0.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.1](https://github.com/sgchun/nps/archive/1.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
-   tar -zxvf nps-1.0.1.tar.gz
-   cd nps-1.0.1/
+   tar -zxvf nps-1.1.tar.gz
+   cd nps-1.1/
    make
    ```
-   
-   Or, alternatively, you can "clone" the NPS repository from GitHub. Once your local repository is set up in this way, this has an added benefit that you can catch up with new changes in the master NPS respository while keeping local modifications in your job scripts. To set up the git repository: 
-   
-   ```bash
-   git clone https://github.com/sgchun/nps nps
-   cd nps/
-   git checkout tags/1.0.1
-   make
-   ```
-   
-   When a new version (`<version#>`) of NPS is released, you can catch up with the changes by running the following: 
-   ```bash
-   cd nps/
-   
-   # Preserve local changes you made
-   git stash 
-   
-   # Update the codes to the new release in GitHub
-   git checkout tags/<version#> 
-   
-   # Bring back your local change
-   git stash pop
-   
-   # Recompile C++ codes
-   make
-   ```
-
-   **Note on computer clusters: If you need to load a GCC module to compile NPS, you have to do the same in job scripts `nps_stdgt.job` and `nps_score.job`. stdgt and grs will depend on GCC shared libraries in the run time.**
 
 2. The core NPS module was implemented in R and requires R-3.3 or later (available for download at [https://www.r-project.org/](https://www.r-project.org/)). Although NPS can run on a standard version of R, we strongly recommend using R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
 
-3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's R^2 statistics. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
+3. (*Optional*) NPS relies on R modules, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to calculate the AUC and Nagelkerke's R^2 statistics, respectively. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 will simply not be reported. To enable this feature, please install these packages by running the following on command line: 
 
    ```bash
    Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   To run the above commands, you will need the root privilege to install files in the default system path. If this is not ideal, you can install the R extensions in your home directory (e.g. ~/R). For this, please do the following instead:
+   To install the R extensions in the home directory (e.g. ~/R) instead of the default system path, please run the following instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -73,17 +45,11 @@ The current version is 1.0.1. The followings were changed with this version:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify the provided job scripts to load necessary modules similarly as in the following example of [sge/nps_score.job](https://github.com/sgchun/nps/blob/master/sge/nps_score.job):
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters processing all chromosomes in parallel. To make this easier, we provide job scripts for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters in [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories. You may still need to modify provided job scripts to load necessary modules similarly as in the following example of:
 
    ```bash
    ###
    # ADD CODES TO LOAD MODULES HERE
-   #
-   # Load R module if necessary. 
-   # 
-   # If you loaded a GCC module to compile grs, you also need to load 
-   # the GCC module here. 
-   #
    # ---------------------- EXAMPLE ----------------------------
    # On clusters running environment modules and providing R-mkl
    module add gcc/5.3.0 
@@ -96,9 +62,9 @@ The current version is 1.0.1. The followings were changed with this version:
    ...
    ```
 
-   **Note: Do not blindly use the above lines. The details will depend on specific system configurations.** 
+   **The details will depend on specific system configurations.** 
 
-5. We provide job scripts to prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/). You will need to either install these packages or edit the job scripts (`support/*.job`) to load them as modules. 
+5. We provide job scripts to help prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/).
 
 ## Input files for NPS
 To run NPS, you need the following set of input files: 
@@ -148,25 +114,9 @@ To run NPS, you need the following set of input files:
      ```
      When summary statistics are provided in this format, NPS will not run automatic data harmonization procedures. The user needs to ensure that the summary statistics file does not include InDels, tri-allelic SNPs or duplicated markers and that no SNP in training genotypes files has missing summary statistics. If these requirements are violated, NPS will report an error and terminate. 
 
-2. **Training genotypes in the qctool dosage format.** NPS expects genotype data of the training cohort in the dosage file format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DatasetTag*.dosage.gz." These files are *space-delimited* compressed text files with the first six columns providing the marker information and rest of columns specifying the allelic dosage of that marker in each individual:
-
-   ```
-   chromosome SNPID rsid position alleleA alleleB trainI2 trainI3 trainI39 trainI41 trainI58
-   01 1_676118:676118:G:A 1_676118:676118:G:A 676118 G A 0 0 0 0 0
-   01 1_734349:734349:G:A 1_734349:734349:G:A 734349 G A 1 0 0 0 0
-   01 1_770886:770886:G:A 1_770886:770886:G:A 770886 G A 0 0 0 1 0
-   01 1_785050:785050:G:A 1_785050:785050:G:A 785050 G A 1 2 2 2 2
-   01 1_798400:798400:G:A 1_798400:798400:G:A 798400 G A 1 0 1 1 0
-   01 1_804759:804759:G:A 1_804759:804759:G:A 804759 G A 1 0 1 0 0
-   01 1_831489:831489:G:A 1_831489:831489:G:A 831489 G A 1 2 2 1 2
-   01 1_832318:832318:G:A 1_832318:832318:G:A 832318 G A 1 2 2 1 2
-   01 1_836924:836924:G:A 1_836924:836924:G:A 836924 G A 0 0 0 0 0
-   ...
-   ```
+2. **Genotypes in the qctool dosage format.** NPS expects genotype data of the training cohort in the dosage file format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DatasetTag*.dosage.gz." 
    
-   To match SNPs between GWAS summary statistics and training and validation cohorts, NPS relies on the combination of chromosome, base position and alleles. All alleles are designated on the forward strand (+). NPS ignores **SNPID** and **rsid**. The **alleleA** has to match **ref** allele, and the **alleleB** has to match **alt** allele in the GWAS summary statistics. The allelic dosage counts the genetic dosage of **alleleB** in each individual. Markers are expected to be ordered by the **position**. 
-
-3. **Training sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space- or tab-separated* six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
+3. **Sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the training genotype files. This is *space- or tab-separated* six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
    ```
    trainF2  trainI2  0  0  0 -9
    trainF3  trainI3  0  0  0 -9
@@ -174,7 +124,7 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 0  0  0 -9
    trainF58 trainI58 0  0  0 -9
    ```
-4. **Training phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be "**Outcome**" with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
+4. **Phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be "**Outcome**" with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is *tab-delimited*, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
    ```
    FID   IID    Outcome
    trainF2  trainI2  0
@@ -183,9 +133,6 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 1
    trainF58 trainI58 0
    ```
-5. **Validation genotypes in the qctool dosage format.** Same as the training genotype dosage format. 
-6. **Validation sample IDs in the PLINK .fam format.** Same as the training sample ID file format.
-7. **Validation phenotypes in the PLINK phenotype format.** Similar to the training phenotype file format. Unlike the phenotype file of training cohort, missing phenotypes (encoded by **-9**) are allowed in a validation cohort phenotype file. Samples with missing phenotypes will be simply excluded when evaluating the accuracy of prediction model.
 
 ## Running NPS 
 
@@ -199,10 +146,10 @@ Both simulated datasets were generated using our multivariate-normal simulator (
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
-cd nps-1.0.1/testdata/
+cd nps-1.1/testdata/
 
 tar -zxvf NPS.Test1.tar.gz 
-# This will create the following test data files in nps-1.0.1/testdata/Test1
+# This will create the following test data files in nps-1.1/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
@@ -216,7 +163,7 @@ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 
 tar -zxvf NPS.Test2.tar.gz 
-# This will create the following test data in nps-1.0.1/testdata/Test2
+# This will create the following test data in nps-1.1/testdata/Test2
 # Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
 # Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
@@ -237,24 +184,12 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetTag*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetTag* of training cohort. 
    ```bash
-   cd nps-1.0.1/
+   cd nps-1.1/
    
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
 
    * Note: If you use [NPS support scripts](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) to harmonize training cohort data with summary statistics, *DatasetTag* will be "*CohortName*.QC2" as the genotype files will be named as chrom*N*.*CohortName*.QC2.dosage.gz.
-
-   After all jobs are completed, `nps_check.sh` script can be used to verify that all jobs were successfully completed:
-   
-   ```bash
-   ./nps_check.sh stdgt testdata/Test1 Test1.train 
-   ```
-   If `nps_check.sh` finds an error, `FAIL` message will be printed. If everything is fine, only `OK` messages will be reported: 
-   > Verifying nps_stdgt:  
-   > Checking testdata/Test1/chrom1.Test2.train ...OK  
-   > Checking testdata/Test1/chrom2.Test2.train ...OK  
-   > Checking testdata/Test1/chrom3.Test2.train ...OK  
-   > ...  
 
 2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to configure an NPS run: 
 
@@ -270,13 +205,33 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
     - analysis window size: `80` SNPs. The window size of 80 SNPs for ~100,000 genome-wide SNPs is comparable to 4,000 SNPs for ~5,000,000 genome-wide SNPs. 
     - directory to store intermediate data: `testdata/Test1/npsdat`. The NPS configuration and all intermediate data will be stored here.
 
-   The set-up can be double-checked by running:  
+   The set-up can be checked by running:  
    
    ```bash
-   ./nps_check.sh init testdata/Test1/npsdat/
+   ./nps_check.sh testdata/Test1/npsdat/
+   ```
+   
+   If `nps_check.sh` finds an error, `FAIL` message will be printed. If everything is fine, only `OK` messages will be reported:
+   > NPS data directory: testdata/Test1/npsdat/
+   > Verifying nps_init:
+   > Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.1)
+   > Checking testdata/Test1/npsdat//log ...OK
+   > Verifying nps_stdgt:
+   > Checking testdata/Test1/chrom1.Test1.train ...OK
+   > Checking testdata/Test1/chrom2.Test1.train ...OK
+   > Checking testdata/Test1/chrom3.Test1.train ...OK
+   > ... 
+
+3. ** Separate out the genome-wide significant peaks as a separate partition. **
+
+```bash
+   ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/
+   
+   # Check the results of last step
+   ./nps_check.sh testdata/Test1/npsdat/
    ```
 
-3. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune_gwassig.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
+4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune_gwassig.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
 
    ```bash
    ./run_all_chroms.sh sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
@@ -288,7 +243,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
    ```
    
-4. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
+5. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
@@ -307,7 +262,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
    ```
 
-5. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
+6. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
    ```bash
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
    Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
@@ -331,7 +286,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
      Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
      ```
 
-6. **Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
+**Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
    ```bash
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
    ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
@@ -369,7 +324,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    - window shifts used in the prediction model: `0 20 40 60`. 
    
    `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
-   > Non-Parametric Shrinkage 1.0.1   
+   > Non-Parametric Shrinkage 1.1   
    > Validation cohort:  
    > Total  5000 samples  
    > 271  case samples  
@@ -427,10 +382,10 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 ### Running NPS on test set #1 using SGE clusters
 
-To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.0.1/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
+To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
 
 ```
-cd nps-1.0.1/
+cd nps-1.1/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
@@ -507,7 +462,7 @@ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Tes
 Running NPS on LSF clusters is similar. We provide the job scripts in `lsf/` directory.
 
 ```
-cd nps-1.0.1/
+cd nps-1.1/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test1 Test1.train
@@ -587,7 +542,7 @@ NPS can be run on test set #2 similarly as test set #1 except:
 * For test set #2 and real data sets, we do not recommend running NPS without parallelization because of heavy computational requirements.
 
 ```bash
-cd nps-1.0.1/
+cd nps-1.1/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
@@ -669,7 +624,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 `nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test2.nps.pdf) and save it to a pdf file (`Test2.nps.pdf`). 
 
 `nps_val.R` will report the following overall prediction accuracy in the validation cohort: 
-> Non-Parametric Shrinkage 1.0.1  
+> Non-Parametric Shrinkage 1.1  
 > Validation cohort:  
 > Total  5000 samples  
 > 240  case samples  
@@ -730,7 +685,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 Running NPS on LSF is similar to running it on SGE clusters. The memory limit is specified by `bsub -R 'rusage[mem=4000]'`.
 
 ```bash
-cd nps-1.0.1/
+cd nps-1.1/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
