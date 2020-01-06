@@ -68,7 +68,7 @@ if [ $# -eq 1 ]; then
 	# auto-detect window shifts
 	echo -n "Detecting window shifts..."
 
-	numwinshifts=`find $workdir -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l`
+	numwinshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l`
 
 	if [ $numwinshifts -eq 0 ]; then
 	    echo " ERROR: autodetect failed"
@@ -77,7 +77,7 @@ if [ $# -eq 1 ]; then
 	    echo -n ": $numwinshifts shifts detected"
 	fi
 
-	winshifts=`find $workdir -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
+	winshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
 
 	echo -n " ("
 	echo -n $winshifts
