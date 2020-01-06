@@ -189,11 +189,12 @@ for (WINSHIFT in WINSHIFT.list) {
 
 #########################################################################
 
+    predY0 <- rep(0, Nt)
     PTwt <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
 
     for (I in 1:nLambdaPT) {
 
-#        trPT.lambda <- rep(0, Nt) 
+        trPT.lambda <- rep(0, Nt) 
 
         for (J in 1:nEtaPT) {
             K <- 1
@@ -217,16 +218,15 @@ for (WINSHIFT in WINSHIFT.list) {
                 PTwt[I, J, K] <- trlm$coefficients[2]
             }
 
-#            trPT.lambda <- trPT.lambda + trPT[, I, J, K]
+            predY0 <- predY0 + PTwt[I, J, K] * trPT[, I, J, K]
+
+            trPT.lambda <- trPT.lambda + trPT[, I, J, K]
         }
-  
+        
 #        lambda.p <- summary(lm(trPT.lambda ~ trY))$coefficients[2, 4]
 
-#        if (lambda.p > 0.05) {
-#            LAMBDA.CO <- lambda.q[I + 1]
-#            PTwt[I, , ] <- 0
-#            cat("Lambda co =", LAMBDA.CO, "\n")
-#        }
+#        print(summary(lm(trPT.lambda ~ trY)))
+
     }
 
 
@@ -251,16 +251,20 @@ for (WINSHIFT in WINSHIFT.list) {
 
     for (chrom in 1:22) {
 
-        cat("Loading S0 partition for chrom", chrom, "...\n")
-        
         trPT.tail.file <-
             paste(tempprefix, "trPT.", chrom, ".tail.RDS", sep='')
 
 # FIXME        
 #        ASSERT(file.exists(trPT.tail.file))
+
         if (file.exists(trPT.tail.file)) {
+            cat("Loading S0 partition for chrom", chrom, "...\n")
+            
             trPT.tail.chr <- readRDS(trPT.tail.file)
+
         } else {
+            cat("No GWAS-sig S0 partition for chrom", chrom, ": set to 0...\n")
+            
             trPT.tail.chr <- rep(0, Nt)
         }
         
@@ -271,54 +275,33 @@ for (WINSHIFT in WINSHIFT.list) {
     
     if (any(trPT.tail != 0)) {
         
-        if (use.lda) {
-            
-            trcaVAR <- var(trPT.tail[trY == 1])
-            trctVAR <- var(trPT.tail[trY == 0])
-            trptVAR <- (trcaVAR + trctVAR) / 2
-            
-            trcaMU <- mean(trPT.tail[trY == 1])
-            trctMU <- mean(trPT.tail[trY == 0])
-            
-            PTwt.tail <- (trcaMU - trctMU) / trptVAR
+        ## Use logistic regression
+        trlm <- glm(trY ~ predY0 + trPT.tail, family=binomial(link="logit"))
 
-        } else {
-            ## Use linear regression 
-            x <- trPT.tail
-            
-            trlm <- lm(trY ~ x)
-            PTwt.tail <- trlm$coefficients[2]
-        }
+        tail.h2.ratio <-
+            (cor(trY, as.vector(trPT.tail * trlm$coefficients[3]))**2) /
+            (cor(trY, as.vector(predY0 * trlm$coefficients[2]))**2)
+
+        print(tail.h2.ratio)
+
+        PTwt.tail <- trlm$coefficients[3] / trlm$coefficients[2]
     }
 
-#    cat("Weight for S0 =", PTwt.tail, "\n")
+    cat("Weight for S0 =", PTwt.tail, "\n")
 
-    if (WINSHIFT == 0) {
-
-        cat("Saving S0 weight...")
+    cat("Saving S0 weight...")
     
-        saveRDS(PTwt.tail, paste(tempprefix, "PTwt.tail.RDS", sep=''))
+    saveRDS(PTwt.tail,
+            paste(tempprefix, "win_", WINSHIFT, ".PTwt.tail.RDS", sep=''))
+    
+    cat("OK\n")
 
-        cat("OK\n")
-    } 
     
 ######################################################################
 ## Training R2
 
-    predY0 <- rep(0, Nt)
-
-    for (I in 1:nLambdaPT) {
-        for (J in 1:nEtaPT) {
-            K <- 1
-
-            predY0 <- predY0 + PTwt[I, J, K] * trPT[, I, J, K]
-
-        }
-    }
-    
-    predY0 <- predY0 + PTwt.tail * trPT.tail 
-
-    cat("Observed scale R2 in training =", cor(trY, predY0)**2, "\n")
+    cat("Observed scale R2 in training =",
+        cor(trY, predY0 + PTwt.tail * trPT.tail)**2, "\n")
 
 #########################################################################
 ## back2snpeff
@@ -362,22 +345,18 @@ for (WINSHIFT in WINSHIFT.list) {
             lambda0 <- wintab$lambda
             etahat0 <- wintab$etahat
             
-            Q0 <- readRDS(paste(winfilepre, ".Q.RDS", sep=''))
-            
-            etahat0 <- etahat0[lambda0 > 0]
-            Q0 <- Q0[, lambda0 > 0, drop=FALSE]
-            lambda0 <- lambda0[lambda0 > 0]
-
-#            etahat0 <- etahat0[lambda0 > LAMBDA.CO]
-#            Q0 <- Q0[, lambda0 > LAMBDA.CO, drop=FALSE]
-#            lambda0 <- lambda0[lambda0 > LAMBDA.CO]
-
-            Nq <- length(etahat0)
+            Nq <- sum(lambda0 > 0)
             
             if (Nq == 0) {
                 ## No projection left
-                ## move on to next iteration
                 
+                ## Fill in with 0
+                windata <- readRDS(file=paste(winfilepre, ".RDS", sep=''))
+                s0 <- windata[["eigen"]]
+                M <- nrow(s0$vectors)   # number of SNPs in the window
+                wt.betahat <- c(wt.betahat, rep(0, M))
+                
+                ## move on to next iteration
                 I <- I + 1
                 
                 winfilepre <-
@@ -386,6 +365,12 @@ for (WINSHIFT in WINSHIFT.list) {
 
                 next
             }
+
+            Q0 <- readRDS(paste(winfilepre, ".Q.RDS", sep=''))
+            
+            etahat0 <- etahat0[lambda0 > 0]
+            Q0 <- Q0[, lambda0 > 0, drop=FALSE]
+            lambda0 <- lambda0[lambda0 > 0]
 
             wt0 <- rep(NA, Nq)
     
@@ -445,7 +430,7 @@ for (WINSHIFT in WINSHIFT.list) {
         ASSERT(M.chr == length(wt.betahat))
 
 
-    ## add tail betahats
+        ## Add tail betahats
         tailbetahatfile <- paste(tempprefix, "tail_betahat.", CHR, ".table",
                                  sep='')
 
@@ -456,32 +441,35 @@ for (WINSHIFT in WINSHIFT.list) {
             
         ASSERT(length(betahat.tail.chr) == M.chr)
 
-        wt.betahat <- wt.betahat + betahat.tail.chr * PTwt.tail
+        wt.betahat.tail <- betahat.tail.chr * PTwt.tail
 
-# se: discovery af 
-#    wt.betahat <- wt.betahat / se[snpIdx0 + c(1:M.chr)]
-
-# se: training af
+        ## Account for MAF
+        ## se: discovery af 
+        ##    wt.betahat <- wt.betahat / se[snpIdx0 + c(1:M.chr)]
 
         ASSERT(length(tr.se.chr) == M.chr)
-
+        
+        ## se: training af
         wt.betahat <- wt.betahat / tr.se.chr
+        wt.betahat.tail <- wt.betahat.tail / tr.se.chr        
 
-    ## write.table(data.frame(betahat=wt.betahat),
-    ##             file=paste(traindir, "/", traintag, ".win_", WINSHIFT,
-    ##                 ".adjbetahat.chrom", CHR, ".txt", sep=''),
-    ##             quote=FALSE, row.names=FALSE, col.names=FALSE)
-
-        filename <- paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                          ".adjbetahat.chrom", CHR, ".txt", sep='')
-        
-        cat("Saving reweighted snpeffs:", filename, "...")
-        
+        ## Save
+        filename.pg <- paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                          ".adjbetahat_pg.chrom", CHR, ".txt", sep='')
+        cat("Saving reweighted snpeffs:", filename.pg, "...")
         write.table(data.frame(betahat=wt.betahat),
-                    file=filename,
+                    file=filename.pg,
                     quote=FALSE, row.names=FALSE, col.names=FALSE)
-
         cat("OK\n")
+
+        filename.tail <- paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                               ".adjbetahat_tail.chrom", CHR, ".txt", sep='')
+        cat("Saving reweighted snpeffs:", filename.tail, "...")
+        write.table(data.frame(betahat=wt.betahat.tail),
+                    file=filename.tail,
+                    quote=FALSE, row.names=FALSE, col.names=FALSE)
+        cat("OK\n")
+        
     }
 }
 

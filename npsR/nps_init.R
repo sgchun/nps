@@ -316,8 +316,8 @@ args[["trainfreqfile"]] <- trainfreqfile
 args[["trainphenofile"]] <- trainphenofile
 args[["traintag"]] <- traintag
 args[["WINSZ"]] <- WINSZ
-# Cut-off for lambda of projection
-args[["LAMBDA.CO"]] <- 10
+# Fixed cut-off for lambda of projection
+# args[["LAMBDA.CO"]] <- 10
 # Cut-off for corss-window pruning
 args[["CXWCOR.CO"]] <- 0.3
 

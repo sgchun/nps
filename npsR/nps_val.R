@@ -74,10 +74,6 @@ if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     }
 }
 
-if (!dir.exists(valdir)) {
-   stop("Dir does not exists:", valdir)
-}
-
 if (!file.exists(valfamfile)) {
    stop("File does not exists:", valfamfile)
 }
@@ -201,53 +197,146 @@ for (WINSHIFT in WINSHIFT.list) {
     prisk <- rep(0, length(vlY))
 
     for (chr in 1:22) {
-
-        # cat("chr", chr, "\n")
-
-        # read per-chrom genetic risk file
+        ## read per-chrom genetic risk file
         prisk.file <-
             paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                  ".predY.", valtag, ".chrom", chr, ".sscore", sep='')
+                  ".predY_pg.", valtag, ".chrom", chr, ".qctoolout", sep='')
 
-        prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+        if (file.exists(prisk.file)) {
+            cat("Reading", prisk.file, "(qctool2 format)...\n")
 
-        if (ncol(prisk.tab) == 5) {
-                                        # PLINK2 generated
-            prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+            prisk.tab <- read.table(prisk.file, header=TRUE, comment="#",
+                                    stringsAsFactors=FALSE)
 
-            ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
-                       colnames(prisk.tab)))
-            ASSERT(colnames(prisk.tab)[2] == "IID")
+            # FIXME
+            ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
+                   all(prisk.tab$sample == vlfam[, 2]))
 
-            # Reorder IID
-            rownames(prisk.tab) <-
-                paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
-
-            prisk.tab <- prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
-            
-            ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
-            ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
-            ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
-
-            # get scores
-            prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+            prisk.chr <- prisk.tab$NPS_risk_score
             
         } else {
-            prisk.chr <- prisk.tab[, 1]
+        
+            prisk.file <-
+                paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                      ".predY_pg.", valtag, ".chrom", chr, ".sscore", sep='')
+
+            prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+
+            if (ncol(prisk.tab) == 5) {
+                ## PLINK2 generated
+                
+                cat("Reading", prisk.file, "(plink2 format)...\n")
+
+                prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+                ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                           colnames(prisk.tab)))
+                ASSERT(colnames(prisk.tab)[2] == "IID")
+                
+                ## Reorder IID
+                rownames(prisk.tab) <-
+                    paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+                
+                prisk.tab <-
+                    prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+                ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+                ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+
+                ## get scores
+                prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+
+            } else {
+                cat("Reading", prisk.file, "(generic)...\n")
+                
+                prisk.chr <- prisk.tab[, 1]
+            }
+        }
+
+        prisk.file <-
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                  ".predY_tail.", valtag, ".chrom", chr, ".qctoolout", sep='')
+
+        if (file.exists(prisk.file)) {
+            cat("Reading", prisk.file, "(qctool2 format)...\n")
+
+            if (file.info(prisk.file)$size > 0) {
+
+                prisk.tab <- read.table(prisk.file, header=TRUE, comment="#",
+                                        stringsAsFactors=FALSE)
+
+                # FIXME
+                ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
+                       all(prisk.tab$sample == vlfam[, 2]))
+
+                prisk.chr <- prisk.chr + prisk.tab$NPS_risk_score
+            }
+            
+        } else {
+        
+            prisk.file <-
+                paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                      ".predY_tail.", valtag, ".chrom", chr, ".sscore", sep='')
+
+            prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+
+            if (ncol(prisk.tab) == 5) {
+                ## PLINK2 generated
+                
+                cat("Reading", prisk.file, "(plink2 format)...\n")
+
+                prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+                ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                           colnames(prisk.tab)))
+                ASSERT(colnames(prisk.tab)[2] == "IID")
+                
+                ## Reorder IID
+                rownames(prisk.tab) <-
+                    paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+                
+                prisk.tab <-
+                    prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+                ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+                ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+
+                ## get scores
+                prisk.chr <-
+                    prisk.chr + prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+
+            } else {
+                cat("Reading", prisk.file, "(generic)...\n")
+                
+                prisk.chr <- prisk.chr + prisk.tab[, 1]
+            }
         }
         
+        ASSERT(all(!is.na(prisk.chr)))
+        
+        ## FIXME
+        ## Check outlier (due to plink2 bug)
+        prisk.mu <- mean(prisk.chr)
+        prisk.sd <- sd(prisk.chr)
+        prisk.std <- (prisk.chr - prisk.mu) / prisk.sd
+
+        if (any(abs(prisk.std) > 10)) {
+            cat("WARNING: outliers in PRS scores:\n")
+            print(prisk.chr[abs(prisk.std) > 10])
+        }
+            
         ASSERT(length(prisk.chr) == length(vlY))
-    
+        
         prisk <- prisk + prisk.chr
     
     }
-
+    
     prisk <- prisk[vlY != -9] 
     vlY <- vlY[vlY != -9]
     
     # R2 observed scale
     cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
-
+    
     # R2 liability scale
     if ("TotalLiability" %in% colnames(vlphen)) {
         vlL <- vlphen$TotalLiability[vlY != -9]	
@@ -265,51 +354,124 @@ vlY <- vlphen$Outcome
 prisk <- rep(0, length(vlY))    
 
 for (WINSHIFT in WINSHIFT.list) {
-
+    
     prisk0 <- rep(0, length(vlY))
-
+    
     for (chr in 1:22) {
+        ## Read per-chrom genetic risk file
 
-        # read per-chrom genetic risk file
         prisk.file <-
             paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                  ".predY.", valtag, ".chrom", chr, ".sscore", sep='')
+                  ".predY_pg.", valtag, ".chrom", chr, ".qctoolout", sep='')
+        
+        if (file.exists(prisk.file)) {
+            prisk.tab <- read.table(prisk.file, header=TRUE, comment="#",
+                                    stringsAsFactors=FALSE)
 
-        prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+            # FIXME
+            ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
+                   all(prisk.tab$sample == vlfam[, 2]))
 
-        if (ncol(prisk.tab) == 5) {
-            # PLINK2 generated
-            prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
-
-            ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
-                       colnames(prisk.tab)))
-            ASSERT(colnames(prisk.tab)[2] == "IID")
-
-            # Reorder IID
-            rownames(prisk.tab) <-
-                paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
-
-            prisk.tab <- prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
-            
-            ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
-            ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
-            ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
-
-            # get scores
-            prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+            prisk.chr <- prisk.tab$NPS_risk_score
             
         } else {
-            prisk.chr <- prisk.tab[, 1]
+            prisk.file <-
+                paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                      ".predY_pg.", valtag, ".chrom", chr, ".sscore", sep='')
+            
+            prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+            
+            if (ncol(prisk.tab) == 5) {
+                ## PLINK2 generated
+                
+                prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+                ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                           colnames(prisk.tab)))
+                ASSERT(colnames(prisk.tab)[2] == "IID")
+
+                ## Reorder IID
+                rownames(prisk.tab) <-
+                    paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+                
+                prisk.tab <-
+                    prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+                ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+                ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+                ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+                
+                ## get scores
+                prisk.chr <- prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+                
+            } else {
+                prisk.chr <- prisk.tab[, 1]
+            }
+        }
+
+        prisk.file <-
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                  ".predY_tail.", valtag, ".chrom", chr, ".qctoolout", sep='')
+        
+        if (file.exists(prisk.file)) {
+
+            if (file.info(prisk.file)$size > 0) {
+            
+                prisk.tab <- read.table(prisk.file, header=TRUE, comment="#",
+                                        stringsAsFactors=FALSE)
+
+                # FIXME
+                ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
+                       all(prisk.tab$sample == vlfam[, 2]))
+                
+                prisk.chr <- prisk.chr + prisk.tab$NPS_risk_score
+            }
+            
+        } else {
+            prisk.file <-
+                paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                      ".predY_tail.", valtag, ".chrom", chr, ".sscore", sep='')
+            
+            prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+            
+            if (ncol(prisk.tab) == 5) {
+                ## PLINK2 generated
+                
+                prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+                ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                           colnames(prisk.tab)))
+                ASSERT(colnames(prisk.tab)[2] == "IID")
+
+                ## Reorder IID
+                rownames(prisk.tab) <-
+                    paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+                
+                prisk.tab <-
+                    prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+                ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+                ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+                ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+                
+                ## get scores
+                prisk.chr <-
+                    prisk.chr + prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+                
+            } else {
+                prisk.chr <-
+                    prisk.chr + prisk.tab[, 1]
+            }
         }
         
         ASSERT(length(prisk.chr) == length(vlY))
-    
+        
         prisk0 <- prisk0 + prisk.chr
-
+        
     }
-
+    
     prisk <- prisk + prisk0
-
+    
 }
 
 prisk <- prisk[vlY != -9] 
@@ -326,7 +488,7 @@ filename <- paste(valphenofile, ".nps_score", sep='')
 df.out <- cbind(vlphen[vlphen$Outcome != -9, ], Score=prisk)
 write.table(df.out, file=filename,
             row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
-cat("OK (saved in", filename, ")\n")
+cat("OK ( saved in", filename, ")\n")
 
 cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
 
@@ -337,19 +499,19 @@ if ("TotalLiability" %in% colnames(vlphen)) {
 
 if (binary.phen) {
     if (require(pROC)) {
-    
+        
         library(pROC)
 
         cat("AUC:\n")
         print(roc(cases=prisk[vlY == 1], controls=prisk[vlY == 0], ci=TRUE))
-
+        
     } else {
         cat("Skip AUC calculation\n")
         cat("Please install pROC package to enable this\n")
     }
-
-    if (require(DescTools)) {
     
+    if (require(DescTools)) {
+        
         library(DescTools)
     
         mod <- glm(vlY ~ prisk, family=binomial(link="logit"))
@@ -357,7 +519,7 @@ if (binary.phen) {
         cat("Nagelkerke's R2 =", PseudoR2(mod, "Nagelkerke"), "\n")
         
         print(mod)
-
+        
     } else {
         cat("Skip Nagelkerke's R2 calculation\n")
         cat("Please install DescTools package to enable this\n")

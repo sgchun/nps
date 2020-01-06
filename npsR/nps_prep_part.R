@@ -44,6 +44,9 @@ w.quant.o2 <- function(x, nbin) {
 }
 
 #########################################################################
+# tempprefix <- "~/ukbb.ibd/npsdat2/"
+# nLambdaPT <- 10
+# nEtaPT <- 10
 
 cargs <- commandArgs(trailingOnly=TRUE)
 
@@ -136,17 +139,16 @@ for (WINSHIFT in WINSHIFT.list) {
             
             wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
 
-
             lambda0 <- wintab$lambda
             etahat0 <- wintab$etahat
             
-            etahat0 <- etahat0[lambda0 > 0]
-            lambda0 <- lambda0[lambda0 > 0]
-            
-#           print(length(lambda0))
-        
-            etahat.all <- c(etahat.all, etahat0)
-            eval.all <- c(eval.all, lambda0)
+            if (sum(lambda0 > 0) > 0) {
+                etahat0 <- etahat0[lambda0 > 0]
+                lambda0 <- lambda0[lambda0 > 0]
+                
+                etahat.all <- c(etahat.all, etahat0)
+                eval.all <- c(eval.all, lambda0)
+            }
         
             ## move on to next iteration
             I <- I + 1

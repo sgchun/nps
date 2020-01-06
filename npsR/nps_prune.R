@@ -145,7 +145,7 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
     ld.q <- cor(QX0)
     
     ld.qx <- ld.q[(NqL + 1):(NqL + Nq),
-                  c(1:NqL, (NqL + Nq + 1):ncol(ld.q))]
+                  c(1:NqL, (NqL + Nq + 1):ncol(ld.q)), drop=FALSE]
     
     corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
     corcxLR.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))
@@ -208,7 +208,7 @@ Nq <- ncol(QX0) - NqL
     
 ld.q <- cor(QX0)
 
-ld.qx <- ld.q[(NqL + 1):(NqL + Nq), 1:NqL]
+ld.qx <- ld.q[(NqL + 1):(NqL + Nq), 1:NqL, drop=FALSE]
                   
 corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
 corcxL.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))

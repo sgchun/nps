@@ -121,6 +121,9 @@ for (chrom in 1:22) {
         paste(tempprefix, "trPT.", chrom, ".tail.RDS", sep='')
 
     ASSERT(file.exists(trPT.tail.file))
+    if (!file.exists(trPT.tail.file)) {
+        next
+    }
     
     cat("Loading S0 partition for chrom", chrom, "...\n")
 

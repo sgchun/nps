@@ -74,20 +74,13 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
     windata <- readRDS(paste(winfilepre, ".RDS", sep=''))
 
     tailfixfile <- paste(winfilepre, ".pruned", ".table", sep='')
-                             
+    
     wintab <- read.delim(tailfixfile, header=TRUE, sep="\t")
-
 
     lambda0 <- wintab$lambda
     etahat0 <- wintab$etahat
     
-    QX0 <- windata[["Q0.X"]]
-
-    etahat0 <- etahat0[lambda0 > 0]
-    QX0 <- QX0[, lambda0 > 0, drop=FALSE]
-    lambda0 <- lambda0[lambda0 > 0]
-
-    Nq <- length(etahat0)
+    Nq <- sum(lambda0 > 0) 
 
     if (Nq == 0) {
         # move on to next iteration
@@ -97,6 +90,12 @@ while (file.exists(paste(winfilepre, ".pruned", ".table", sep=''))) {
             paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I, sep='')
         next
     }
+
+    QX0 <- windata[["Q0.X"]]
+
+    etahat0 <- etahat0[lambda0 > 0]
+    QX0 <- QX0[, lambda0 > 0, drop=FALSE]
+    lambda0 <- lambda0[lambda0 > 0]
     
     ASSERT(nrow(QX0) == Nt)
     ASSERT(ncol(QX0) == Nq)

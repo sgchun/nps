@@ -36,7 +36,7 @@ summstatfile <- args[["summstatfile"]]
 traindir <- args[["traindir"]] 
 traintag <- args[["traintag"]]
 WINSZ <- args[["WINSZ"]]
-LAMBDA.CO <- args[["LAMBDA.CO"]]
+# LAMBDA.CO <- args[["LAMBDA.CO"]]
 
 # Rest of command args
 CHR <- as.numeric(cargs[2])
@@ -101,27 +101,13 @@ while ((snpIdx + WINSZ) <= M.chr) {
     X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
     rm(X0v)
 
-    pos.cur <-
-        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
+#    pos.cur <-
+#        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
         
     betahat.cur <-
         summstat.chr$std.effalt[snpIdx:(snpIdx + span - 1)]
 
     ld0 <- (t(X0) %*% X0) / (Nt - 1)
-
-#        for (J in 1:span) {
-#
-#            pos.J <- pos.cur[J]
-#            
-#            for (K in 1:span) {
-#
-#                pos.dist <- abs(pos.J - pos.cur[K])
-#                
-#                if (pos.dist > 500000) {
-#                    ld0[J, K] <- 0
-#                }
-#            }
-#        }
 
     ## SE ~ 1/sqrt(Nt), 5 SD
     ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
@@ -130,12 +116,53 @@ while ((snpIdx + WINSZ) <= M.chr) {
 
     ASSERT(!is.null(s0))
     rm(ld0)
+
+    ## Tracy-widom
+    eigenvals <- s0$values
+    m <- length(eigenvals)
+    tw <- c()
+    eigenval.co <- 0
+
+    for (k in 1:(m - 2)) {
+        sum.eigenvals <- sum(eigenvals[k:(m - 1)])
+        ss.eigenvals <- sum(eigenvals[k:(m - 1)] ** 2)
+
+        mp <- m - k
+
+        n.eff <- (mp + 2) * (sum.eigenvals ** 2) /
+            (mp * ss.eigenvals - (sum.eigenvals ** 2))
+
+        L <- mp * eigenvals[k] / sum.eigenvals
+
+        mu <- (sqrt(n.eff - 1) + sqrt(mp))**2 / n.eff
+
+        sigma <- (sqrt(n.eff - 1) + sqrt(mp)) / n.eff *
+            (1/sqrt(n.eff - 1) + 1/sqrt(mp)) ** (1/3)
+        ## sigma <- sqrt(sum.eigenvals / (m - 1) / n.eff)
+        
+        x <- (L - mu) / sigma
+
+        # P > 0.05 : 0.9794, P > 0.01 : 2.0236, P > 0.001 : 3.2730
+        if (x < 0.9794) { 
+            if (k == 1) {
+                eigenval.co <- eigenvals[1] + 1
+            } else {
+                eigenval.co <- eigenvals[k - 1]
+            }
+            break
+        }
+
+        tw[k] <- x
+    }
+
+    cat("T-W: #", k, "lambda =", eigenval.co, "\n")
     
+    # Apply the cut-off
     Q0 <- s0$vectors
 
-    lambda0 <- s0$values[s0$values > LAMBDA.CO]
+    lambda0 <- s0$values[s0$values >= eigenval.co]
     
-    Q0 <- Q0[, s0$values > LAMBDA.CO, drop=FALSE]
+    Q0 <- Q0[, s0$values >= eigenval.co, drop=FALSE]
 
     # in contrast to manuscript, qX0 was not divided by sqrt(lambda0) here
     # thus, backconversion code to beta scale does not divide by
@@ -160,6 +187,8 @@ while ((snpIdx + WINSZ) <= M.chr) {
         
     saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
     rm(windata)
+
+    ASSERT(length(lambda0) > 0)
 
     write.table(
         data.frame(lambda=lambda0, etahat=etahat0),
@@ -192,27 +221,13 @@ if ((snpIdx + min.span) <= M.chr) {
     X0 <- cbind(X0, matrix(X0v, nrow=Nt, ncol=span))
     rm(X0v)
 
-    pos.cur <-
-        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
+#    pos.cur <-
+#        summstat.chr$pos[snpIdx:(snpIdx + span - 1)]
         
     betahat.cur <-
         summstat.chr$std.effalt[snpIdx:(snpIdx + span - 1)]
     
     ld0 <- (t(X0) %*% X0) / (Nt - 1)
-
-#        for (J in 1:span) {
-#            
-#            pos.J <- pos.cur[J]
-#            
-#            for (K in 1:span) {
-#
-#                pos.dist <- abs(pos.J - pos.cur[K])
-#                
-#                if (pos.dist > 500000) {
-#                    ld0[J, K] <- 0
-#                }
-#            }
-#        }
 
     ## SE ~ 1/sqrt(Nt), 5 SD
     ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
@@ -221,43 +236,82 @@ if ((snpIdx + min.span) <= M.chr) {
     
     ASSERT(!is.null(s0))
     rm(ld0)
-    
+
+    ## Tracy-widom
+    eigenvals <- s0$values
+    m <- length(eigenvals)
+    tw <- c()
+    eigenval.co <- 0
+
+    for (k in 1:(m - 2)) {
+        sum.eigenvals <- sum(eigenvals[k:(m - 1)])
+        ss.eigenvals <- sum(eigenvals[k:(m - 1)] ** 2)
+
+        mp <- m - k
+
+        n.eff <- (mp + 2) * (sum.eigenvals ** 2) /
+            (mp * ss.eigenvals - (sum.eigenvals ** 2))
+
+        L <- mp * eigenvals[k] / sum.eigenvals
+
+        mu <- (sqrt(n.eff - 1) + sqrt(mp))**2 / n.eff
+
+        sigma <- (sqrt(n.eff - 1) + sqrt(mp)) / n.eff *
+            (1/sqrt(n.eff - 1) + 1/sqrt(mp)) ** (1/3)
+        
+        x <- (L - mu) / sigma
+
+        # P > 0.05 : 0.9794, P > 0.01 : 2.0236, P > 0.001 : 3.2730
+        if (x < 0.9794) {
+            if (k == 1) {
+                eigenval.co <- eigenvals[1] + 1
+            } else {
+                eigenval.co <- eigenvals[k - 1]
+            }
+            break
+        }
+
+        tw[k] <- x
+    }
+
+    cat("T-W: #", k, "lambda =", eigenval.co, "\n")
+
+    ## Apply the cut-off
     Q0 <- s0$vectors
     
-    lambda0 <- s0$values[s0$values > LAMBDA.CO]
+    lambda0 <- s0$values[s0$values >= eigenval.co]
     
-    Q0 <- Q0[, s0$values > LAMBDA.CO, drop=FALSE]
+    Q0 <- Q0[, s0$values >= eigenval.co, drop=FALSE]
 
     qX0 <- X0 %*% Q0
 
-    if (length(lambda0) == 0) {
-        etahat0 <- c()
-    } else {
-        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
-    }
-
-    windata <- list()
-    
-    windata[["eigen"]] <- s0
-    windata[["Q0.X"]] <- qX0
-    windata[["etahat0"]] <- etahat0
-    
-    winfilepre <-
-        paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I,
-              sep='')
+    if (length(lambda0) > 0) {
         
-    saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
-    rm(windata)
+        etahat0 <- t(Q0) %*% as.matrix(betahat.cur) / sqrt(lambda0)
 
-    write.table(
-        data.frame(lambda=lambda0, etahat=etahat0),
-        file=paste(winfilepre, ".table", sep=''),
-        quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
-
-    saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
+        windata <- list()
     
-    etahat.all <- c(etahat.all, etahat0)
-    eval.all <- c(eval.all, lambda0)
+        windata[["eigen"]] <- s0
+        windata[["Q0.X"]] <- qX0
+        windata[["etahat0"]] <- etahat0
+    
+        winfilepre <-
+            paste(tempprefix, "win_", WINSHIFT, ".", CHR, ".", I,
+                  sep='')
+        
+        saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
+        rm(windata)
+
+        write.table(
+            data.frame(lambda=lambda0, etahat=etahat0),
+            file=paste(winfilepre, ".table", sep=''),
+            quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")
+       
+        saveRDS(Q0, paste(winfilepre, ".Q.RDS", sep=''))        
+    
+        etahat.all <- c(etahat.all, etahat0)
+        eval.all <- c(eval.all, lambda0)
+    }
 } else {
     span <- M.chr - snpIdx + 1
     cat("Ignore SNPs at the end of chromosome: m=", span, "\n")
