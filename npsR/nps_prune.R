@@ -83,25 +83,27 @@ QX0 <- cbind(QX0, windata[["Q0.X"]])
 wintabR <- read.delim(paste(winfilepre, ".table", sep=''),
                       header=TRUE, sep="\t")
 
-# calc cross-window corr
-ld.q <- cor(QX0)
+if ((Nq > 0) && (ncol(QX0) > Nq)) {
+    # calc cross-window corr
+    ld.q <- cor(QX0)
 
-ld.qx <- ld.q[1:Nq, (Nq + 1):ncol(ld.q)]
+    ld.qx <- ld.q[1:Nq, (Nq + 1):ncol(ld.q), drop=FALSE]
     
-corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
-corcxR.idx <- apply(ld.qx, 1, function(x) which.max(abs(x))) 
+    corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
+    corcxR.idx <- apply(ld.qx, 1, function(x) which.max(abs(x))) 
 
-# prune
-for (I0 in which(corcx0 > CXWCOR.CO)) {
+    # prune
+    for (I0 in which(corcx0 > CXWCOR.CO)) {
         
-    IR <- corcxR.idx[I0]
-
-    if (abs(wintab0$etahat[I0]) < abs(wintabR$etahat[IR])) {
+        IR <- corcxR.idx[I0]
+        
+        if (abs(wintab0$etahat[I0]) < abs(wintabR$etahat[IR])) {
             
-        cat(wintab0$etahat[I0], "<", wintabR$etahat[IR], ":",
-            ld.qx[I0, IR], "\n")
+            cat(wintab0$etahat[I0], "<", wintabR$etahat[IR], ":",
+                ld.qx[I0, IR], "\n")
         
-        wintab0[I0, ] <- 0 
+            wintab0[I0, ] <- 0 
+        }
     }
 }
 
@@ -141,43 +143,60 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
                           header=TRUE, sep="\t")
     
     Nq <- ncol(QX0) - NqL - NqR
-    
-    ld.q <- cor(QX0)
-    
-    ld.qx <- ld.q[(NqL + 1):(NqL + Nq),
-                  c(1:NqL, (NqL + Nq + 1):ncol(ld.q)), drop=FALSE]
-    
-    corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
-    corcxLR.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))
 
-    # prune
-    for (I0 in which(corcx0 > CXWCOR.CO)) {
-            
-        ILR <- corcxLR.idx[I0]
+    if ((Nq > 0) && (ncol(QX0) > Nq)) {
+    
+        ld.q <- cor(QX0)
 
-        if (ILR <= NqL) {
-            IL <- ILR
+        ld.qx <- NULL
+
+        if (NqL > 0) {
+            ld.qx <-
+                ld.q[(NqL + 1):(NqL + Nq), 1:NqL, drop=FALSE]
+        }
+
+        if (NqR > 0) {
+            ld.qx <-
+                cbind(ld.qx,
+                      ld.q[(NqL + 1):(NqL + Nq),
+                           (NqL + Nq + 1):ncol(ld.q), drop=FALSE])
+        }
+
+        ASSERT(nrow(ld.qx) == Nq)
+        ASSERT(ncol(ld.qx) == (NqL + NqR))
             
-            if (abs(wintab0$etahat[I0]) < abs(wintabL$etahat[IL])) {
-                    
-                cat(wintab0$etahat[I0], "<", wintabL$etahat[IL], ":",
-                    ld.qx[I0, IL], "\n")
-                    
-                wintab0[I0, ] <- 0 
-            }
-        } else {
-            IR <- ILR - NqL
+        corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
+        corcxLR.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))
+
+        # prune
+        for (I0 in which(corcx0 > CXWCOR.CO)) {
             
-            if (abs(wintab0$etahat[I0]) < abs(wintabR$etahat[IR])) {
-                
-                cat(wintab0$etahat[I0], "<", wintabR$etahat[IR], ":",
-                    ld.qx[I0, ILR], "\n")
-                
-                wintab0[I0, ] <- 0 
+            ILR <- corcxLR.idx[I0]
+            
+            if (ILR <= NqL) {
+                IL <- ILR
+            
+                if (abs(wintab0$etahat[I0]) < abs(wintabL$etahat[IL])) {
+                    
+                    cat(wintab0$etahat[I0], "<", wintabL$etahat[IL], ":",
+                        ld.qx[I0, IL], "\n")
+                    
+                    wintab0[I0, ] <- 0 
+                }
+            } else {
+                IR <- ILR - NqL
+            
+                if (abs(wintab0$etahat[I0]) < abs(wintabR$etahat[IR])) {
+                    
+                    cat(wintab0$etahat[I0], "<", wintabR$etahat[IR], ":",
+                        ld.qx[I0, ILR], "\n")
+                    
+                    wintab0[I0, ] <- 0 
+                }
             }
         }
     }
-
+    
     # re-write    
     winfilepre <-
         paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),
@@ -189,7 +208,11 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
         
         
     # move on to next iteration
-    QX0 <- QX0[, (NqL + 1):ncol(QX0)]
+    if (ncol(QX0) > NqL) {
+        QX0 <- QX0[, (NqL + 1):ncol(QX0), drop=FALSE]
+    } else {
+        QX0 <- NULL
+    }
         
     NqL <- Nq
     wintabL <- wintab0
@@ -205,28 +228,31 @@ while (file.exists(paste(winfilepre, ".RDS", sep=''))) {
 
 # last block
 Nq <- ncol(QX0) - NqL
-    
-ld.q <- cor(QX0)
 
-ld.qx <- ld.q[(NqL + 1):(NqL + Nq), 1:NqL, drop=FALSE]
+if ((Nq > 0) && (NqL > 0)) {
+    
+    ld.q <- cor(QX0)
+
+    ld.qx <- ld.q[(NqL + 1):(NqL + Nq), 1:NqL, drop=FALSE]
                   
-corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
-corcxL.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))
+    corcx0 <- apply(ld.qx, 1, function(x) max(abs(x)))
+    corcxL.idx <- apply(ld.qx, 1, function(x) which.max(abs(x)))
 
-# prune
-for (I0 in which(corcx0 > CXWCOR.CO)) {
+    # prune
+    for (I0 in which(corcx0 > CXWCOR.CO)) {
             
-    IL <- corcxL.idx[I0]
+        IL <- corcxL.idx[I0]
     
-    if (abs(wintab0$etahat[I0]) < abs(wintabL$etahat[IL])) {
+        if (abs(wintab0$etahat[I0]) < abs(wintabL$etahat[IL])) {
         
-        cat(wintab0$etahat[I0], "<", wintabL$etahat[IL], ":",
-            ld.qx[I0, IL], "\n")
+            cat(wintab0$etahat[I0], "<", wintabL$etahat[IL], ":",
+                ld.qx[I0, IL], "\n")
         
-        wintab0[I0, ] <- 0 
+            wintab0[I0, ] <- 0 
+        }
     }
 }
-
+    
 # re-write    
 winfilepre <-
     paste(tempprefix, "win_", WINSHIFT, ".", chrom, ".", (I - 1),

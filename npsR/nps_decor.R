@@ -188,8 +188,6 @@ while ((snpIdx + WINSZ) <= M.chr) {
     saveRDS(windata, file=paste(winfilepre, ".RDS", sep=''))
     rm(windata)
 
-    ASSERT(length(lambda0) > 0)
-
     write.table(
         data.frame(lambda=lambda0, etahat=etahat0),
         file=paste(winfilepre, ".table", sep=''),
