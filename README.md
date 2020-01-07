@@ -212,15 +212,15 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ```
    
    If `nps_check.sh` finds an error, `FAIL` message will be printed. If everything is fine, only `OK` messages will be reported:
-   > NPS data directory: testdata/Test1/npsdat/
-   > Verifying nps_init:
-   > Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.1)
-   > Checking testdata/Test1/npsdat//log ...OK
-   > Verifying nps_stdgt:
-   > Checking testdata/Test1/chrom1.Test1.train ...OK
-   > Checking testdata/Test1/chrom2.Test1.train ...OK
-   > Checking testdata/Test1/chrom3.Test1.train ...OK
-   > ... 
+   > NPS data directory: testdata/Test1/npsdat/  
+   > Verifying nps_init:  
+   > Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.1)  
+   > Checking testdata/Test1/npsdat//log ...OK  
+   > Verifying nps_stdgt:  
+   > Checking testdata/Test1/chrom1.Test1.train ...OK  
+   > Checking testdata/Test1/chrom2.Test1.train ...OK  
+   > Checking testdata/Test1/chrom3.Test1.train ...OK  
+   > ...   
 
 3. ** Separate out the GWAS-significant peaks as a separate partition. **
 
@@ -297,15 +297,15 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    
    `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
 
-   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )
-   > Observed-scale R2 = 0.1062148
-   > Liability-scale R2 = 0.4694313
-   > ...
-   > Data: 4729 controls < 271 cases.
-   > Area under the curve: 0.8777
-   > 95% CI: 0.859-0.8964 (DeLong)
-   > ...
-   > Nagelkerke's R2 = 0.3174816
+   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )  
+   > Observed-scale R2 = 0.1062148  
+   > Liability-scale R2 = 0.4694313  
+   > ...  
+   > Data: 4729 controls < 271 cases.  
+   > Area under the curve: 0.8777  
+   > 95% CI: 0.859-0.8964 (DeLong)  
+   > ...  
+   > Nagelkerke's R2 = 0.3174816  
 
 ### Running NPS on test set #1 using SGE clusters
 
