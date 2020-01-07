@@ -289,15 +289,15 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    
    `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
 
-   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )  
-   > Observed-scale R2 = 0.1062148  
-   > Liability-scale R2 = 0.4694313  
-   > ...  
-   > Data: 4729 controls < 271 cases.  
-   > Area under the curve: 0.8777  
-   > 95% CI: 0.859-0.8964 (DeLong)  
-   > ...  
-   > Nagelkerke's R2 = 0.3174816  
+   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )
+   > Observed-scale R2 = 0.1061336
+   > Liability-scale R2 = 0.4693835
+   > ... 
+   > Data: 4729 controls < 271 cases.
+   > Area under the curve: 0.8776
+   > 95% CI: 0.8589-0.8963 (DeLong)
+   > Nagelkerke's R2 = 0.3172322
+
 
 ### Running NPS on test set #1 using SGE clusters
 
