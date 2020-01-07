@@ -76,7 +76,6 @@ if ("N" %in% colnames(summstat)) {
     sqrtN <- std.effalt / (summstat$effalt * se)
     sqrtN[summstat$effalt == 0] <- 0
 }
-sqrtN <- rep(1, M.chr)
 
 summstat <- cbind(summstat, std.effalt=std.effalt, sqrtN=sqrtN)
 
