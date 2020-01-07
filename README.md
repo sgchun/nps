@@ -222,7 +222,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    > Checking testdata/Test1/chrom3.Test1.train ...OK
    > ... 
 
-3. ** Separate out the genome-wide significant peaks as a separate partition. **
+3. ** Separate out the GWAS-significant peaks as a separate partition. **
 
 ```bash
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/
@@ -231,7 +231,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh testdata/Test1/npsdat/
    ```
 
-4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain, pruning across windows and separating out the GWAS-significant partition. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
+4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain and pruning residual correlations bretween windows. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus window shifts should be `0`, `20`, `40` and `60`.  
 
    ```bash
    ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 0
@@ -243,7 +243,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh testdata/Test1/npsdat/
    ```
    
-5. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`). The third and last arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
+5. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`). The second and third arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
    Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 10 10 
    ```
@@ -259,41 +259,19 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./nps_check.sh testdata/Test1/npsdat/
    ```
 
-6. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_weight.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`):
+6. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_reweight.R`. The argument is the NPS data directory (`testdata/Test1/npsdat/`):
    ```bash
-   Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
-   Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
-   Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
-   Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
+   Rscript npsR/nps_reweight.R testdata/Test1/npsdat/ 
+  
    ```
    
-   We also provide two optional utilities: 
-   * `npsR/nps_train_AUC.R` reports the AUC statistics of prediction in the training cohort. You will need **pROC** package to run this. It will combine prediction models of all shifted windows (`0`, `20`, `40` and `60`) and report the overall accuracy. 
-     ```bash
-     Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
-     ```
-     
-     With test set #1, the reported AUC in the training cohort is as follows: 
-     > Data: 2500 controls < 2500 cases.  
-     > Area under the curve: **0.8799**  
-     > 95% CI: 0.8707-0.8891 (DeLong)  
+   The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as the order of SNPs in the summary statistics file.
    
-   * `npsR/nps_plot_shrinkage.R` plots the curves of estimated conditional mean effects in the eigenlocus space. The plot will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
-     ```
-     Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
-     ```
 
-**Convert back to per-SNP effect sizes.** The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. The first argument is the NPS data directory (`testdata/Test1/npsdat/`) and the second argument is the window shift (`0`, `20`, `40` or `60`): 
-   ```bash
-   ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
-   ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
-   ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
-   ./run_all_chroms.sh sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-   ```
-   This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.adjbetahat.chrom*N*.txt and testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as the order of SNPs in the summary statistics file (testdata/Test1/npsdat/harmonized.summstats.txt). 
+   * (Optional) `npsR/nps_plot_shrinkage.R` plots the curves of estimated conditional mean effects in the eigenlocus space. The plot will be saved in a pdf file specified by the second argument (`Test1.nps.pdf`) [plot](https://github.com/sgchun/nps/blob/master/testdata/Test1.nps.pdf). 
+     ```
+     Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 
+     ```
 
 7. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
    ```bash
@@ -303,79 +281,31 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
    
    # Check the results
-   ./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
+   ./nps_check.sh testdata/Test1/npsdat/
    ```
    Here, the first argument for `sge/nps_score.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetTag for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetTag has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
-   *Note that instead of* `./nps_check.sh last`, `./nps_check.sh score` *has to be run in order to verify the results of nps_score jobs.*
-   
    Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
    ```
-   Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
+   Rscript npsR/nps_val.R testdata/Test1/npsdat/ Test1.val testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen
    ```
    The command arguments are: 
    - NPS data directory: `testdata/Test1/npsdat/`
-   - directory containing validation genotypes: `testdata/Test1`
+   - DatasetTag for validation genotypes: `Test1.val`
    - sample IDs of validation cohort: `testdata/Test1/Test1.val.5K.fam`
    - phenotypes of validation samples: `testdata/Test1/Test1.val.5K.phen`
-   - window shifts used in the prediction model: `0 20 40 60`. 
    
    `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8531 and Nagelkerke's R2 of 0.2693255 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
-   > Non-Parametric Shrinkage 1.1   
-   > Validation cohort:  
-   > Total  5000 samples  
-   > 271  case samples  
-   > 4729  control samples  
-   > 0  samples with missing phenotype (-9)  
-   > Includes TotalLiability  
-   > Checking a prediction model (winshift = 0 )...  
-   > Observed-scale R2 = 0.08795757   
-   > Liability-scale R2 = 0.4207207   
-   > Checking a prediction model (winshift = 20 )...  
-   > Observed-scale R2 = 0.08940181   
-   > Liability-scale R2 = 0.4150352   
-   > Checking a prediction model (winshift = 40 )...  
-   > Observed-scale R2 = 0.08912039   
-   > Liability-scale R2 = 0.4187129   
-   > Checking a prediction model (winshift = 60 )...  
-   > Observed-scale R2 = 0.09010319   
-   > Liability-scale R2 = 0.4182834   
-   >   
-   >   
-   >   
-   > Producing a combined prediction model...OK (saved in **testdata/Test1/Test1.val.5K.phen.nps_score** )  
-   > Observed-scale R2 = 0.09048684   
-   > Liability-scale R2 = 0.4244738   
-   > Loading required package: pROC  
-   > Type 'citation("pROC")' for a citation.  
-   >   
-   > Attaching package: ‘pROC’  
-   >   
-   > The following objects are masked from ‘package:stats’:  
-   >   
-   > cov, smooth, var  
-   >   
-   > AUC:  
-   >   
-   > Call:  
-   > roc.default(controls = prisk[vlY == 0], cases = prisk[vlY ==     1], ci = TRUE)  
-   >   
-   > Data: 4729 controls < 271 cases.  
-   > **Area under the curve: 0.8531**  
-   > 95% CI: 0.8321-0.8741 (DeLong)  
-   > Loading required package: DescTools  
-   > **Nagelkerke's R2 = 0.2693255**   
-   >   
-   > Call: &nbsp;glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
-   >   
-   > Coefficients:  
-   > (Intercept) &nbsp; &nbsp; &nbsp; &nbsp;prisk    
-   > &nbsp; &nbsp; -7.2563 &nbsp; &nbsp; 0.1908    
-   >   
-   > Degrees of Freedom: 4999 Total (i.e. Null); &nbsp;4998 Residual  
-   > Null Deviance: &nbsp; &nbsp; 2107   
-   > Residual Deviance: 1621 &nbsp;AIC: 1625  
-   > Done  
+
+   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )
+   > Observed-scale R2 = 0.1062148
+   > Liability-scale R2 = 0.4694313
+   > ...
+   > Data: 4729 controls < 271 cases.
+   > Area under the curve: 0.8777
+   > 95% CI: 0.859-0.8964 (DeLong)
+   > ...
+   > Nagelkerke's R2 = 0.3174816
 
 ### Running NPS on test set #1 using SGE clusters
 
