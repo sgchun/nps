@@ -50,7 +50,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# init
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh init $workdir
@@ -58,7 +58,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# gwassig
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh gwassig $workdir
@@ -85,20 +85,20 @@ if [ $# -eq 1 ]; then
 
 
 	# score
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .predY.chrom | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .predY_pg. | wc -l `
 
 	if [ $auto != 0 ]; then
 
 	    # auto-detect valtag
 	    echo -n "Detecting validation dataset tag..."
 	    
-	    scorefp=`ls -t $workdir/*.predY.chrom*.txt | head -n 1`
-	    valtag=`basename $scorefp | sed 's/\.win_[0-9]*\.predY\.chrom[0-9]*\.txt//'`
+	    scorefp=`ls -t $workdir/*.predY_pg.*.chrom* | head -n 1`
+	    valtag=`basename $scorefp | sed 's/\.predY_pg\./\t/' | cut -f2 | sed 's/\.chrom[0-9]*\..*//'`
 	    if [ -z "$valtag" ]; then
 		echo " ERROR: autodetect failed"
 		exit 1
 	    else 
-		echo $valtag
+		echo "( $valtag )"
 	    fi
 
 	    ./nps_check.sh score $workdir $valtag $winshifts
@@ -106,7 +106,7 @@ if [ $# -eq 1 ]; then
 	fi
     
 	# reweight
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh reweight $workdir $winshifts
@@ -114,7 +114,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh part $workdir $winshifts
@@ -122,7 +122,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prep_part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh prep_part $workdir $winshifts
@@ -130,7 +130,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prune
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
@@ -151,7 +151,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# decor
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY.chrom*.txt 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l `
 
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
@@ -653,7 +653,13 @@ elif [ $step == "score" ]; then
 	for chrom in `seq 1 22`
 	do 
 
-	    scorefile="$workdir/$modtag.predY.chrom$chrom.txt"
+	    scorefilepre="$workdir/$modtag.predY_pg.$valtag.chrom$chrom"
+
+	    if [ -f "$scorefilepre.qctoolout" ]; then
+		scorefile="$scorefilepre.qctoolout"
+	    else
+		scorefile="$scorefilepre.sscore"
+	    fi
 
 	    echo -n "Checking $scorefile ..."
 
@@ -664,20 +670,40 @@ elif [ $step == "score" ]; then
 	    fi
 	    
 	    # check line number
-	    if [ $chrom -ne "1" ]; then
+	    # if [ $chrom -ne "1" ]; then
 
-		N0=`cat $scorefile | wc -l`
+	    # 	N0=`cat $scorefile | wc -l`
 
-		N=`cat $workdir/$modtag.predY.chrom1.txt | wc -l`
+	    # 	N=`cat $workdir/$modtag.predY.chrom1.txt | wc -l`
 
-		if [ $N != $N0 ]; then
-		    echo "FAIL (incomplete)"
-		    status=1
-		    continue
-		fi
+	    # 	if [ $N != $N0 ]; then
+	    # 	    echo "FAIL (incomplete)"
+	    # 	    status=1
+	    # 	    continue
+	    # 	fi
+	    # fi
+
+	    # echo "OK (N=$N)"
+	    echo "OK"
+
+	    scorefilepre="$workdir/$modtag.predY_tail.$valtag.chrom$chrom"
+
+	    if [ -f "$scorefilepre.qctoolout" ]; then
+		scorefile="$scorefilepre.qctoolout"
+	    else
+		scorefile="$scorefilepre.sscore"
 	    fi
 
-	    echo "OK (N=$N)"
+	    echo -n "Checking $scorefile ..."
+
+	    if [ ! -s $scorefile ]; then
+		echo "FAIL (missing or empty)"
+		status=1
+		continue
+	    fi
+
+	    echo "OK"
+
 	done
 
 	if [ $status != 0 ]; then 
@@ -688,7 +714,14 @@ elif [ $step == "score" ]; then
 	echo -n "Checking timestamp ..."
 
 	prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
-	outdated=`find $workdir/ -name "$modtag.predY.chrom*.txt" ! -newer "$prevfile" | wc -l`
+	outdated=`find $workdir/ -name "$modtag.predY_pg.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l`
+
+	if [ $outdated != 0 ]; then
+	    echo "FAIL (outdated score data)"
+	    exit 1
+	fi
+
+	outdated=`find $workdir/ -name "$modtag.predY_tail.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l`
 
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated score data)"

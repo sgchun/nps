@@ -23,11 +23,6 @@ valtag=$3
 chrom=$SGE_TASK_ID
 chromstr=$(printf '%02d' "$chrom")
 
-if [ $# -lt 3 ]; then
-    echo "Usage: nps_score.plink2.sh workdir valdir valdatasetID"
-    exit
-fi
-
 # work dir
 if [ ! -d "$moddir" ]; then
     echo "ERROR: NPS data directory does not exist: $moddir"
