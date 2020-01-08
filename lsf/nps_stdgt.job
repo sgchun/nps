@@ -13,12 +13,12 @@ prefix="$dir/chrom${chrom}.${datasetName}"
 
 echo $prefix
 
-N=`zcat $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
-M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
+N=`zcat < $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
+M=`zcat < $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
 
 echo "N=$N M=$M"
 
-zcat $prefix.dosage.gz | ./stdgt $N $M $prefix
+zcat < $prefix.dosage.gz | ./stdgt $N $M $prefix
     
 gzip -f $prefix.stdgt
     

@@ -25,9 +25,9 @@ prefix="$valdir/chrom${chrom}.${valtag}"
 
 echo $prefix
 
-M=`zcat $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
-N=`zcat $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
+M=`zcat < $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
+N=`zcat < $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 
 echo "chr$chrom N=$N M=$M"
 
-zcat $prefix.dosage.gz | ./grs $N $M $moddir/$modtag.adjbetahat.chrom$chrom.txt > $moddir/$modtag.predY.$valtag.chrom$chrom.sscore
+zcat < $prefix.dosage.gz | ./grs $N $M $moddir/$modtag.adjbetahat.chrom$chrom.txt > $moddir/$modtag.predY.$valtag.chrom$chrom.sscore

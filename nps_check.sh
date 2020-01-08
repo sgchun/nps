@@ -22,8 +22,8 @@ step=$1
 status=0
 
 # Check Rscript and R version
-Rver=`Rscript -e 'cat(":NPS:\t", version$major, "\n", sep='')' | grep -F ':NPS:' | cut -f2`
-Rver_string=`Rscript -e 'cat(":NPS:\t", version$version.string, "\n", sep='')' | grep -F ':NPS:' | cut -f2`
+Rver=`Rscript -e 'cat(":NPS:\t", version$major, "\n", sep="")' | grep -F ':NPS:' | cut -f2`
+Rver_string=`Rscript -e 'cat(":NPS:\t", version$version.string, "\n", sep="")' | grep -F ':NPS:' | cut -f2`
 
 if [ $? != 0 ]; then 
    echo "ERROR: cannot run Rscript"
