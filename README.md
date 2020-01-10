@@ -301,10 +301,10 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 ### Running NPS on test set #1 using SGE clusters
 
-To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
+To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1.0/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
 
 ```
-cd nps-1.1/
+cd nps-1.1.0/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
