@@ -54,9 +54,9 @@ else
     echo ")"
 fi
 
-traindir=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+traindir=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
-traintag=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+traintag=`Rscript -e "args <- readRDS(\"$moddir/args.RDS\"); cat(\":NPS:\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 for winshift in $winshifts
 do

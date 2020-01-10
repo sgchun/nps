@@ -22,8 +22,8 @@ step=$1
 status=0
 
 # Check Rscript and R version
-Rver=`Rscript -e 'writeLines(paste("NPS:", version$major, sep=""))' | grep -F 'NPS:' | tr ":" "\t" | cut -f2`
-Rver_string=`Rscript -e 'writeLines(paste("NPS:", version$version.string, sep=""))' | grep -F 'NPS:' | tr ":" "\t" | cut -f2`
+Rver=`Rscript -e 'writeLines(paste(":NPS:", version$major, sep=""))' | grep -F ':NPS:' | sed 's/^:NPS://' `
+Rver_string=`Rscript -e 'writeLines(paste(":NPS:", version$version.string, sep=""))' | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 if [ $? != 0 ]; then 
    echo "ERROR: cannot run Rscript"
@@ -50,7 +50,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# init
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh init $workdir
@@ -58,7 +58,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# gwassig
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh gwassig $workdir
@@ -68,7 +68,7 @@ if [ $# -eq 1 ]; then
 	# auto-detect window shifts
 	echo -n "Detecting window shifts..."
 
-	numwinshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l | sed 's/^[ \t]*// `
+	numwinshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $numwinshifts -eq 0 ]; then
 	    echo " ERROR: autodetect failed"
@@ -77,7 +77,7 @@ if [ $# -eq 1 ]; then
 	    echo -n ": $numwinshifts shifts detected"
 	fi
 
-	winshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
+	winshifts=`find $workdir/ -name "win_*.*.*.Q.RDS" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' `
 
 	echo -n " ("
 	echo -n $winshifts
@@ -85,7 +85,7 @@ if [ $# -eq 1 ]; then
 
 
 	# score
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .predY_pg. | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .predY_pg. | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $auto != 0 ]; then
 
@@ -106,7 +106,7 @@ if [ $# -eq 1 ]; then
 	fi
     
 	# reweight
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh reweight $workdir $winshifts
@@ -114,7 +114,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh part $workdir $winshifts
@@ -122,7 +122,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prep_part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh prep_part $workdir $winshifts
@@ -130,7 +130,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prune
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
@@ -151,7 +151,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# decor
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l | sed 's/^[ \t]*// `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
@@ -234,7 +234,7 @@ elif [ $step == "init" ]; then
 	exit 1
     fi
     
-    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"VERSION\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+    ver=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"VERSION\"]], sep='');" | grep -F ':NPS:' |  sed 's/^:NPS://' `
     
     echo "OK (version $ver)"
 
@@ -248,8 +248,8 @@ elif [ $step == "init" ]; then
     echo "OK"
 
     # check stdgt
-    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
-    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
+    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
     ./nps_check.sh stdgt $traindir $traintag
     exit $?
@@ -293,8 +293,8 @@ if [ $step == "gwassig" ]; then
 	exit $status
     fi
 
-    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
-    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+    traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
+    traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
     # check tail_betahat files
     for chrom in `seq 1 22`
@@ -309,8 +309,8 @@ if [ $step == "gwassig" ]; then
 	    continue
 	fi
 	
-	M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*// `
-	M2=`cat $tailbetahatfile | wc -l | sed 's/^[ \t]*// `
+	M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*//' `
+	M2=`cat $tailbetahatfile | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $M1 != $M2 ]; then
 	    echo "FAIL (incomplete)"
@@ -339,8 +339,8 @@ if [ $step == "gwassig" ]; then
 	    continue
 	fi
 	
-	M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*// `
-	M2=`tail -n +2 $summstatfile | wc -l | sed 's/^[ \t]*// `
+	M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*//' `
+	M2=`tail -n +2 $summstatfile | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $M1 != $M2 ]; then
 	    echo "FAIL (incomplete)"
@@ -361,7 +361,7 @@ if [ $step == "gwassig" ]; then
     
     for chrom in `seq 1 22`
     do 
-	outdated=`find $workdir/ -name "harmonized.summstats.txt.$chrom" ! -newer "$workdir/args.RDS" | wc -l | sed 's/^[ \t]*// `
+	outdated=`find $workdir/ -name "harmonized.summstats.txt.$chrom" ! -newer "$workdir/args.RDS" | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated gwassig data)"
@@ -420,8 +420,8 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "part" ]; then
 	
 	    echo -n "Checking window count..." 
 
-	    win1=`ls -l $workdir/win_$winshift.*.Q.RDS | wc -l | sed 's/^[ \t]*// `
-	    win2=`ls -l $workdir/win_$winshift.*.pruned.table | wc -l | sed 's/^[ \t]*// `
+	    win1=`ls -l $workdir/win_$winshift.*.Q.RDS | wc -l | sed 's/^[ \t]*//' `
+	    win2=`ls -l $workdir/win_$winshift.*.pruned.table | wc -l | sed 's/^[ \t]*//' `
 
 	    if [ $win1 != $win2 ]; then
 		echo "FAIL ($win1 != $win2)"
@@ -436,7 +436,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "part" ]; then
 	    do 
 
 		decorfile=`ls -t $workdir/win_$winshift.$chrom.*.Q.RDS | head -n 1`
-		outdated=`find $workdir/ -name "win_$winshift.$chrom.*.pruned.table" ! -newer "$decorfile" | wc -l | sed 's/^[ \t]*// `
+		outdated=`find $workdir/ -name "win_$winshift.$chrom.*.pruned.table" ! -newer "$decorfile" | wc -l | sed 's/^[ \t]*//' `
 
 		if [ $outdated != 0 ]; then
 		    echo "FAIL (outdated pruning data for chr$chrom)"
@@ -461,7 +461,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "part" ]; then
 		    continue
 		fi
 
-		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(\":NPS:\\t\", paste(dim(trPT), collapse=' x '), sep='');" | grep -F ':NPS:' | cut -f2 `
+		dim=`Rscript -e "trPT <- readRDS(\"$trPT\"); cat(\":NPS:\", paste(dim(trPT), collapse=' x '), sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 		echo "OK ($dim)"
 	    done
@@ -473,7 +473,7 @@ elif [ $step == "decor" ] || [ $step == "prune" ] || [ $step == "part" ]; then
 	    
 	    echo -n "Checking timestamp ..."
 	    
-	    outdated=`find $workdir/ -name "win_$winshift.trPT.*.RDS" ! -newer "$workdir/win_$winshift.part.RDS" | grep -v tail.RDS | wc -l | sed 's/^[ \t]*// `
+	    outdated=`find $workdir/ -name "win_$winshift.trPT.*.RDS" ! -newer "$workdir/win_$winshift.part.RDS" | grep -v tail.RDS | wc -l | sed 's/^[ \t]*//' `
 
 	    if [ $outdated != 0 ]; then
 		echo "FAIL (outdated trPT data)"
@@ -516,7 +516,7 @@ elif [ $step == "prep_part" ]; then
 
 	echo -n "Checking timestamp ..."
 
-	outdated=`find $workdir/ -name "$partfile" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*// `    
+	outdated=`find $workdir/ -name "$partfile" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `    
 
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated partition files)"
@@ -564,14 +564,14 @@ elif [ $step == "reweight" ]; then
 	    exit 1
 	fi
 	
-	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(\":NPS:\\t\", paste(dim(PTwt), collapse=' x '), sep='')" | grep -F ':NPS:' | cut -f2 `
+	dim=`Rscript -e "PTwt <- readRDS(\"$ptwtfile\"); cat(\":NPS:\", paste(dim(PTwt), collapse=' x '), sep='')" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 	echo "OK ($dim)"
 
 	echo -n "Checking timestamp ..."
 
 	prevfile=`ls -t $workdir/win_$winshift.trPT.*.RDS | head -n 1`
-	outdated=`find $workdir/ -name "win_$winshift.PTwt.RDS" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*// `
+	outdated=`find $workdir/ -name "win_$winshift.PTwt.RDS" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated PTwt data)"
@@ -581,8 +581,8 @@ elif [ $step == "reweight" ]; then
 	echo "OK"
 
 	# back2snpeff
-	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
-	traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
+	traindir=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traindir\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 	for chrom in `seq 1 22`
 	do 
@@ -597,8 +597,8 @@ elif [ $step == "reweight" ]; then
 		continue
 	    fi
 
-	    M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*// `
-	    M2=`cat $snpeff | wc -l | sed 's/^[ \t]*// `
+	    M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*//' `
+	    M2=`cat $snpeff | wc -l | sed 's/^[ \t]*//' `
 
 	    if [ $M1 != $M2 ]; then
 		echo "FAIL (marker count mismatch: $M1 != $M2)"
@@ -616,7 +616,7 @@ elif [ $step == "reweight" ]; then
 	    
 	echo -n "Checking timestamp ..."
 
-	outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat.chrom*.txt" ! -newer "$workdir/win_$winshift.PTwt.RDS" | wc -l | sed 's/^[ \t]*// `
+	outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat.chrom*.txt" ! -newer "$workdir/win_$winshift.PTwt.RDS" | wc -l | sed 's/^[ \t]*//' `
 
 
 	if [ $outdated != 0 ]; then
@@ -648,7 +648,7 @@ elif [ $step == "score" ]; then
 
 	echo "----- Shifted by $winshift -----"
 
-	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\\t\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | cut -f2 `
+	traintag=`Rscript -e "args <- readRDS(\"$workdir/args.RDS\"); cat(\":NPS:\", args[[\"traintag\"]], sep='');" | grep -F ':NPS:' | sed 's/^:NPS://' `
 
 	modtag="$traintag.win_${winshift}"
 
@@ -674,9 +674,9 @@ elif [ $step == "score" ]; then
 	    # check line number
 	    # if [ $chrom -ne "1" ]; then
 
-	    # 	N0=`cat $scorefile | wc -l | sed 's/^[ \t]*// `
+	    # 	N0=`cat $scorefile | wc -l | sed 's/^[ \t]*//' `
 
-	    # 	N=`cat $workdir/$modtag.predY.chrom1.txt | wc -l | sed 's/^[ \t]*// `
+	    # 	N=`cat $workdir/$modtag.predY.chrom1.txt | wc -l | sed 's/^[ \t]*//' `
 
 	    # 	if [ $N != $N0 ]; then
 	    # 	    echo "FAIL (incomplete)"
@@ -716,14 +716,14 @@ elif [ $step == "score" ]; then
 	echo -n "Checking timestamp ..."
 
 	prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
-	outdated=`find $workdir/ -name "$modtag.predY_pg.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*// `
+	outdated=`find $workdir/ -name "$modtag.predY_pg.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated score data)"
 	    exit 1
 	fi
 
-	outdated=`find $workdir/ -name "$modtag.predY_tail.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*// `
+	outdated=`find $workdir/ -name "$modtag.predY_tail.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
 	    echo "FAIL (outdated score data)"
