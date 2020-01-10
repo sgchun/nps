@@ -11,7 +11,10 @@ chrom=$LSB_JOBINDEX
 
 prefix="$dir/chrom${chrom}.${datasetName}"
 
-echo $prefix
+if [ ! -s $prefix.dosage.gz ]; then
+    echo "ERROR: $prefix.dosage.gz is missing or empty"
+    exit 1
+fi
 
 N=`zcat < $prefix.dosage.gz | head -n 1 | tr " " "\n" | tail -n +7 | wc -l`
 M=`zcat < $prefix.dosage.gz | tail -n +2 | wc -l | cut -d' ' -f1`
