@@ -49,8 +49,12 @@ if [ $# -eq 1 ]; then
 	    exit 1
 	fi
 
-	# init
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l | sed 's/^[ \t]*//' `
+        auto1=`ls -t $workdir/*.Q.RDS 2> /dev/null | head -n 1`
+        auto2=`ls -t $workdir/*.pruned.table 2> /dev/null | head -n 1`
+        auto3=`ls -t $workdir/win_*.trPT.*.RDS 2> /dev/null | head -n 1`
+	auto4=`ls -t $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1`
+        # init
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F args.RDS | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh init $workdir
@@ -58,7 +62,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# gwassig
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F tail_betahat. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh gwassig $workdir
@@ -85,7 +89,7 @@ if [ $# -eq 1 ]; then
 
 
 	# score
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .predY_pg. | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .predY_pg. | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $auto != 0 ]; then
 
@@ -106,7 +110,7 @@ if [ $# -eq 1 ]; then
 	fi
     
 	# reweight
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .PTwt. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh reweight $workdir $winshifts
@@ -114,7 +118,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .trPT. | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh part $workdir $winshifts
@@ -122,7 +126,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prep_part
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .part.RDS | wc -l | sed 's/^[ \t]*//' `
 	
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh prep_part $workdir $winshifts
@@ -130,7 +134,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# prune
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .pruned.table | wc -l | sed 's/^[ \t]*//' `
     
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
@@ -151,7 +155,7 @@ if [ $# -eq 1 ]; then
 	fi
 
 	# decor
-	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $workdir/*.Q.RDS $workdir/*.pruned.table $workdir/win_*.part.RDS $workdir/win_*.trPT.*.RDS $workdir/win_*.PTwt.RDS $workdir/*.win_*.predY_pg.*.chrom* 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l | sed 's/^[ \t]*//' `
+	auto=`ls -t $workdir/args.RDS $workdir/tail_betahat.*.table $auto1 $auto2  $workdir/win_*.part.RDS $auto3 $workdir/win_*.PTwt.RDS $auto4 2> /dev/null | head -n 1 | grep -F .Q.RDS | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $auto != 0 ]; then
 	    ./nps_check.sh decor $workdir $winshifts
