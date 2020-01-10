@@ -97,7 +97,7 @@ if [ $# -eq 1 ]; then
 	    echo -n "Detecting validation dataset tag..."
 	    
 	    scorefp=`ls -t $workdir/*.predY_pg.*.chrom* | head -n 1`
-	    valtag=`basename $scorefp | sed 's/\.predY_pg\./\t/' | cut -f2 | sed 's/\.chrom[0-9]*\..*//'`
+	    valtag=`basename $scorefp | sed 's/.*\.predY_pg\.//' | sed 's/\.chrom[0-9]*\..*//'`
 	    if [ -z "$valtag" ]; then
 		echo " ERROR: autodetect failed"
 		exit 1
@@ -741,7 +741,7 @@ elif [ $step == "score" ]; then
 	
 	echo -n "Checking timestamp ..."
 
-	prevfile=`ls -t $workdir/$modtag.adjbetahat.chrom*.txt | head -n 1`
+	prevfile=`ls -t $workdir/$modtag.adjbetahat_*.chrom*.txt | head -n 1`
 	outdated=`find $workdir/ -name "$modtag.predY_pg.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
