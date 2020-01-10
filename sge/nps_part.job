@@ -6,4 +6,18 @@
 # use OpenblasR
 ###
 
-Rscript npsR/nps_part.R $1 $SGE_TASK_ID $2 > $1/log/nps_part.Rout.$2.$SGE_TASK_ID
+if [ ! -z "$SGE_TASK_ID" ]; then
+    CHROM=$SGE_TASK_ID
+    echo "SGE/UGER clusters: SGE_TASK_ID=$CHROM"
+elif [ ! -z "$LSB_JOBINDEX" ]; then
+    CHROM=$LSB_JOBINDEX
+    echo "LSF clusters: LSB_JOBINDEX=$CHROM"
+elif [ ! -z "$SLURM_ARRAY_TASK_ID" ]; then
+    CHROM=$SLURM_ARRAY_TASK_ID
+    echo "SLURM clusters: SLURM_ARRAY_TASK_ID=$CHROM"
+else
+    echo "Unknown job scheduler"
+    exit 1
+fi
+
+Rscript npsR/nps_part.R $1 $CHROM $2 > $1/log/nps_part.Rout.$2.$CHROM

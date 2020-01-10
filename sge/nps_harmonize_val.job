@@ -16,6 +16,22 @@
 # QCTOOL=~/Tools/qctool_v2.0.1/qctool_v2.0.1
 
 #####
+
+if [ ! -z "$SGE_TASK_ID" ]; then
+    CHROM=$SGE_TASK_ID
+    echo "SGE/UGER clusters: SGE_TASK_ID=$CHROM"
+elif [ ! -z "$LSB_JOBINDEX" ]; then
+    CHROM=$LSB_JOBINDEX
+    echo "LSF clusters: LSB_JOBINDEX=$CHROM"
+elif [ ! -z "$SLURM_ARRAY_TASK_ID" ]; then
+    CHROM=$SLURM_ARRAY_TASK_ID
+    echo "SLURM clusters: SLURM_ARRAY_TASK_ID=$CHROM"
+else
+    echo "Unknown job scheduler"
+    exit 1
+fi
+
+
 if [ $# != 5 ]; then 
     echo "Usage: nps_harmonize_val.job npsdatadir bgen_file_path bgen_sample_file workdir cohort_name" 
     echo "Use with qsub -t 1-22"
@@ -28,7 +44,6 @@ BGEN_SAMPLE_FILE=$3
 OUTPUT_DIR=$4
 NAME=$5
 
-CHROM=$SGE_TASK_ID
 summstat="$NPS_WORK_DIR/harmonized.summstats.txt"
 
 if [ ! -s "$summstat" ]; then 
@@ -43,8 +58,7 @@ fi
 
 N=`tail -n +3 $BGEN_SAMPLE_FILE |wc -l`
 
-echo "N=$N"
-echo "chrom $CHROM"
+echo "chrom$CHROM N=$N"
 
 total=`tail -n +2 $summstat | grep -w "^chr$CHROM" | wc -l`
 
