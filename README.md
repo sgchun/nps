@@ -11,17 +11,17 @@ For inquiries on software, please contact:
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
-The current version is 1.1. The followings were changed with this version: 
+The current version is 1.1.0. The followings were changed with this version: 
 - Command line interface was simplified for the useability improvement. 
 - Tracy-Widom statistic is used to truncate noisy low-rank projections instead of imposing a preset threshold on eigenvalues.
 - GWAS peak selection algorithm was improved to better account for conditionally independent signals.
 
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.1](https://github.com/sgchun/nps/archive/1.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.1.0](https://github.com/sgchun/nps/archive/1.1.0.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.1.0)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
-   tar -zxvf nps-1.1.tar.gz
-   cd nps-1.1/
+   tar -zxvf nps-1.1.0.tar.gz
+   cd nps-1.1.0/
    make
    ```
 
@@ -146,10 +146,10 @@ Both simulated datasets were generated using our multivariate-normal simulator (
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
-cd nps-1.1/testdata/
+cd nps-1.1.0/testdata/
 
 tar -zxvf NPS.Test1.tar.gz 
-# This will create the following test data files in nps-1.1/testdata/Test1
+# This will create the following test data files in nps-1.1.0/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
@@ -163,7 +163,7 @@ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 
 tar -zxvf NPS.Test2.tar.gz 
-# This will create the following test data in nps-1.1/testdata/Test2
+# This will create the following test data in nps-1.1.0/testdata/Test2
 # Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
 # Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
@@ -184,7 +184,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetID*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetID* of training cohort. 
    ```bash
-   cd nps-1.1/
+   cd nps-1.1.0/
    
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
@@ -265,17 +265,17 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    
    The re-weighted effect sizes should be converted back to the original per-SNP space from the eigenlocus space. This will store per-SNP re-weighted effect sizes in files of testdata/Test1/npsdat/Test1.train.win_*shift*.adjbetahat.chrom*N*.txt. The order of re-weighted effect sizes in these files are the same as the order of SNPs in the summary statistics file.
 
-7. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.job` as follows: 
+7. **Validate the accuracy of prediction model in a validation cohort.** Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.dosage.job` as follows: 
    ```bash
-   ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
-   ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
-   ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
-   ./run_all_chroms.sh sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
+   ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
+   ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
+   ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
+   ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
    
    # Check the results
    ./nps_check.sh testdata/Test1/npsdat/
    ```
-   Here, the first argument for `sge/nps_score.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetID for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetID has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
+   Here, the first argument for `sge/nps_score.dosage.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetID for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetID has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
    Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
    ```
@@ -301,10 +301,10 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 ### Running NPS on test set #1 using SGE clusters
 
-To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
+To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1.0/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
 
 ```
-cd nps-1.1/
+cd nps-1.1.0/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
@@ -381,7 +381,7 @@ Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Tes
 Running NPS on LSF clusters is similar. We provide the job scripts in `lsf/` directory.
 
 ```
-cd nps-1.1/
+cd nps-1.1.0/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test1 Test1.train
@@ -461,7 +461,7 @@ NPS can be run on test set #2 similarly as test set #1 except:
 * For test set #2 and real data sets, we do not recommend running NPS without parallelization because of heavy computational requirements.
 
 ```bash
-cd nps-1.1/
+cd nps-1.1.0/
 
 # Standardize genotypes
 qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
@@ -604,7 +604,7 @@ Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Tes
 Running NPS on LSF is similar to running it on SGE clusters. The memory limit is specified by `bsub -R 'rusage[mem=4000]'`.
 
 ```bash
-cd nps-1.1/
+cd nps-1.1.0/
 
 # Standardize genotypes
 bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
