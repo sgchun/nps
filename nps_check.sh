@@ -591,7 +591,7 @@ elif [ $step == "reweight" ]; then
 	for chrom in `seq 1 22`
 	do 
 		
-	    snpeff="$workdir/$traintag.win_$winshift.adjbetahat.chrom$chrom.txt"
+	    snpeff="$workdir/$traintag.win_$winshift.adjbetahat_pg.chrom$chrom.txt"
 	    
 	    echo -n "Checking $snpeff ..."
 
@@ -611,6 +611,27 @@ elif [ $step == "reweight" ]; then
 	    fi
 
 	    echo "OK"
+
+            snpeff="$workdir/$traintag.win_$winshift.adjbetahat_tail.chrom$chrom.txt"
+
+            echo -n "Checking $snpeff ..."
+
+            if [ ! -s $snpeff ]; then
+                echo "FAIL (missing or empty)"
+                status=1
+                continue
+            fi
+
+            M1=`tail -n +2 $traindir/chrom$chrom.$traintag.snpinfo | wc -l | sed 's/^[ \t]*//' `
+            M2=`cat $snpeff | wc -l | sed 's/^[ \t]*//' `
+
+            if [ $M1 != $M2 ]; then
+                echo "FAIL (marker count mismatch: $M1 != $M2)"
+                status=1
+                continue
+            fi
+
+	    echo "OK"
 	done
 
 	if [ $status != 0 ]; then 
@@ -620,7 +641,8 @@ elif [ $step == "reweight" ]; then
 	    
 	echo -n "Checking timestamp ..."
 
-	outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat.chrom*.txt" ! -newer "$workdir/win_$winshift.PTwt.RDS" | wc -l | sed 's/^[ \t]*//' `
+        prevfile=`ls -t $workdir/win_$winshift.trPT.*.RDS | head -n 1`
+	outdated=`find $workdir/ -name "$traintag.win_$winshift.adjbetahat_*.chrom*.txt" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 
 	if [ $outdated != 0 ]; then
