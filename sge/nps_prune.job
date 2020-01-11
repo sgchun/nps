@@ -8,8 +8,8 @@
 # use OpenblasR
 #
 # BCH E2:
-module add openblas/0.3.5
-module add R/3.5.3
+# module add openblas/0.3.5
+# module add R/3.5.3
 ###
 
 if [ ! -z "$SGE_TASK_ID" ]; then
