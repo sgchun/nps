@@ -714,24 +714,29 @@ elif [ $step == "score" ]; then
 	    # echo "OK (N=$N)"
 	    echo "OK"
 
-	    scorefilepre="$workdir/$modtag.predY_tail.$valtag.chrom$chrom"
+	    Ntail=` grep -v -w 0 $workdir/$modtag.adjbetahat_tail.chrom$chrom.txt | wc -l | sed 's/^[ \t]*//' `
 
-	    if [ -f "$scorefilepre.qctoolout" ]; then
-		scorefile="$scorefilepre.qctoolout"
-	    else
-		scorefile="$scorefilepre.sscore"
+	    # more than 1 GWAS peaks
+	    if [ $Ntail -gt 0 ]; then
+
+		scorefilepre="$workdir/$modtag.predY_tail.$valtag.chrom$chrom"
+
+		if [ -f "$scorefilepre.qctoolout" ]; then
+		    scorefile="$scorefilepre.qctoolout"
+		else
+		    scorefile="$scorefilepre.sscore"
+		fi
+
+		echo -n "Checking $scorefile ..."
+
+		if [ ! -s $scorefile ]; then
+		    echo "FAIL (missing or empty)"
+		    status=1
+		    continue
+		fi
+
+		echo "OK"
 	    fi
-
-	    echo -n "Checking $scorefile ..."
-
-	    if [ ! -s $scorefile ]; then
-		echo "FAIL (missing or empty)"
-		status=1
-		continue
-	    fi
-
-	    echo "OK"
-
 	done
 
 	if [ $status != 0 ]; then 
@@ -741,18 +746,19 @@ elif [ $step == "score" ]; then
 	
 	echo -n "Checking timestamp ..."
 
-	prevfile=`ls -t $workdir/$modtag.adjbetahat_*.chrom*.txt | head -n 1`
+	prevfile=`ls -t $workdir/$modtag.adjbetahat_pg.chrom*.txt $workdir/$modtag.adjbetahat_tail.chrom*.txt | head -n 1`
+	
 	outdated=`find $workdir/ -name "$modtag.predY_pg.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
-	    echo "FAIL (outdated score data)"
+	    echo "FAIL (outdated score data: polygenic)"
 	    exit 1
 	fi
 
 	outdated=`find $workdir/ -name "$modtag.predY_tail.$valtag.chrom*.*" ! -newer "$prevfile" | wc -l | sed 's/^[ \t]*//' `
 
 	if [ $outdated != 0 ]; then
-	    echo "FAIL (outdated score data)"
+	    echo "FAIL (outdated score data: gwas tail)"
 	    exit 1
 	fi
 

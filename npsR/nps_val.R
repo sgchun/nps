@@ -409,62 +409,76 @@ for (WINSHIFT in WINSHIFT.list) {
             }
         }
 
-        prisk.file <-
-            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                  ".predY_tail.", valtag, ".chrom", chr, ".qctoolout", sep='')
+        ASSERT(length(prisk.chr) == length(vlY))
         
-        if (file.exists(prisk.file)) {
+        adjbetahat.file <- 
+            paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                  ".adjbetahat_tail.chrom", chr, ".txt", sep='')
+        adjbetahats <- read.delim(adjbetahat.file, header=FALSE)[, 1]
 
-            if (file.info(prisk.file)$size > 0) {
-            
-                prisk.tab <- read.table(prisk.file, header=TRUE, comment="#",
-                                        stringsAsFactors=FALSE)
-
-                # FIXME
-                ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
-                       all(prisk.tab$sample == vlfam[, 2]))
-                
-                prisk.chr <- prisk.chr + prisk.tab$NPS_risk_score
-            }
-            
-        } else {
+        if (any(adjbetahats != 0)) {
+        
             prisk.file <-
                 paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                      ".predY_tail.", valtag, ".chrom", chr, ".sscore", sep='')
-            
-            prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
-            
-            if (ncol(prisk.tab) == 5) {
-                ## PLINK2 generated
-                
-                prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+                      ".predY_tail.", valtag, ".chrom", chr, ".qctoolout",
+                      sep='')
+        
+            if (file.exists(prisk.file)) {
 
-                ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
-                           colnames(prisk.tab)))
-                ASSERT(colnames(prisk.tab)[2] == "IID")
-
-                ## Reorder IID
-                rownames(prisk.tab) <-
-                    paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
-                
-                prisk.tab <-
-                    prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+                if (file.info(prisk.file)$size > 0) {
             
-                ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
-                ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
-                ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+                    prisk.tab <-
+                        read.table(prisk.file, header=TRUE, comment="#",
+                                   stringsAsFactors=FALSE)
+
+                    ASSERT(all(prisk.tab$sample == vlfam[, 1]) ||
+                           all(prisk.tab$sample == vlfam[, 2]))
+                    ASSERT(nrow(prisk.tab) == length(vlY))
                 
-                ## get scores
-                prisk.chr <-
-                    prisk.chr + prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
-                
+                    prisk.chr <- prisk.chr + prisk.tab$NPS_risk_score
+                }
+            
             } else {
-                prisk.chr <-
-                    prisk.chr + prisk.tab[, 1]
+                prisk.file <-
+                    paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
+                          ".predY_tail.", valtag, ".chrom", chr, ".sscore",
+                          sep='')
+            
+                prisk.tab <- read.delim(prisk.file, header=FALSE, sep="\t")
+
+                ASSERT(nrow(prisk.tab) == length(vlY))
+            
+                if (ncol(prisk.tab) == 5) {
+                    ## PLINK2 generated
+                
+                    prisk.tab <- read.delim(prisk.file, header=TRUE, sep="\t")
+
+                    ASSERT(all(c("IID", "NMISS_ALLELE_CT", "SCORE1_AVG") %in%
+                               colnames(prisk.tab)))
+                    ASSERT(colnames(prisk.tab)[2] == "IID")
+                    ASSERT(nrow(prisk.tab) == length(vlY))
+        
+                    ## Reorder IID
+                    rownames(prisk.tab) <-
+                        paste(prisk.tab[, 1], prisk.tab[, 2], sep=":")
+                
+                    prisk.tab <-
+                        prisk.tab[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+            
+                    ASSERT(all(prisk.tab[, 1] == vlfam[, 1]))
+                    ASSERT(all(prisk.tab[, 2] == vlfam[, 2]))
+                    ASSERT(all(!is.na(prisk.tab$SCORE1_AVG)))
+                
+                    ## get scores
+                    prisk.chr <- prisk.chr +
+                        prisk.tab$SCORE1_AVG * prisk.tab$NMISS_ALLELE_CT
+                
+                } else {
+                    prisk.chr <-
+                        prisk.chr + prisk.tab[, 1]
+                }
             }
         }
-        
-        ASSERT(length(prisk.chr) == length(vlY))
         
         prisk0 <- prisk0 + prisk.chr
         
