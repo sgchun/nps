@@ -79,6 +79,8 @@ if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
 
 #########################################################################
 
+predY <- NULL
+
 for (WINSHIFT in WINSHIFT.list) {
 
     cat("----- Shifted by", WINSHIFT, "-----\n")
@@ -218,6 +220,11 @@ for (WINSHIFT in WINSHIFT.list) {
                 PTwt[I, J, K] <- trlm$coefficients[2]
             }
 
+            if (is.nan(PTwt[I, J, K])) {
+                cat("WARNING: partition (", I, ",", J, ") produced NaN\n")
+                PTwt[I, J, K] <- 0
+            }
+
             predY0 <- predY0 + PTwt[I, J, K] * trPT[, I, J, K]
 
             trPT.lambda <- trPT.lambda + trPT[, I, J, K]
@@ -230,13 +237,7 @@ for (WINSHIFT in WINSHIFT.list) {
     }
 
 
-    if (any(is.nan(PTwt))) {
-        cat("WARNING: ", sum(is.nan(PTwt)), "partitions produced NaN\n")
-    }
-
 # cat(PTwt[ , , 1])
-
-    PTwt[is.nan(PTwt)] <- 0
 
     cat("Saving ", nLambdaPT, "x", nEtaPT, "partition weights...")
 
@@ -300,8 +301,14 @@ for (WINSHIFT in WINSHIFT.list) {
 ######################################################################
 ## Training R2
 
-    cat("Observed scale R2 in training =",
-        cor(trY, predY0 + PTwt.tail * trPT.tail)**2, "\n")
+#    cat("Observed scale R2 in training =",
+#        cor(trY, predY0 + PTwt.tail * trPT.tail)**2, "\n")
+
+    if (is.null(predY)) {
+        predY <- predY0 + PTwt.tail * trPT.tail
+    } else {
+        predY <- predY + (predY0 + PTwt.tail * trPT.tail)
+    }
 
 #########################################################################
 ## back2snpeff
@@ -471,6 +478,17 @@ for (WINSHIFT in WINSHIFT.list) {
         cat("OK\n")
         
     }
+}
+
+cat("Observed scale R2 in training cohort =", cor(trY, predY)**2, "\n")
+
+if (require(pROC) && use.lda) {
+    ## Binary phenotypes
+        
+    library(pROC)
+
+    cat("AUC in training cohort:\n")
+    print(roc(cases=predY[trY == 1], controls=predY[trY == 0], ci=TRUE))
 }
 
 cat("Done\n")
