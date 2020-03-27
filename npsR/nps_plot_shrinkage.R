@@ -101,32 +101,19 @@ for (WINSHIFT in WINSHIFT.list) {
     PTwt <- readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
 
     meanBetahatH <- part[["meanBetahatH"]]
+    meanSqLambda <- part[["meanSqLambda"]]
     betahatH.q <- part[["betahatH.q"]]
 
     x.end.Ix <- pmax(x.end.Ix, meanBetahatH[, nEtaPT, 1] * 1.2)
     x.end.Ix.cap <- pmin(x.end.Ix.cap, betahatH.q[nEtaPT + 1, ], na.rm=TRUE)
-    y.end <- max(y.end, max(abs(meanBetahatH[, , 1] * PTwt[, , 1])) * 1.2)
+    y.end <- max(y.end, max(abs(meanBetahatH[, , 1] * meanSqLambda[, , 1]
+                                * PTwt[, , 1])) * 1.2)
 
 }
 
 x.end <- max(x.end.Ix)
 
 x.end.Ix <- x.end.Ix.cap
-
-
-scale <- 1
-
-PTwt.tail.file <- paste(tempprefix, "PTwt.tail.RDS", sep='')
-
-ASSERT(file.exists(PTwt.tail.file))
-
-PTwt.tail <- readRDS(PTwt.tail.file)
-
-if (PTwt.tail > 0) {
-    scale <- 1 / PTwt.tail
-}
-
-#    cat("Rescale y-axis by ", scale, "\n")
 
 
 Ix <- nLambdaPT
@@ -144,20 +131,38 @@ for (Ix in nLambdaPT:1) {
         PTwt <-
             readRDS(paste(tempprefix, "win_", WINSHIFT, ".PTwt.RDS", sep=''))
 
+        scale <- 1
+
+        PTwt.tail.file <-
+            paste(tempprefix, "win_", WINSHIFT, ".PTwt.tail.RDS", sep='')
+
+        ASSERT(file.exists(PTwt.tail.file))
+
+        PTwt.tail <- readRDS(PTwt.tail.file)
+
+        if (PTwt.tail != 0) {
+            scale <- 1 / abs(PTwt.tail)
+        }
+
+        
         betahatH.q <- part[["betahatH.q"]]
 
         for (Jx in 1:nEtaPT) {
             Jx.st <- betahatH.q[Jx, Ix]
             Jx.ed <- betahatH.q[Jx + 1, Ix]
-            wt <- PTwt[Ix, Jx, 1]
 
+            wt <- PTwt[Ix, Jx, 1]
+            meanSqLambda.ij <- part[["meanSqLambda"]][Ix, Jx, 1]
+            
             seg <- x.seq >= Jx.st & x.seq < Jx.ed
 
-            y.seq[seg] <- y.seq[seg] + wt * x.seq[seg]
+            y.seq[seg] <-
+                y.seq[seg] + wt * x.seq[seg] * meanSqLambda.ij * scale
         }
+
     }
     
-    y.seq <- y.seq / 4 * scale
+    y.seq <- y.seq / 4
 
     # ignore the end point
     x.seq <- x.seq[1:(length(x.seq) - 1)]
@@ -165,9 +170,9 @@ for (Ix in nLambdaPT:1) {
 
     plot(x.seq, y.seq, ty='l',
          xlim=c(0, x.end),
-         ylim=c(0, y.end * scale),
+         ylim=c(0, max(y.seq)),
          main=paste("S_", Ix, ": ", Ix, "-th decile in eigenvalues", sep=''),
-         xlab="eta hats", ylab="Conditional mean effects")
+         xlab="Estimated GWAS effects", ylab="Conditional mean effects")
 
 }
 
