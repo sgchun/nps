@@ -169,6 +169,23 @@ for (WINSHIFT in WINSHIFT.list) {
         }
     }
 
+    ## Check covariates
+
+    sex.covariate <- NULL
+    
+    if (any(trfam[, 5] == 1) && any(trfam[, 5] == 2)) {
+        
+        cat("Sex covariate detected.\n")
+
+        ## Unknown sex not allowed
+        if (any((trfam[, 5] != 1) & (trfam[, 5] != 2))) {
+            stop("Sex is either 1 or 2; unknown sex is not allowed")
+        }
+
+        use.lda <- FALSE
+        sex.covariate <- (trfam[, 5] - 1)
+    }
+
     if (use.lda) {
         cat("Using linear discriminary analysis...\n")
     } else {
@@ -191,12 +208,9 @@ for (WINSHIFT in WINSHIFT.list) {
 
 #########################################################################
 
-    predY0 <- rep(0, Nt)
     PTwt <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
 
     for (I in 1:nLambdaPT) {
-
-        trPT.lambda <- rep(0, Nt) 
 
         for (J in 1:nEtaPT) {
             K <- 1
@@ -215,8 +229,13 @@ for (WINSHIFT in WINSHIFT.list) {
             } else {
                 ## Use linear regression 
                 x <- trPT[, I, J, K]
+
+                if (is.null(sex.covariate)) {
+                    trlm <- lm(trY ~ x)
+                } else {
+                    trlm <- lm(trY ~ x + sex.covariate)
+                }
                 
-                trlm <- lm(trY ~ x)
                 PTwt[I, J, K] <- trlm$coefficients[2]
             }
 
@@ -225,17 +244,19 @@ for (WINSHIFT in WINSHIFT.list) {
                 PTwt[I, J, K] <- 0
             }
 
-            predY0 <- predY0 + PTwt[I, J, K] * trPT[, I, J, K]
-
-            trPT.lambda <- trPT.lambda + trPT[, I, J, K]
         }
-        
-#        lambda.p <- summary(lm(trPT.lambda ~ trY))$coefficients[2, 4]
-
-#        print(summary(lm(trPT.lambda ~ trY)))
-
     }
 
+    predY0 <- rep(0, Nt)
+    
+    for (I in 1:nLambdaPT) {
+
+        for (J in 1:nEtaPT) {
+            K <- 1
+    
+            predY0 <- predY0 + PTwt[I, J, K] * trPT[, I, J, K]
+        }
+    }
 
 # cat(PTwt[ , , 1])
 
@@ -273,11 +294,25 @@ for (WINSHIFT in WINSHIFT.list) {
     }
 
     PTwt.tail <- 0
-    
+    sex.baseline <- 0
+
     if (any(trPT.tail != 0)) {
         
         ## Use logistic regression
-        trlm <- glm(trY ~ predY0 + trPT.tail, family=binomial(link="logit"))
+        if (is.null(sex.covariate)) {
+            
+            trlm <-
+                glm(trY ~ predY0 + trPT.tail,
+                    family=binomial(link="logit"))
+            
+        } else {
+            
+            trlm <-
+                glm(trY ~ predY0 + trPT.tail + sex.covariate,
+                    family=binomial(link="logit"))
+
+            sex.baseline <- trlm$coefficients[4] / trlm$coefficients[2]
+        }
 
         tail.h2.ratio <-
             (cor(trY, as.vector(trPT.tail * trlm$coefficients[3]))**2) /
@@ -286,6 +321,15 @@ for (WINSHIFT in WINSHIFT.list) {
         print(tail.h2.ratio)
 
         PTwt.tail <- trlm$coefficients[3] / trlm$coefficients[2]
+
+    } else {
+
+        trlm <-
+            glm(trY ~ predY0 + sex.covariate,
+                family=binomial(link="logit"))
+        
+        sex.baseline <- trlm$coefficients[3] / trlm$coefficients[2]
+        
     }
 
     cat("Weight for S0 =", PTwt.tail, "\n")
@@ -297,6 +341,12 @@ for (WINSHIFT in WINSHIFT.list) {
     
     cat("OK\n")
 
+    if (!is.null(sex.covariate)) {
+        cat("Female baseline =", sex.baseline, "\n")
+
+        saveRDS(list(sex=sex.baseline), 
+                paste(tempprefix, "win_", WINSHIFT, ".covariate.RDS", sep=''))
+    }
     
 ######################################################################
 ## Training R2
@@ -310,6 +360,10 @@ for (WINSHIFT in WINSHIFT.list) {
         predY <- predY + (predY0 + PTwt.tail * trPT.tail)
     }
 
+    if (!is.null(sex.covariate)) {
+        predY <- predY + (sex.baseline * sex.covariate)
+    }
+
 #########################################################################
 ## back2snpeff
 
@@ -317,7 +371,7 @@ for (WINSHIFT in WINSHIFT.list) {
 
         cat("Re-weighting SNPs in chr", CHR, "...\n")
 
-    ## Read summary stats (discovery)
+        ## Read summary stats (discovery)
         summstat.chr <- read.delim(paste(summstatfile, ".", CHR, sep=''),
                                    header=TRUE, stringsAsFactors=FALSE,
                                    sep="\t")
@@ -352,7 +406,7 @@ for (WINSHIFT in WINSHIFT.list) {
             lambda0 <- wintab$lambda
             etahat0 <- wintab$etahat
             
-            Nq <- sum(lambda0 > 0)
+            Nq <- sum(lambda0 > lambda.q[1])
             
             if (Nq == 0) {
                 ## No projection left
@@ -375,9 +429,9 @@ for (WINSHIFT in WINSHIFT.list) {
 
             Q0 <- readRDS(paste(winfilepre, ".Q.RDS", sep=''))
             
-            etahat0 <- etahat0[lambda0 > 0]
-            Q0 <- Q0[, lambda0 > 0, drop=FALSE]
-            lambda0 <- lambda0[lambda0 > 0]
+            etahat0 <- etahat0[lambda0 > lambda.q[1]]
+            Q0 <- Q0[, lambda0 > lambda.q[1], drop=FALSE]
+            lambda0 <- lambda0[lambda0 > lambda.q[1]]
 
             wt0 <- rep(NA, Nq)
     
@@ -405,12 +459,15 @@ for (WINSHIFT in WINSHIFT.list) {
             if (any(etahat0 == 0)) {
                 wt0[etahat0 == 0] <- 0
             }
-            
+
             ASSERT(all(!is.na(wt0)))
 
 #       Compared to manuscript, we did not scale qX0 with lambda^(-1/2), 
 #       thus no need to scale here again, wt0 includes the factor already.
 #       etahat0.adj <- etahat0 * wt0 / sqrt(lambda0)
+#       In effect, however, this is equivalent to the description of methods
+#       as this is compensated at the later step. 
+#       The difference is intended to minimize numerical errors.
             etahat0.adj <- etahat0 * wt0 
 
             wt.betahat <- c(wt.betahat, Q0 %*% as.matrix(etahat0.adj))
@@ -482,7 +539,7 @@ for (WINSHIFT in WINSHIFT.list) {
 
 cat("Observed scale R2 in training cohort =", cor(trY, predY)**2, "\n")
 
-if (require(pROC) && use.lda) {
+if (require(pROC) && (length(unique(trphen$Outcome)) == 2)) {
     ## Binary phenotypes
         
     library(pROC)
