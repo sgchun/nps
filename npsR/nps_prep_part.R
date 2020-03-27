@@ -44,10 +44,6 @@ w.quant.o2 <- function(x, nbin) {
 }
 
 #########################################################################
-# tempprefix <- "~/ukbb.ibd/npsdat2/"
-# nLambdaPT <- 10
-# nEtaPT <- 10
-
 cargs <- commandArgs(trailingOnly=TRUE)
 
 if (length(cargs) < 3) {
@@ -187,6 +183,7 @@ for (WINSHIFT in WINSHIFT.list) {
     count <- 0
     nBetahatH <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
     meanBetahatH <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
+    meanSqLambda <- array(0, dim=c(nLambdaPT, nEtaPT, 1))
     
     for (I in 2:length(lambda.q)) {
         etahat.all.sub <- etahat.all[lambda.all > lambda.q[I - 1] &
@@ -210,6 +207,11 @@ for (WINSHIFT in WINSHIFT.list) {
             meanBetahatH[I - 1, J, 1] <- meanBetahatH[I - 1, J, 1] +
                 sum(etahat.all.sub[(etahat.all.sub > betahatH.lo &
                                     etahat.all.sub <= betahatH.hi)])
+            meanSqLambda[I - 1, J, 1] <- meanSqLambda[I - 1, J, 1] +
+                sum(sqrt(lambda.all[lambda.all > lambda.q[I - 1] &
+                                    lambda.all <= lambda.q[I] & 
+                                    abs(etahat.all) > betahatH.lo &
+                                    abs(etahat.all) <= betahatH.hi]))
             
             count <- count + sum(nBetahatH[I - 1, J, ])
         }
@@ -221,9 +223,11 @@ for (WINSHIFT in WINSHIFT.list) {
     print(betahatH.q)
     
     meanBetahatH <- meanBetahatH / nBetahatH
-    
     meanBetahatH[is.nan(meanBetahatH)] <- 0
 
+    meanSqLambda <- meanSqLambda / nBetahatH
+    meanSqLambda[is.nan(meanSqLambda)] <- 0
+    
 # print(meanBetahatH)
 
 
@@ -239,6 +243,7 @@ for (WINSHIFT in WINSHIFT.list) {
     partdata[["lambda.q"]] <- lambda.q
     partdata[["betahatH.q"]] <- betahatH.q
     partdata[["meanBetahatH"]] <- meanBetahatH
+    partdata[["meanSqLambda"]] <- meanSqLambda
 
     saveRDS(partdata,
             paste(tempprefix, "win_", WINSHIFT, ".part.RDS", sep=''))
