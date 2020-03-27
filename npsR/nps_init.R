@@ -296,13 +296,18 @@ summstatfile2 <- paste(tempprefix, "/harmonized.summstats.txt", sep='')
 
 cat("Dumping harmonized summary stats file: ", summstatfile2, "...")
 
-write.table(summstat[, c("chr", "pos", "ref", "alt", "reffreq", "pval",
-                         "effalt")],
+cols <- c("chr", "pos", "ref", "alt", "reffreq", "pval", "effalt")
+
+if ("N" %in% colnames(summstat)) {
+   cols <- c(cols, "N")
+}
+
+write.table(summstat[, cols],
             file=summstatfile2, quote=FALSE, sep="\t",
             row.names=FALSE, col.names=TRUE)
 cat(" OK\n")
 
-# SAve config
+# Save config
 cat("Writing config file ...")
 
 args <- list()
@@ -316,9 +321,6 @@ args[["trainfreqfile"]] <- trainfreqfile
 args[["trainphenofile"]] <- trainphenofile
 args[["traintag"]] <- traintag
 args[["WINSZ"]] <- WINSZ
-# Fixed cut-off for lambda of projection
-# args[["LAMBDA.CO"]] <- 10
-# Cut-off for corss-window pruning
 args[["CXWCOR.CO"]] <- 0.3
 
 saveRDS(args, file=paste(tempprefix, "args.RDS", sep=''))
