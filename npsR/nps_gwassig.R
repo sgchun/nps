@@ -27,7 +27,7 @@ ASSERT <- function(test) {
 cargs <- commandArgs(trailingOnly=TRUE)
 
 if (length(cargs) != 2) {
-    stop("Usage: Rscript nps_split_gwassig.R <work dir> <chrom>")
+    stop("Usage: Rscript nps_gwassig.R <work dir> <chrom>")
 }
 
 tempprefix <- paste(cargs[1], "/", sep='')
@@ -41,7 +41,7 @@ traindir <- args[["traindir"]]
 traintag <- args[["traintag"]]
 WINSZ <- args[["WINSZ"]]
 
-# Rest of command args
+## Rest of command args
 CHR <- as.numeric(cargs[2])
 
 if (!(CHR %in% 1:22)) {
@@ -53,7 +53,7 @@ if (CHR == 6) {
 }
 #########################################################################
 
-# Read summary stats (discovery)
+## Read summary stats (discovery)
 chr.str <- paste('chr', CHR, sep='')
 
 summstat <- read.delim(summstatfile, header=TRUE, stringsAsFactors=FALSE,
@@ -64,18 +64,18 @@ M.chr <- nrow(summstat)
 
 std.effalt <-
     abs(qnorm(summstat$pval/2, lower.tail=TRUE))*sign(summstat$effalt)
-
-if ("N" %in% colnames(summstat)) {
     
-    sqrtN <- sqrt(summstat$N)
-
-} else {
-    
-    ## Calculate effective N
+## Calculate effective N
+#if ("N" %in% colnames(summstat)) {
+#
+#    sqrtN <- sqrt(summstat$N)
+#
+#} else {
     se <- sqrt(2 * summstat$reffreq * (1 - summstat$reffreq))
     sqrtN <- std.effalt / (summstat$effalt * se)
     sqrtN[summstat$effalt == 0] <- 0
-}
+#} 
+
 
 summstat <- cbind(summstat, std.effalt=std.effalt, sqrtN=sqrtN)
 
@@ -93,7 +93,7 @@ betahat.tail.chr <- rep(0, M.chr)
 
 pval.chr <- summstat.chr$pval
 
-# for trPT of tails 
+## for trPT of tails 
 X.trPT <- NULL
 betahat.trPT <- c()
 
@@ -103,7 +103,6 @@ masked[ summstat.chr$sqrtN == 0 ] <- 0
 while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
 
     ## Focal SNP
-    ##    pick0 <- which.min(pval.chr)[1]
     masked.std.effalt <- abs(summstat.chr$std.effalt)
     masked.std.effalt[masked <= 0] <- 0
     pick0 <- which.max(masked.std.effalt)
@@ -121,7 +120,7 @@ while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
     start.idx <- c(start.idx, begin)
     end.idx <- c(end.idx, end)
 
-    ## Get the reference LD matrix
+    ### Get the reference LD matrix
     stdgt.file <-
         gzfile(paste(traindir, "/chrom", CHR, ".", traintag,
                      ".stdgt.gz", sep=''), open="rb")
@@ -152,19 +151,11 @@ while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
     
     close(stdgt.file)
 
-    ld0 <- (t(X0) %*% X0) / (Nt - 1)
-
-    ## SE ~ 1/sqrt(Nt), 5 SD
-    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
-
     span <- (end - begin + 1)
 
     ASSERT(!is.null(X0))
     ASSERT(nrow(X0) == Nt)
     ASSERT(ncol(X0) == span)
-
-    ASSERT(!is.null(ld0))
-    ASSERT(nrow(ld0) == span)
 
     pos.win <- summstat.chr$pos[begin:end]
 
@@ -176,6 +167,15 @@ while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
 
     ASSERT(pos.win[pick1] == pick.chrpos)
 
+    ## Calculate LD 
+    ld0 <- (t(X0) %*% X0[, pick1, drop=FALSE]) / (Nt - 1)
+
+    ## SE ~ 1/sqrt(Nt), 5 SD
+    ld0[abs(ld0) < 5 / sqrt(Nt)] <- 0
+
+    ASSERT(!is.null(ld0))
+    ASSERT(nrow(ld0) == span)
+    
     ## calculate residual effects
     tailbeta <- rep(0, span)
     tailbeta[pick1] <- betahat.win[pick1]
@@ -185,37 +185,7 @@ while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
     sqrtN.cor <- sqrtN.win / sqrtN.win[pick1]
 
     betahat.win.tailfix <-
-        betahat.win - sqrtN.cor * (ld0 %*% as.matrix(tailbeta))
-
-    ## masked.win <- masked[begin:end]
-    ## masked.win[abs(ld0[pick1, ]) > 0.5] <- TRUE
-
-    ## if (max(abs(betahat.win.tailfix)[!masked.win]) > TAIL.THR.Z) {
-    ##     ## calculate joint effects
-
-    ##     betahat.win.tailfix2 <- abs(betahat.win.tailfix)
-    ##     betahat.win.tailfix2[masked.win] <- 0
-        
-    ##     pick2cv <- which.max(betahat.win.tailfix2)
-
-    ##     r.ij <- ld0[pick1, pick2cv]
-    ##     det.ij <- 1 - r.ij**2
-
-    ##     if (r.ij != 0) {
-            
-    ##         lambda.i <-
-    ##             (betahat.win[pick1] - r.ij * sqrtN.win[pick1] /
-    ##              sqrtN.win[pick2cv] * betahat.win[pick2cv]) / det.ij
-
-    ##         cat("    (", pos.win[pick1], pos.win[pick2cv], ") r =",
-    ##             r.ij, "Z =", betahat.win[pick1], "->", lambda.i, "\n")
-                
-    ##         tailbeta[pick1] <- lambda.i
-
-    ##         betahat.win.tailfix <-
-    ##             betahat.win - sqrtN.cor * (ld0 %*% as.matrix(tailbeta))
-    ##     }
-    ## }
+        betahat.win - sqrtN.cor * ld0 * betahat.win[pick1]
 
     cat("Residualizing the effect at", pos.win[pick1],
         "Z =", tailbeta[pick1], "\n")
@@ -234,7 +204,7 @@ while (max(abs(summstat.chr$std.effalt[masked > 0])) > TAIL.THR.Z) {
 
     masked[begin:end] <- masked[begin:end] - 1
     
-    pos.mask <- pos.win[abs(ld0[pick1, ]) > 0.3]
+    pos.mask <- pos.win[abs(ld0) > 0.3]
     masked[summstat.chr$pos %in% pos.mask] <- 0
 
     cat("Max Residualized Z:",
