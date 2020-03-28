@@ -46,7 +46,7 @@ For inquiries on software, please contact:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job script templates in the [sge/](https://github.com/sgchun/nps/tree/master/sge) directory. These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. You may still need to modify the provided job scripts to configure and load necessary modules, for example:
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job script templates in the [nps-1.1.1/sge/](https://github.com/sgchun/nps/tree/master/sge) directory. These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. You may still need to modify the provided job scripts to configure and load necessary modules, for example:
 
    ```bash
    ###
@@ -65,18 +65,16 @@ For inquiries on software, please contact:
 
    **The details will depend on specific system configurations.** 
 
-## Running NPS 
-
-### Test datsets
-We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from Sunyaev Lab FTP server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small and can be easily run on desktop computer whereas test set #2 is more realistic dataset but requires serious computational resource to run.
+## NPS Test datsets
+We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from Sunyaev Lab FTP server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small and can be easily run on desktop computer whereas test set #2 is a more realistic dataset but requires serious computational resource to run NPS.
 
 Test set | Total # of simulated SNPs | # of simulated causal SNPs | NPS disk space requirement | NPS run time
 --- | --- | --- | --- | --- 
 #1 | 100,449 | 522 (0.5%) | XX GB | < 30 mins* 
 #2 | 5,012,500 | 5,008 (0.1%) | 1 TB | 3-6 hours**
 
-* On desktop computer, without parallelization
-** On computer clusters, parallelizing up to 88 CPUs, with linear algebra acceleration. 
+[*] On desktop computer, without parallelization  
+[**] On computer clusters, parallelizing up to 88 CPUs, with linear algebra acceleration.  
 
 Download the test dataset and unpacked it as below. See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the description on the input file formats.
 ```bash
@@ -97,10 +95,8 @@ tar -zxvf NPS.Test1.tar.gz
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
 ```
 
-### Running NPS on test set #1 without parallelization
-NPS was designed with parallel processing on clusters in mind. For this, the algorithm is broken down into multiple steps, and computationally-intensive operations are split by chromosomes and run in parallel. For instructions on running it on computer clusters, move onto [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) sections after this. 
-
-For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to drive SGE cluster jobs sequentially, by processing one chromosome at a time. Test set #1 is a small dataset and can be tested on modest desktop computers without parallelization. The instructions below are based on the scenario that you will run the test set #1 on a desktop computer.
+## Running NPS on test set #1
+Test set #1 is small enough to run on desktop computers (MacOS and Linux are supported) without parallel processing. We provide a wrapper script (`run_all_chroms.sh`) to drive cluster jobs sequentially, by processing one chromosome at a time. To run Test set #1 on computer clusters, see the instructions for [SGE] and [LSF]. 
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetID*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetID* of training cohort. 
    ```bash
@@ -125,29 +121,10 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
     - analysis window size: `80` SNPs. The window size of 80 SNPs for ~100,000 genome-wide SNPs is comparable to 4,000 SNPs for ~5,000,000 genome-wide SNPs. 
     - directory to store NPS data: `testdata/Test1/npsdat`. The NPS configuration and all output files will be stored here.
 
-   The set-up can be checked by running `nps_check.sh`. If `nps_check.sh` finds an error, `FAIL` message will be printed. If everything is fine, only `OK` messages will be reported: 
-   
-   ```bash
-   ./nps_check.sh testdata/Test1/npsdat/
-   ```
-   
-   > NPS data directory: testdata/Test1/npsdat/  
-   > Verifying nps_init:  
-   > Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.1)  
-   > Checking testdata/Test1/npsdat//log ...OK  
-   > Verifying nps_stdgt:  
-   > Checking testdata/Test1/chrom1.Test1.train ...OK  
-   > Checking testdata/Test1/chrom2.Test1.train ...OK  
-   > Checking testdata/Test1/chrom3.Test1.train ...OK  
-   > ...   
-
 3. ** Separate out the GWAS-significant peaks as a separate partition. **
 
 ```bash
    ./run_all_chroms.sh sge/nps_gwassig.job testdata/Test1/npsdat/
-   
-   # Check the results of last step
-   ./nps_check.sh testdata/Test1/npsdat/
    ```
 
 4. **Set up the decorrelated "eigenlocus" space.** This step sets up the decorrelated eigenlocus space by projecting the data into the decorrelated domain and pruning residual correlations bretween windows. This is one of the most time-consuming steps of NPS. The first argument to `nps_decor_prune.job` is the NPS data directory, in this case, `testdata/Test1/npsdat/`. The second argument is the window shift. We recommend running NPS four times on shifted windows and merging the results in the last step. Specifically, we recommend shifting analysis windows by 0, WINSZ \* 1/4, WINSZ \* 2/4 and WINSZ \* 3/4 SNPs, where WINSZ is the size of analysis window. For test set #1, we use the WINSZ of 80, thus the recommended window shifts should be `0`, `20`, `40` and `60`.  
@@ -157,10 +134,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 20
    ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh testdata/Test1/npsdat/
-   ```
+    ```
    
 5. **Partition the rest of data.** We define the partition scheme by running `npsR/nps_prep_part.R`. The first argument is the NPS data directory (`testdata/Test1/npsdat/`). The second and third arguments are the numbers of partitions. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space, thus last two arguments are `10` and `10`: 
    ```
@@ -173,9 +147,6 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 20
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 40
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
-   
-   # Check the results of last step
-   ./nps_check.sh testdata/Test1/npsdat/
    ```
 
 6. **Estimate per-partition shrinkage weights.** We estimate the per-partition weights using `npsR/nps_reweight.R`. The argument is the NPS data directory (`testdata/Test1/npsdat/`):
@@ -191,9 +162,6 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
-   
-   # Check the results
-   ./nps_check.sh testdata/Test1/npsdat/
    ```
    Here, the first argument for `sge/nps_score.dosage.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetID for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetID has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
@@ -218,6 +186,8 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    > 95% CI: 0.8589-0.8963 (DeLong)  
    > Nagelkerke's R2 = 0.3172322  
 
+## Running NPS on test set #2
+To run test set #2 on computer clusters, see the instructions for [SGE] and [LSF]. 
 
 ## How to prepare training and validation cohorts for NPS
 We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
