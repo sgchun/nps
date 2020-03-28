@@ -8,14 +8,14 @@ We recommend running NPS in parallelized computer clusters. We support the follo
 * Slurm
 * MacOS (not recommended for genome-wide datasets)
 
-For citation: 
-> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
-> BioRxiv 2020. doi: 10.1101/370064 (preprint).
-
 For inquiries on software, please contact: 
 * Sung Chun (SungGook.Chun@childrens.harvard.edu)
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
+
+For citation: 
+> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
+> BioRxiv 2020. doi: 10.1101/370064 (preprint).
 
 ## How to Install
 1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled using GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level directory. 
