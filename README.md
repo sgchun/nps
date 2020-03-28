@@ -1,27 +1,22 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. (2018) [(preprint)](https://www.biorxiv.org/content/early/2019/01/09/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
+NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. [(preprint)](https://doi.org/10.1101/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
 
 For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
-> BioRxiv 370064, doi: https://doi.org/10.1101/370064 (preprint).
+> BioRxiv doi: 10.1101/370064 (preprint).
 
 For inquiries on software, please contact: 
 * Sung Chun (SungGook.Chun@childrens.harvard.edu)
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
-The current version is 1.1.0. The followings were changed with this version: 
-- Command line interface was simplified for the useability improvement. 
-- Tracy-Widom statistic is used to truncate noisy low-rank projections instead of imposing a preset threshold on eigenvalues.
-- GWAS peak selection algorithm was improved to better account for conditionally independent signals.
-
 ## How to Install
-1. Download and unpack NPS package as below ([version 1.1.0](https://github.com/sgchun/nps/archive/1.1.0.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.1.0)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
+1. Download and unpack NPS package as below ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)) ([Release Note](https://github.com/sgchun/nps/releases/tag/1.1.1)). Some of NPS codes are optimized in C++ and need to be compiled with GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. **stdgt** is used to convert allelic dosages to standardized genotypes with the mean of 0 and variance of 1. **grs** calculates genetic risk scores using per-SNP genetic effects computed by NPS.
 
    ```bash
-   tar -zxvf nps-1.1.0.tar.gz
-   cd nps-1.1.0/
+   tar -zxvf nps-1.1.1.tar.gz
+   cd nps-1.1.1/
    make
    ```
 
@@ -66,78 +61,10 @@ The current version is 1.1.0. The followings were changed with this version:
 
 5. We provide job scripts to help prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/).
 
-## Input files for NPS
-To run NPS, you need the following set of input files: 
-
-1. **GWAS summary statistics.** NPS supports two summary statistics formats: *MINIMAL* and *PREFORMATTED*. Internally, NPS uses PREFORMATTED summary statistics. With real data, however, we generally recommend preparing summary statistics in the MINIMAL format and harmonize them with training genotype data using provided NPS scripts. This will automatically convert the summary statistics file into the PREFORMATTED format ([step-by-step instruction](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). 
-   - The MINIMAL format is a *tab-delimited* text file with the following seven or eight columns: 
-     - **chr**: chromosome number. NPS expects only chromosomes 1-22. *Only chromosome numbers are expected.*
-     - **pos**: base position of SNP.
-     - **a1** and **a2**: alleles at each SNP in any order.
-     - **effal**: effect allele. It should match either a1 or a2 allele. 
-     - **pval**: p-value of association. 
-     - **effbeta**: estimated *per-allele* effect size of *the effect allele*. For case/control GWAS, log(OR) should be used. *DO NOT pre-convert them to effect sizes relative to standardized genotypes. NPS will handle this automatically.*
-     - **effaf**: (*Optional*) allele frequency of *the effect allele* in the discovery GWAS cohort. If this column is missing, NPS will use the allele frequencies of training cohort instead. Although this is optional, we **strongly recommend including effaf when it is available from a GWAS study.** When this column is provided, NPS will run a QC check for the consistency of the effect allele frequencies  between GWAS and training cohort data. 
-     ```
-     chr	pos	a1	a2	effal	pval	effbeta	effaf
-     1	569406	G	A	G	0.8494	0.05191	0.99858
-     1	751756	C	T	C	0.6996	0.00546	0.14418
-     1	753405	C	A	C	0.8189	0.00316	0.17332
-     1	753541	A	G	A	0.8945	0.00184	0.16054
-     1	754182	A	G	A	0.7920	0.00361	0.18067
-     1	754192	A	G	A	0.7853	0.00373	0.1809
-     1	754334	T	C	T	0.7179	0.00500	0.18554
-     1	755890	A	T	A	0.7516	0.00441	0.17327
-     1	756604	A	G	A	0.9064	0.00162	0.18202
-     ...
-     ```
-     
-   - The *PREFORMATTED* format is the native format for NPS. We provide summary statistics of [our test cases](https://github.com/sgchun/nps#test-cases) in this format so that NPS can run on them directly without conversion. This is a *tab-delimited* text file format, and rows must be sorted by chromosome numbers and positions of SNPs. The following seven columns are required: 
-     - **chr**: chromosome name starting with "chr." NPS expects only chromosomes 1-22. *Chromosomes should be designated by "chr1", ..., "chr22".*
-     - **pos**: base position of SNP.
-     - **ref** and **alt**: reference and alternative alleles of SNP, respectively.
-     - **reffreq**: allele frequency of reference allele in the discovery GWAS cohort. 
-     - **pval**: p-value of association. 
-     - **effalt**: estimated *per-allele* effect size of *the alternative allele*. For case/control GWAS, log(OR) should be used. NPS will convert **effalt** to effect sizes relative to *the standardized genotype* internally using **reffreq**.  
-     ```
-     chr	pos	ref	alt	reffreq	pval	effalt
-     chr1	676118	G	A	0.91584	0.7908	0.0012
-     chr1	734349	G	A	0.90222	0.6989	0.001636
-     chr1	770886	G	A	0.91708	0.721	0.001627
-     chr1	785050	G	A	0.1139	0.3353	-0.00381
-     chr1	798400	G	A	0.8032	0.03301	0.006736
-     chr1	804759	G	A	0.8837	0.7324	-0.00134
-     chr1	831489	G	A	0.2797	0.1287	0.004252
-     chr1	832318	G	A	0.2797	0.4102	0.002304
-     chr1	836924	G	A	0.7958	0.6591	-0.001374
-     ...
-     ```
-     When summary statistics are provided in this format, NPS will not run its automatic data harmonization procedures. The user needs to ensure that the summary statistics file does not include InDels, tri-allelic SNPs or duplicated markers and also that no SNP in training genotypes files has missing summary statistics. If these requirements are violated, NPS will report an error and terminate. 
-
-2. **Genotypes in the qctool dosage format.** NPS expects individual genotype data are provided in the dosage file format. We use [qctool](https://www.well.ox.ac.uk/~gav/qctool/) to generate these files (See [instructions](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps)). The genotype files need to be split by chromosomes for parallelization, and for each chromosome, the file should be named as "chrom*N*.*DatasetID*.dosage.gz." 
-   
-3. **Sample IDs in the PLINK .fam format.** The samples in the .fam file should appear in the exactly same order as the samples in the  genotype dosage files. This is a space- or tab-separated six-column text file without a column header. The phenotype information in this file will be ignored. See [PLINK documentation](https://www.cog-genomics.org/plink2/formats#fam) for the details on the format. 
-   ```
-   trainF2  trainI2  0  0  0 -9
-   trainF3  trainI3  0  0  0 -9
-   trainF39 trainI39 0  0  0 -9
-   trainF41 trainI41 0  0  0 -9
-   trainF58 trainI58 0  0  0 -9
-   ```
-4. **Phenotypes in the PLINK phenotype format.** NPS looks up phenotypes in a separately prepared phenotype file. The phenotype name has to be "**Outcome**" with cases and controls encoded by **1** and **0**, respectively. **FID** and **IID** are used together to match samples to .fam file. This file is tab-delimited, and samples can appear in any order. Missing phenotypes (e.g. missing entry of samples in .fam file or phenotypes encoded by **-9**) are not allowed.
-   ```
-   FID   IID    Outcome
-   trainF2  trainI2  0
-   trainF39 trainI39 0
-   trainF3  trainI3  1
-   trainF41 trainI41 1
-   trainF58 trainI58 0
-   ```
-
 ## Running NPS 
 
 ### Test cases
-We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from the Sunyaev Lab server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can be run in less than ~30 mins in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediate data and can take ~ 6 hours on computer clusters with linear-algebra acceleration.
+We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from the [Sunyaev Lab server](ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can be run in less than ~30 mins in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediate data and can take ~ 6 hours on computer clusters with linear-algebra acceleration. The description on the input file formats can be found in [here](https://github.com/sgchun/nps/blob/master/FileFormats.md). 
 
 Both simulated datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly:    
 - **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in those 100,449 SNPs. Note that this is an unrealistic assumption; with such a sparse SNP set, causal SNPs may not be necessarily genotyped or accurately tagged. The fraction of causal SNP is 0.005 (a total of 522 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 individuals without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
@@ -146,10 +73,10 @@ Both simulated datasets were generated using our multivariate-normal simulator (
 
 We assume that the test datasets will be downloaded and unpacked in the following directories: 
 ```bash
-cd nps-1.1.0/testdata/
+cd nps-1.1.1/testdata/
 
 tar -zxvf NPS.Test1.tar.gz 
-# This will create the following test data files in nps-1.1.0/testdata/Test1
+# This will create the following test data files in nps-1.1.1/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
@@ -161,20 +88,6 @@ tar -zxvf NPS.Test1.tar.gz
 # ... 
 # Test1/Test1.val.5K.fam (validation cohort sample IDs)
 # Test1/Test1.val.5K.phen (validation cohort phenotypes)
-
-tar -zxvf NPS.Test2.tar.gz 
-# This will create the following test data in nps-1.1.0/testdata/Test2
-# Test2/Test2.summstats.txt (PREFORMATTED GWAS summary statistics)
-# Test2/chrom1.Test2.train.dosage.gz (training cohort genotypes)
-# Test2/chrom2.Test2.train.dosage.gz (training cohort genotypes)
-# ... 
-# Test2/Test2.train.2.5K_2.5K.fam (training cohort sample IDs)
-# Test2/Test2.train.2.5K_2.5K.phen (training cohort phenotypes)
-# Test2/chrom1.Test2.val.dosage.gz (validation cohort genotypes)
-# Test2/chrom2.Test2.val.dosage.gz (validation cohort genotypes)
-# ... 
-# Test2/Test2.val.5K.fam (validation cohort sample IDs)
-# Test2/Test2.val.5K.phen (validation cohort phenotypes)
 ```
 
 ### Running NPS on test set #1 without parallelization
@@ -184,7 +97,7 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
 
 1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetID*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetID* of training cohort. 
    ```bash
-   cd nps-1.1.0/
+   cd nps-1.1.1/
    
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
@@ -298,386 +211,6 @@ For desktop computers, we provide a wrapper script (`run_all_chroms.sh`) to driv
    > 95% CI: 0.8589-0.8963 (DeLong)  
    > Nagelkerke's R2 = 0.3172322  
 
-
-### Running NPS on test set #1 using SGE clusters
-
-To run NPS on SGE clusters, please run the following steps. All steps have to run in the top-level NPS directory (`nps-1.1.0/`), and jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the `sge/` directory.
-
-```
-cd nps-1.1.0/
-
-# Standardize genotypes
-qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
-
-# Check the results
-./nps_check.sh stdgt testdata/Test1 Test1.train 
-
-# Configure
-Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
-
-# Check the results
-./nps_check.sh init testdata/Test1/npsdat/
-
-# Set up the decorrelated eigenlocus space 
-qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0 
-qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20 
-qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40 
-qsub -cwd -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60 
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60 
-
-# Define partitioning boundaries
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10 
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10 
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10 
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10 
-
-# Calculate partitioned risk scores in the training cohort
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-
-# Estimate per-partition shrinkage weights
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0 
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20 
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40 
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60 
-
-# (Optional) Report the overall AUC of prediction in the training cohort
-Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
-
-# (Optional) Generate a plot of overall shrinkage curves
-Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
-
-# Convert back to per-SNP effect sizes
-qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 0
-qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 20
-qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 40
-qsub -cwd -t 1-22 sge/nps_back2snpeff.job testdata/Test1/npsdat/ 60
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-
-# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
-
-# Check the results of nps_score
-./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
-
-# Calculate overall polygenic scores and report prediction accuracies
-Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
-```
-
-### Running NPS on test set #1 using LSF clusters
-
-Running NPS on LSF clusters is similar. We provide the job scripts in `lsf/` directory.
-
-```
-cd nps-1.1.0/
-
-# Standardize genotypes
-bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test1 Test1.train
-
-# Check the results
-./nps_check.sh stdgt testdata/Test1 Test1.train
-
-# Configure
-Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
-
-# Check the results
-./nps_check.sh init testdata/Test1/npsdat/
-
-# Set up the decorrelate eigenlocus space
-bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 0
-bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 20
-bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 40
-bsub -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test1/npsdat/ 60
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-
-# Define partitioning boundaries
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 0 10 10
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 20 10 10
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 40 10 10
-Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 60 10 10
-
-# Calculate partitioned risk scores in the training cohort
-bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 0
-bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 20
-bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 40
-bsub -J part[1-22] lsf/nps_part.job testdata/Test1/npsdat/ 60
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-
-# Estimate per-partition shrinkage weights
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 0
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 20
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 40
-Rscript npsR/nps_weight.R testdata/Test1/npsdat/ 60
-
-# (Optional) Report the overall AUC of prediction in the training cohort
-Rscript npsR/nps_train_AUC.R testdata/Test1/npsdat/ 0 20 40 60
-
-# (Optional) Generate a plot of overall shrinkage curves
-Rscript npsR/nps_plot_shrinkage.R testdata/Test1/npsdat/ Test1.nps.pdf 0 20 40 60
-
-# Convert back to per-SNP effect sizes
-bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 0
-bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 20
-bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 40
-bsub -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test1/npsdat/ 60
-
-# Check the results of last step
-./nps_check.sh last testdata/Test1/npsdat/ 0 20 40 60
-
-# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0
-bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
-bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
-bsub -J score[1-22] lsf/nps_score.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
-
-# Check the results of nps_score
-./nps_check.sh score testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 20 40 60
-
-# Calculate overall polygenic scores and report prediction accuracies
-Rscript npsR/nps_val.R testdata/Test1/npsdat/ testdata/Test1/ testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen 0 20 40 60 
-```
-
-### Running NPS on test set #2 using SGE clusters
-
-NPS can be run on test set #2 similarly as test set #1 except: 
-* Since test set #2 has a total of ~5,000,000 genome-wide common SNPs, we recommend to use the window size of **4,000 SNPs**. And accordingly, window shifts should be set to **0, 1,000, 2,000, and 3,000 SNPs**. This is the setting we generally recommend for real data as well. 
-* Some of NPS steps now require large memory space. With most datasets, 4GB memory space per a task is sufficient for NPS. On SGE, the memory requirement can be specified by `qsub -l h_vmem=4G`.
-* For test set #2 and real data sets, we do not recommend running NPS without parallelization because of heavy computational requirements.
-
-```bash
-cd nps-1.1.0/
-
-# Standardize genotypes
-qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test2/ Test2.train
-
-# Check the results
-./nps_check.sh stdgt testdata/Test2/ Test2.train
-
-# Configure
-# CAUTION: This step requires large memory space
-# You may need to run this as a job or open an interative session for it by:
-# qlogin -l h_vmem=4G
-Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat
-
-# Check the results
-./nps_check.sh init testdata/Test2/npsdat/
-
-# Set up the decorrelate eigenlocus space
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 3000
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Define partitioning boundaries 
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
-
-# Calculate partitioned risk scores in the training cohort
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_part.job testdata/Test2/npsdat/ 3000
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Estimate per-partition shrinkage weights
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000
-
-# (Optional) Report the overall AUC of prediction in the training cohort
-Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000
-
-# (Optional) Generate a plot of overall shrinkage curves
-Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000
-
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 0
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 1000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 2000
-qsub -cwd -l h_vmem=4G -t 1-22 sge/nps_back2snpeff.job testdata/Test2/npsdat/ 3000
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Convert back to per-SNP effect sizes
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
-qsub -cwd -t 1-22 sge/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
-
-# Check the results of nps_score
-./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
-
-# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000
-```
-
-`nps_train_AUC.R` will report the following AUC in the training cohort:
-> Data: 2500 controls < 2500 cases.  
-> Area under the curve: **0.7843**  
-> 95% CI: 0.7718-0.7968 (DeLong)  
-
-`nps_plot_shrinkage.R` will plot [the curves of estimated conditional mean effects](https://github.com/sgchun/nps/blob/master/testdata/Test2.nps.pdf) and save it to a pdf file (`Test2.nps.pdf`). 
-
-`nps_val.R` will report the following overall prediction accuracy in the validation cohort: 
-> Non-Parametric Shrinkage 1.1  
-> Validation cohort:  
-> Total  5000 samples  
-> 240  case samples  
-> 4760  control samples  
-> 0  samples with missing phenotype (-9)  
-> Includes TotalLiability  
-> Checking a prediction model (winshift = 0 )...  
-> Observed-scale R2 = 0.04862955   
-> Liability-scale R2 = 0.2303062   
-> Checking a prediction model (winshift = 1000 )...  
-> Observed-scale R2 = 0.04994584  
-> Liability-scale R2 = 0.2298484  
-> Checking a prediction model (winshift = 2000 )...  
-> Observed-scale R2 = 0.05150205  
-> Liability-scale R2 = 0.2268046  
-> Checking a prediction model (winshift = 3000 )...  
-> Observed-scale R2 = 0.05258402  
-> Liability-scale R2 = 0.2298871  
->  
->  
->  
-> Producing a combined prediction model...OK (saved in **testdata/Test2/Test2.val.5K.phen.nps_score** )  
-> Observed-scale R2 = 0.05253146  
-> Liability-scale R2 = 0.2376991  
-> Loading required package: pROC  
-> Type 'citation("pROC")' for a citation.  
->  
-> Attaching package: ‘pROC’  
->  
-> The following objects are masked from ‘package:stats’:  
->  
-> cov, smooth, var  
->  
-> AUC:  
->  
-> Call:  
-> roc.default(controls = prisk[vlY == 0], cases = prisk[vlY ==     1], ci = TRUE)  
->   
-> Data: 4760 controls < 240 cases.  
-> **Area under the curve: 0.7886**  
-> 95% CI: 0.7617-0.8154 (DeLong)  
-> Loading required package: DescTools  
-> **Nagelkerke's R2 = 0.1668188**   
->  
-> Call: &nbsp;glm(formula = vlY ~ prisk, family = binomial(link = "logit"))  
->  
-> Coefficients:  
-> (Intercept) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;prisk  
-> &nbsp; &nbsp; -5.2888 &nbsp; &nbsp; &nbsp; 0.2387  
->  
-> Degrees of Freedom: 4999 Total (i.e. Null);  4998 Residual  
-> Null Deviance: &nbsp; &nbsp; &nbsp;1926  
-> Residual Deviance: 1652 &nbsp; &nbsp; &nbsp; &nbsp; AIC: 1656  
-> Done  
-
-### Running NPS on test set #2 using LSF clusters
-
-Running NPS on LSF is similar to running it on SGE clusters. The memory limit is specified by `bsub -R 'rusage[mem=4000]'`.
-
-```bash
-cd nps-1.1.0/
-
-# Standardize genotypes
-bsub -J stdgt[1-22] lsf/nps_stdgt.job testdata/Test2/ Test2.train
-
-# Check the results
-./nps_check.sh stdgt testdata/Test2/ Test2.train 
-
-# Configure
-# This step requires large memory space.  
-# You may need to run this as a job or open an interative session for it by running:
-# bsub -Is -R 'rusage[mem=4000]' /bin/bash
-Rscript npsR/nps_init.R testdata/Test2/Test2.summstats.txt testdata/Test2 testdata/Test2/Test2.train.2.5K_2.5K.fam testdata/Test2/Test2.train.2.5K_2.5K.phen Test2.train 4000 testdata/Test2/npsdat 
-
-# Check the results
-./nps_check.sh init testdata/Test2/npsdat/
-
-# Set up the decorrelate eigenlocus space
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J decor[1-22] lsf/nps_decor_prune_gwassig.job testdata/Test2/npsdat/ 3000 
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Define partitioning boundaries 
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 0 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 1000 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 2000 10 10
-Rscript npsR/nps_prep_part.R testdata/Test2/npsdat/ 3000 10 10
-
-# Calculate partitioned risk scores in the training cohort
-bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J part[1-22] lsf/nps_part.job testdata/Test2/npsdat/ 3000 
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Estimate per-partition shrinkage weights
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 0 
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 1000 
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 2000 
-Rscript npsR/nps_weight.R testdata/Test2/npsdat/ 3000 
-
-# (Optional) Report the overall AUC of prediction in the training cohort
-Rscript npsR/nps_plot_shrinkage.R testdata/Test2/npsdat/ Test2.nps.pdf 0 1000 2000 3000 
-
-# (Optional) Generate a plot of overall shrinkage curves
-Rscript npsR/nps_train_AUC.R testdata/Test2/npsdat/ 0 1000 2000 3000 
-
-# Convert back to per-SNP effect sizes
-bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 0 
-bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 1000 
-bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 2000 
-bsub -R 'rusage[mem=4000]' -J back2snpeff[1-22] lsf/nps_back2snpeff.job testdata/Test2/npsdat/ 3000 
-
-# Check the results of last step
-./nps_check.sh last testdata/Test2/npsdat/ 0 1000 2000 3000
-
-# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000
-bsub -J score[1-22] lsf/nps_score.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000
-
-# Check the results of nps_score
-./nps_check.sh score testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 1000 2000 3000
-
-# Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-Rscript npsR/nps_val.R testdata/Test2/npsdat/ testdata/Test2/ testdata/Test2/Test2.val.5K.fam testdata/Test2/Test2.val.5K.phen 0 1000 2000 3000 
-```
 
 ## How to prepare training and validation cohorts for NPS
 We take an example of UK Biobank to show how to prepare training and validation cohorts for NPS. In principle, however, NPS can work with other cohorts as far as the genotype data are prepared in the bgen file format. To gain access to UK Biobank, please check [UK Biobank data access application procedure](https://www.ukbiobank.ac.uk/). 
