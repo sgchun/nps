@@ -1,10 +1,10 @@
 ﻿
 # Non-Parametric Shrinkage (NPS)
-NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. [(preprint)](https://doi.org/10.1101/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
+NPS is a non-parametric polygenic risk prediction algorithm described in Chun et al. 2020 [(preprint)](https://doi.org/10.1101/370064). NPS starts with a set of summary statistics in the form of SNP effect sizes from a large GWAS cohort. It then removes the correlation structure across summary statistics arising due to linkage disequilibrium and applies a piecewise linear interpolation on conditional mean effects. The conditional mean effects are estimated by partitioning-based non-parametric shrinkage algorithm using a training cohort with individual-level genotype data. 
 
 For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
-> BioRxiv doi: 10.1101/370064 (preprint).
+> BioRxiv 2020. doi: 10.1101/370064 (preprint).
 
 For inquiries on software, please contact: 
 * Sung Chun (SungGook.Chun@childrens.harvard.edu)
