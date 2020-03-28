@@ -2,6 +2,12 @@
 # Non-Parametric Shrinkage (NPS)
 NPS implements a non-parametric polygenic risk prediction algorithm described in [Chun et al. 2020 (preprint)](https://doi.org/10.1101/370064). NPS projects genetic data into an orthogonal domain called "eigenlocus space". Then, it re-weights GWAS effect sizes by partitioning genetic variations into trenches and measuring the predictive power of each trench in an independent training cohort. To run NPS, two sets of data are required: GWAS summary statistics and small individual-level training cohort with both genotype and phenotype data. 
 
+We recommend running NPS in parallelized computer clusters. We supported the following platforms: 
+* SGE / UGER
+* LSF 
+* Slurm
+* MacOS (not recommended for genome-wide datasets)
+
 For citation: 
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
 > BioRxiv 2020. doi: 10.1101/370064 (preprint).
@@ -12,7 +18,7 @@ For inquiries on software, please contact:
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
-1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled by GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level NPS directory. 
+1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled using GNU C++ compiler (GCC-4.4 or later). This will create two executable binaries, **stdgt** and **grs**, in the top-level directory. 
 
    ```bash
    tar -zxvf nps-1.1.1.tar.gz
@@ -20,16 +26,16 @@ For inquiries on software, please contact:
    make
    ```
 
-2. The core NPS module was implemented in R and requires R-3.3 or later. Although NPS can run on a standard version of R, we strongly recommend using R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
+2. The core NPS module was implemented in R (version 3.3 or higher required). Although NPS can run on a standard version of R, we strongly recommend using R linked with a linear algebra acceleration library, such as [OpenBLAS](https://www.openblas.net/), [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/articles/using-intel-mkl-with-r) or [Microsoft R open](https://mran.microsoft.com/open). These libraries can substantially speed up NPS operations.  
 
-3. (*Optional*) NPS relies on R libraries, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to report the AUC and Nagelkerke's R^2 of polygenic scores in validation cohort. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 will not be reported. To enable this feature, please install these packages by running the following on command line: 
+3. (*Optional*) NPS relies on R libraries, [pROC](https://cran.r-project.org/web/packages/pROC/index.html) and [DescTools](https://cran.r-project.org/web/packages/DescTools/index.html), to report the accuracy of polygenic scores in AUC and Nagelkerke's R^2. These modules are optional; if they are not installed, AUC and Nagelkerke's R^2 calculation will be skipped. To install these packages, run the following on command line: 
 
    ```bash
    Rscript -e 'install.packages("pROC", repos="http://cran.r-project.org")' 
    Rscript -e 'install.packages("DescTools", repos="http://cran.r-project.org")' 
    ```
 
-   To install the R extensions in the home directory (e.g. ~/R) rather than in the default system path, please run the following instead:
+   To install the R extensions in the home directory (e.g. ~/R) rather than in the default system path, use the following commands instead:
 
    ```bash
    Rscript -e 'install.packages("pROC", "~/R", repos="http://cran.r-project.org")' 
@@ -40,17 +46,17 @@ For inquiries on software, please contact:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job script examples for [SGE](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-sge-clusters) and [LSF](https://github.com/sgchun/nps#running-nps-on-test-set-1-using-lsf-clusters) clusters (See [sge/](https://github.com/sgchun/nps/tree/master/sge) and [lsf/](https://github.com/sgchun/nps/tree/master/lsf) directories). You may still need to modify the provided job scripts to configure and load necessary modules similarly as in the following example:
+4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps-on-test-set-1-without-parallelization), we strongly recommend running it on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job script templates in the [sge/](https://github.com/sgchun/nps/tree/master/sge) directory. These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. You may still need to modify the provided job scripts to configure and load necessary modules, for example:
 
    ```bash
    ###
    # ADD CODES TO LOAD MODULES HERE
-   # ---------------------- EXAMPLE ----------------------------
+   # ---------------------- EXAMPLES ----------------------------
    # On clusters running environment modules and providing R-mkl
    module add gcc/5.3.0 
    module add R-mkl/3.3.2
    
-   # On clusters running DotKit instead and supporting OpenblasR
+   # Or, on clusters running DotKit instead and supporting OpenblasR
    use GCC-5.3.0 
    use OpenblasR
    # -----------------------------------------------------------
@@ -59,19 +65,20 @@ For inquiries on software, please contact:
 
    **The details will depend on specific system configurations.** 
 
-5. We provide job scripts to help prepare training and validation cohorts for NPS. These scripts require [bgen](https://bitbucket.org/gavinband/bgen/wiki/bgenix) and [qctool v2](https://www.well.ox.ac.uk/~gav/qctool/).
-
 ## Running NPS 
 
-### Test cases
-We provide two sets of simulated test cases. Due to their large file sizes, they are provided separately from the software distribution. Please download them from the [Sunyaev Lab server](ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small (225MB), and NPS can be run in less than ~30 mins in total on a modest desktop PC even without linear-algebra acceleration. In contrast, test set #2 is more realistic simulation (11GB) and will require serious computational resources. NPS will generate up to 1 TB of intermediate data and can take ~ 6 hours on computer clusters with linear-algebra acceleration. The description on the input file formats can be found in [here](https://github.com/sgchun/nps/blob/master/FileFormats.md). 
+### Test datsets
+We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from Sunyaev Lab FTP server (ftp://genetics.bwh.harvard.edu/download/schun/). Test set #1 is relatively small and can be easily run on desktop computer whereas test set #2 is more realistic dataset but requires serious computational resource to run.
 
-Both simulated datasets were generated using our multivariate-normal simulator (See our NPS manuscript for the details). Briefly:    
-- **Test set #1.** The number of markers across the genome is limited to 100,449. We assume that all causal SNPs are included in those 100,449 SNPs. Note that this is an unrealistic assumption; with such a sparse SNP set, causal SNPs may not be necessarily genotyped or accurately tagged. The fraction of causal SNP is 0.005 (a total of 522 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 individuals without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%.  
+Test set | Total # of simulated SNPs | # of simulated causal SNPs | NPS disk space requirement | NPS run time
+--- | --- | --- | --- | --- 
+#1 | 100,449 | 522 (0.5%) | XX GB | < 30 mins* 
+#2 | 5,012,500 | 5,008 (0.1%) | 1 TB | 3-6 hours**
 
-- **Test set #2.** The number of markers across the genome is 5,012,500. The fraction of causal SNP is 0.001 (a total of 5,008 causal SNPs). The GWAS cohort size is 100,000. The training cohort has 2,500 cases and 2,500 controls. The validation cohort consists of 5,000 samples without case over-sampling. The heritability is 0.5. The phenotype prevalence is 5%. This is one of the benchmark simulation datasets used in our manuscript, with 10-fold reduction in validation cohort size. 
+* On desktop computer, without parallelization
+** On computer clusters, parallelizing up to 88 CPUs, with linear algebra acceleration. 
 
-We assume that the test datasets will be downloaded and unpacked in the following directories: 
+Download the test dataset and unpacked it as below. See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the description on the input file formats.
 ```bash
 cd nps-1.1.1/testdata/
 
