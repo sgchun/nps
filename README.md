@@ -2,14 +2,14 @@
 # Non-Parametric Shrinkage (NPS)
 NPS implements a non-parametric polygenic risk prediction algorithm described in [Chun et al. 2020 (preprint)](https://doi.org/10.1101/370064). NPS projects genetic data into an orthogonal domain called "eigenlocus space". Then, it re-weights GWAS effect sizes by partitioning genetic variations into trenches and measuring the predictive power of each trench in an independent training cohort. To run NPS, two sets of data are required: GWAS summary statistics and small individual-level training cohort with both genotype and phenotype data. 
 
-We recommend running NPS in parallelized computer clusters. We supported the following platforms: 
+We recommend running NPS in parallelized computer clusters. We support the following platforms: 
 * SGE / UGER
 * LSF 
 * Slurm
 * MacOS (not recommended for genome-wide datasets)
 
 For citation: 
-> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics. 
+> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
 > BioRxiv 2020. doi: 10.1101/370064 (preprint).
 
 For inquiries on software, please contact: 
@@ -96,30 +96,30 @@ tar -zxvf NPS.Test1.tar.gz
 ```
 
 ## Running NPS on test set #1
-Test set #1 is small enough to run on desktop computers (MacOS and Linux are supported) without parallel processing. We provide a wrapper script (`run_all_chroms.sh`) to drive cluster jobs sequentially, by processing one chromosome at a time. To run Test set #1 on computer clusters, see the instructions for [SGE] and [LSF]. 
+Test set #1 is small enough to run on desktop computers (MacOS and Linux are supported) without parallel processing. We provide a wrapper script (`run_all_chroms.sh`) to drive cluster jobs sequentially, by processing one chromosome at a time. To run test set #1 on computer clusters, see the instructions page for [SGE] and [LSF] schedulers. 
 
-1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The first parameter (`testdata/Test1`) is the location of training cohort data, where NPS will find chrom*N*.*DatasetID*.dosage.gz files. The second parameter (`Test1.train`) is the *DatasetID* of training cohort. 
+1. **Standardize genotypes.** The first step is to standardize the training genotypes to the mean of 0 and variance of 1 using `nps_stdgt.job`. The command arguments are:
+    * directory where training genotype files are: `testdata/Test1`
+    * *DatasetID* of training genotype files: `Test1.train`. For genotype files, NPS looks up chrom*N*.*DatasetID*.dosage.gz. 
+
    ```bash
    cd nps-1.1.1/
    
    ./run_all_chroms.sh sge/nps_stdgt.job testdata/Test1 Test1.train
    ```
 
-   * Note: If you use [NPS support scripts](https://github.com/sgchun/nps#how-to-prepare-training-and-validation-cohorts-for-nps) to harmonize training cohort data with summary statistics, *DatasetID* will be "*CohortName*.QC2" as the genotype files will be named as chrom*N*.*CohortName*.QC2.dosage.gz.
-
-2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to configure an NPS run: 
+2. **Configure an NPS run.** Next, we run `npsR/nps_init.R` to set up NPS. The command arguments are:
+    * GWAS summary statistics file: `testdata/Test1/Test1.summstats.txt`
+    * directory where training genotype files are: `testdata/Test1`
+    * sample information of training cohort: `testdata/Test1/Test1.train.2.5K_2.5K.fam`
+    * phenotypes information of training samples: `testdata/Test1/Test1.train.2.5K_2.5K.phen`
+    * *DatasetID* of training genotype files: `Test1.train`
+    * analysis window size: `80`. The default window size is 80 SNP for ~100,000 genome-wide SNPs. We recommend 4,000-SNP window for ~5,000,000 genome-wide SNPs. 
+    * directory to store NPS data: `testdata/Test1/npsdat`. All NPS output files will be stored here.
 
    ```bash
    Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
    ```
-    The command arguments are:
-    - GWAS summary statistics file in the PREFORMATTED format: `testdata/Test1/Test1.summstats.txt`
-    - directory containing training genotypes: `testdata/Test1`
-    - Sample information of training samples: `testdata/Test1/Test1.train.2.5K_2.5K.fam`
-    - phenotypes of training samples: `testdata/Test1/Test1.train.2.5K_2.5K.phen`
-    - DatasetID of training cohort genotypes: `Test1.train`
-    - analysis window size: `80` SNPs. The window size of 80 SNPs for ~100,000 genome-wide SNPs is comparable to 4,000 SNPs for ~5,000,000 genome-wide SNPs. 
-    - directory to store NPS data: `testdata/Test1/npsdat`. The NPS configuration and all output files will be stored here.
 
 3. ** Separate out the GWAS-significant peaks as a separate partition. **
 
