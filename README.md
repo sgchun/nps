@@ -79,13 +79,13 @@ cd nps-1.1.1/testdata/
 tar -zxvf NPS.Test1.tar.gz 
 # This will create the following test data files in nps-1.1.1/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
-# Test1/Test1.train.2.5K_2.5K.fam (training cohort sample IDs)
-# Test1/Test1.train.2.5K_2.5K.phen (training cohort phenotypes)
+# Test1/Test1.train.fam (training cohort sample IDs)
+# Test1/Test1.train.phen (training cohort phenotypes)
 # Test1/chrom1.Test1.train.dosage.gz (training cohort genotypes)
 # Test1/chrom2.Test1.train.dosage.gz (training cohort genotypes)
 # ... 
-# Test1/Test1.val.5K.fam (validation cohort sample IDs)
-# Test1/Test1.val.5K.phen (validation cohort phenotypes)
+# Test1/Test1.val.fam (validation cohort sample IDs)
+# Test1/Test1.val.phen (validation cohort phenotypes)
 # Test1/chrom1.Test1.val.dosage.gz (validation cohort genotypes)
 # Test1/chrom2.Test1.val.dosage.gz (validation cohort genotypes)
 # ... 
@@ -106,13 +106,13 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
 2. **Configure an NPS run.** For test set #1, which has ~100,000 genomewide SNPs, we recommend a window size of 80 SNPs. In general, for ~5,000,000 genome-wide SNPs we recommend to use 4,000-SNP windows. The command arguments are:
     * (1) GWAS summary statistics file: `testdata/Test1/Test1.summstats.txt`
     * (2) directory where training genotype files are: `testdata/Test1`
-    * (3) sample information of training cohort: `testdata/Test1/Test1.train.2.5K_2.5K.fam`
-    * (4) phenotypes information of training samples: `testdata/Test1/Test1.train.2.5K_2.5K.phen`
+    * (3) sample information of training cohort: `testdata/Test1/Test1.train.fam`
+    * (4) phenotypes information of training samples: `testdata/Test1/Test1.train.phen`
     * (5) *DatasetID* of training genotype files: `Test1.train`
     * (6) analysis window size: `80`.
     * (7) directory to store NPS data: `testdata/Test1/npsdat` (All NPS output files will be stored in this directory.)
    ```bash
-   Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.2.5K_2.5K.fam testdata/Test1/Test1.train.2.5K_2.5K.phen Test1.train 80 testdata/Test1/npsdat
+   Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.fam testdata/Test1/Test1.train.phen Test1.train 80 testdata/Test1/npsdat
    ```
 
 3. **Set up a special partition for GWAS-significant SNPs.** The command argument is: 
@@ -131,7 +131,7 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    ./run_all_chroms.sh sge/nps_decor_prune.job testdata/Test1/npsdat/ 60
     ```
    
-5. **Partition the rest of genome.** First, we define the partition cut-offs by running `npsR/nps_prep_part.R`. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space. The command arguments are:
+5. **Partition the rest of genome.** First, we define the partition cut-offs by running `nps_prep_part.R`. We recommend 10-by-10 double-partitioning on the intervals of eigenvalues of projection and estimated effect sizes in the eigenlocus space. The command arguments are:
     * (1) NPS data directory: `testdata/Test1/npsdat`
     * (2) Number of partitions on eigenvalues: `10`
     * (3) Number of partitions on estimated effects: `10` 
@@ -149,37 +149,38 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    ./run_all_chroms.sh sge/nps_part.job testdata/Test1/npsdat/ 60
    ```
 
-6. **Estimate shrinkage weights for each partition.** If the sex covariate is included in the training data (.fam file), ...  The command argument is: 
+6. **Estimate shrinkage weights for each partition.** If the sex is included in the FAM file of training data, NPS will automatically train the prediction model with the sex covariate. The command argument is: 
     * (1) NPS data directory: `testdata/Test1/npsdat`
    ```bash
    Rscript npsR/nps_reweight.R testdata/Test1/npsdat/ 
    ```
 
-7. **Evaluate the accuracy of trained prediction model in a validation cohort.** 
-
-
-Last, polygenic risk scores will be calculated for each chromosome and for each individual in the validation cohort using `sge/nps_score.dosage.job` as follows: 
+7. **Evaluate the accuracy of trained prediction model in a validation cohort.** First, polygenic risk scores need to be calculated chromosome by chromosome for each individual in validation cohort. For validation genotype data prepared in the dosage format like our test datasets, `sge/nps_score.dosage.job` should be used. For Oxford bgen genotype files, use `sge/nps_score.bgen.job`. The command arguments are:
+    * (1) NPS data directory: `testdata/Test1/npsdat`
+    * (2) directory where validation cohort genotype files are: `testdata/Test1/`
+    * (3) *DatasetID* for validation genotypes files: `Test1.val`
+    * (4) window shift: `0`, `20`, `40` or `60`
+    NPS will read the genotype data from chrom*N*.*DatasetID*.dosage.gz if `nps_score.dosage.job` is used, and from chrom*N*.*DatasetID*.bgen if `nps_score.bgen.job` is used. 
    ```bash
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
    ```
-   Here, the first argument for `sge/nps_score.dosage.job` is the NPS data directory (`testdata/Test1/npsdat/`), the second argument is the directory containing validation cohort data (`testdata/Test1/`), and the third argument is the DatasetID for validation genotypes. Since the genotype files for validation cohorts are named as chrom*N*.*Test1.val*.dosage.gz, DatasetID has to be `Test1.val`. The last argument is the window shift (`0`, `20`, `40` or `60`). 
    
-   Finally, `npsR/nps_val.R` will combine polygenic risk scores across all shifted windows and report per-individual scores along with overall accuracy statistics: 
+   Then, NPS sums polygenic scores across chromosomes and overlapping windows by using `nps_val.R`. The command arguments are: 
+   * (1) NPS data directory: `testdata/Test1/npsdat/`
+   * (2) *DatasetID* for validation genotypes: `Test1.val`
+   * (3) sample information of validation cohort: `testdata/Test1/Test1.val.fam`
+   * (4) phenotype information of validation cohort: `testdata/Test1/Test1.val.phen`
+   See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details.
    ```
-   Rscript npsR/nps_val.R testdata/Test1/npsdat/ Test1.val testdata/Test1/Test1.val.5K.fam testdata/Test1/Test1.val.5K.phen
+   Rscript npsR/nps_val.R testdata/Test1/npsdat/ Test1.val testdata/Test1/Test1.val.fam testdata/Test1/Test1.val.phen
    ```
-   The command arguments are: 
-   - NPS data directory: `testdata/Test1/npsdat/`
-   - DatasetID for validation genotypes: `Test1.val`
-   - sample IDs of validation cohort: `testdata/Test1/Test1.val.5K.fam`
-   - phenotypes of validation samples: `testdata/Test1/Test1.val.5K.phen`
    
-   `npsR/nps_val.R` will print out the following. Here, it reports the AUC of 0.8776 and Nagelkerke's R2 of 0.3172322 in the validation cohort. The polygenic risk score for each individuals in the cohort are stored in the file `testdata/Test1/Test1.val.5K.phen.nps_score`. 
-
-   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.5K.phen.nps_score )  
+   NPS will print the following output. Here, it reports the AUC of 0.8776 and Nagelkerke's R2 of 0.3172322 in the validation cohort. The polygenic risk scores computed for the validation cohort will be stored in the file: `testdata/Test1/Test1.val.phen.nps_score`. 
+   > ...
+   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.phen.nps_score )  
    > Observed-scale R2 = 0.1061336  
    > Liability-scale R2 = 0.4693835  
    > ...   
@@ -187,6 +188,8 @@ Last, polygenic risk scores will be calculated for each chromosome and for each 
    > Area under the curve: 0.8776  
    > 95% CI: 0.8589-0.8963 (DeLong)  
    > Nagelkerke's R2 = 0.3172322  
+   
+   Note: If the risk prediction model was trained with the sex covariate at the step 6, NPS will incorporate the sex in the validation model as well. In this case, the .fam file of validation data is expected to include the sex information. 
 
 ## Running NPS on test set #2
 To run test set #2 on computer clusters, see the instructions for [SGE] and [LSF]. 
