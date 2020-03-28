@@ -76,7 +76,7 @@ Download the test dataset and unpacked it as below. See [File Formats](https://g
 ```bash
 cd nps-1.1.1/testdata/
 
-tar -zxvf NPS.Test1.tar.gz 
+tar -zxvf NPS.Test1.tar  
 # This will create the following test data files in nps-1.1.1/testdata/Test1
 # Test1/Test1.summstats.txt (PREFORMATTED GWAS summary statistics)
 # Test1/Test1.train.fam (training cohort sample IDs)
