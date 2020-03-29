@@ -36,9 +36,10 @@ traindir <- args[["traindir"]]
 trainfreqfile <- args[["trainfreqfile"]]
 traintag <- args[["traintag"]]
 trainfamfile <- args[["trainfamfile"]]
-trainphenofile <- args[["trainphenofile"]]
+trphen <- args[["trainpheno"]]
 WINSZ <- args[["WINSZ"]]
 
+ASSERT(!is.null(trphen))
 
 if (length(cargs) > 1) {
 
@@ -62,10 +63,15 @@ if (length(cargs) > 1) {
 
     WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
 
+    if (length(WINSHIFT.list) == 0) {
+        cat("ERROR\n")
+        stop("No window shift found")
+    }
+    
     cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
-if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+if (any(is.na(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
     
     if (length(cargs) > 1) {
@@ -98,14 +104,11 @@ for (WINSHIFT in WINSHIFT.list) {
 #########################################################################
 
     cat("train fam file:", trainfamfile, "\n")
-    cat("train pheno file:", trainphenofile, "\n")
     cat("Size of training cohort:", Nt, "\n")
     
     ## phenotypes
     trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
                         stringsAsFactors=FALSE)
-    trphen <- read.delim(trainphenofile, sep="\t", header=TRUE,
-                         stringsAsFactors=FALSE)
 
     if (ncol(trfam) != 6) {
         ## re-try with tab delimination
@@ -115,62 +118,31 @@ for (WINSHIFT in WINSHIFT.list) {
     }
 
     ASSERT(ncol(trfam) == 6)
-    
-    rownames(trphen) <- paste(trphen$FID, trphen$IID, sep=":")
-    trphen <- trphen[paste(trfam[, 1], trfam[, 2], sep=":"), ]
-
-
-# print(length(intersect(paste(trfam[, 1], trfam[, 2], sep=":"),
-#                        paste(trphen$FID, trphen$IID, sep=":")
-#                        )))
-# print(sum(is.na(trphen$Outcome)))
 
     ASSERT(all(!is.na(trphen$Outcome)))
     ASSERT(all(trphen$FID == trfam[, 1]))
     ASSERT(all(trphen$IID == trfam[, 2]))
 
+    use.lda <- TRUE
+
+    if (length(unique(trphen$Outcome)) > 4) {
+        ## Quantitative phenotypes
+        cat("Quantitative phenotype detected\n")
+        
+        use.lda <- FALSE
+        
+    } else {
+        ## Binary phenotypes    
+        cat("Binary phenotype detected\n")
+
+        use.lda <- TRUE
+    }
+
     trY <- trphen$Outcome
 
     ASSERT(Nt == length(trY))
 
-    if (any(trY == -9)) {
-        stop("Missing outcome (\"-9\") is not allowed")
-    }
-
-    use.lda <- TRUE
-
-    if (length(unique(trphen$Outcome)) > 2) {
-        ## Quantitative phenotypes
-        cat("Quantitative phenotype: Outcome - ")
-
-        use.lda <- FALSE
-        
-        if (!is.numeric(trphen$Outcome)) {
-            stop("phenotype values are not numeric: Outcome :", trainphenofile)
-        }
-    
-    } else {
-        ## Binary phenotypes    
-        cat("Binary phenotype: Outcome - ")
-
-        use.lda <- TRUE
-
-        if (length(setdiff(trphen$Outcome, c(0, 1))) != 0) {
-            print(head(trphen[!(trphen$Outcome %in% c(0, 1)), ]))
-            stop("Only 0 or 1 is expected in Outcome:", trainphenofile)
-        }
-
-        if (sum(trphen$Outcome == 0) == 0) {
-            stop("Must have controls (Outcome = 0):", trainphenofile)
-        }
-
-        if (sum(trphen$Outcome == 1) == 0) {
-            stop("Must have cases (Outcome = 1):", trainphenofile)
-        }
-    }
-
     ## Check covariates
-
     sex.covariate <- NULL
     
     if (any(trfam[, 5] == 1) && any(trfam[, 5] == 2)) {
