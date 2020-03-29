@@ -59,7 +59,7 @@ qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 60
 # Check the results
 ./nps_check.sh testdata/Test1/npsdat/
 
-# Partitioning the rest of genetic variations
+# Partition the rest of genetic variations
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 10 10
 
 # Calculate partitioned risk scores in the training cohort
@@ -72,7 +72,7 @@ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 ./nps_check.sh testdata/Test1/npsdat/
 
 # Estimate per-partition shrinkage weights
-Rscript npsR/nps_reweight.R testdata/Test1/npsdat/ 0 
+Rscript npsR/nps_reweight.R testdata/Test1/npsdat/
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
