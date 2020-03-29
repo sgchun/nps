@@ -66,10 +66,10 @@ We provide two sets of simulated test cases. They are provided separately from t
 
 Test set | Total # of simulated SNPs | # of simulated causal SNPs | NPS disk space requirement | NPS run time
 --- | --- | --- | --- | --- 
-#1 | 100,449 | 522 (0.5%) | XX GB | < 30 mins* 
-#2 | 5,012,500 | 5,008 (0.1%) | 1 TB | 3-6 hours**
+#1 | 100,449 | 522 (0.5%) | 5 GB | < 1 hour* 
+#2 | 5,012,500 | 5,008 (0.1%) | XXX GB | 3-6 hours**
 
-[*] On desktop computer, without parallelization  
+[*] On a desktop computer, without parallelization  
 [**] On computer clusters, parallelizing up to 88 CPUs, with linear algebra acceleration.  
 
 Download the test dataset and unpacked it as below. See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the description on the input file formats.
