@@ -1,6 +1,6 @@
-﻿## Running NPS on test set #1 using LSF schedulers
+## Running NPS on LSF
 
-### Before you run
+### Before you run NPS
 The cluster job scripts are located under [nps-1.1.1/sge/](https://github.com/sgchun/nps/tree/master/sge). These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. Depending on the system, it may be necessary to modify the provided job scripts to load required modules, for example:
 ```bash
 ###
