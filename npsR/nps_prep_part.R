@@ -60,11 +60,11 @@ WINSZ <- args[["WINSZ"]]
 nLambdaPT <- as.numeric(cargs[2])
 nEtaPT <- as.numeric(cargs[3])
 
-if (is.nan(nLambdaPT) || nLambdaPT < 1) {
+if (is.na(nLambdaPT) || nLambdaPT < 1) {
     stop("Invalid nLambdaPT:", cargs[2])
 }
 
-if (is.nan(nEtaPT) || nEtaPT < 1) {
+if (is.na(nEtaPT) || nEtaPT < 1) {
     stop("Invalid nEtaPT:", cargs[3])
 }
 
@@ -93,10 +93,15 @@ if (length(cargs) > 3) {
 
     WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
 
+    if (length(WINSHIFT.list) == 0) {
+        cat("ERROR\n")
+        stop("No window shift found")
+    }
+    
     cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
-if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+if (any(is.na(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
 
     if (length(cargs) > 3) {
@@ -121,7 +126,7 @@ for (WINSHIFT in WINSHIFT.list) {
     # chrom <- 1
 
     for (chrom in 1:22) {
-        cat("chrom", chrom, "\n")
+        # cat("chrom", chrom, "\n")
         
         I <- 1
 

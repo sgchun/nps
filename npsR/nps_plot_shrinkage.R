@@ -60,10 +60,15 @@ if (length(cargs) > 2) {
 
     WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
 
+    if (length(WINSHIFT.list) == 0) {
+        cat("ERROR\n")
+        stop("No window shift found")
+    }
+
     cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
-if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+if (any(is.na(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
     if (length(cargs) > 2) {
         stop("Invalid shift (window size =", WINSZ, "):",

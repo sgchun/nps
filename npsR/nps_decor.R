@@ -46,7 +46,7 @@ if (!(CHR %in% 1:22)) {
 
 WINSHIFT <- as.numeric(cargs[3])
 
-if (is.nan(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
+if (is.na(WINSHIFT) || WINSHIFT < 0 || WINSHIFT >= WINSZ) {
     stop("Invalid window shift:", cargs[3])
 }
 
