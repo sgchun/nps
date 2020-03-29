@@ -43,19 +43,6 @@ For citation:
    export R_LIBS="~/R:$R_LIBS"
    ```
 
-4. Although we provide a command line tool to run NPS on desktop computers [without parallelization](https://github.com/sgchun/nps#running-nps), we strongly recommend running it on computer clusters, processing all chromosomes in parallel. To make this easier, we provide job script templates in the [nps-1.1.1/sge/](https://github.com/sgchun/nps/tree/master/sge) directory. These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. You may still need to modify the provided job scripts to load necessary modules, for example:
-   ```bash
-   ###
-   # ADD CODES TO LOAD MODULES HERE
-   # ---------------------- EXAMPLE ----------------------------
-   # On clusters running environment modules and providing R-mkl
-   module add gcc/5.3.0 
-   module add R-mkl/3.3.2
-   # -----------------------------------------------------------
-   ...
-   ```
-   **The details will depend on specific system configurations.** 
-
 ## NPS Test datsets
 We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from Sunyaev Lab FTP server (**ftp://genetics.bwh.harvard.edu/download/schun/**). Test set #1 is relatively small and can be easily run on desktop whereas test set #2 is a more realistic dataset but requires serious computational resource to run NPS.
 
@@ -181,9 +168,9 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
     * `--val-dir`: directory of validation cohort data if it is different from training data dir
     * `--val-fam`: sample file for the validation cohort (by default, {val dir}/{val dataset ID}.fam, e.g. `testdata/Test1/Test1.val.fam`)
     * `--val-phen`: phenotype file for training cohort. If this is not specified, NPS searches phenotype data first in the provided fam file. If phenotypes are also missing in the fam file, NPS look up a default phenotype file ({val dir}/{val dataset ID}.phen, e.g. `testdata/Test1/Test1.val.fam`).
-  See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details. If the risk prediction model was trained with the sex covariate at the step (6), NPS will incorporate the sex in the validation model as well using the sex in validation sample fam file.
+   See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details. If the risk prediction model was trained with the sex covariate at the step (6), NPS will incorporate the sex in the validation model as well using the sex in validation sample fam file.
    
-  NPS stores the polygenic risk scores computed for the validation cohort in `testdata/Test1/Test1.val.phen.nps_score`. For test set #1, NPS will print out the following accuracy statistics: 
+   NPS stores the polygenic risk scores computed for the validation cohort in `testdata/Test1/Test1.val.phen.nps_score`. For test set #1, NPS will print out the following accuracy statistics: 
    > ...
    > Polygenic scores are saved in testdata/Test1/Test1.val.phen.nps_score.  
    > ...   
