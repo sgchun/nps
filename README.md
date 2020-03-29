@@ -181,20 +181,22 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    * (4) phenotype information of validation cohort: `testdata/Test1/Test1.val.phen`
    See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details.
    ```
-   Rscript npsR/nps_val.R testdata/Test1/npsdat/ Test1.val testdata/Test1/Test1.val.fam testdata/Test1/Test1.val.phen
+   Rscript npsR/nps_val.R --out testdata/Test1/npsdat \
+       --val-dataset Test1.val 
    ```
    
    NPS will print the following output. Here, it reports the AUC of 0.8776 and Nagelkerke's R2 of 0.3172322 in the validation cohort. The polygenic risk scores computed for the validation cohort will be stored in the file: `testdata/Test1/Test1.val.phen.nps_score`. 
    > ...
-   > Producing a combined prediction model...OK ( saved in testdata/Test1/Test1.val.phen.nps_score )  
-   > Observed-scale R2 = 0.1061336  
-   > Liability-scale R2 = 0.4693835  
+   > Polygenic scores are saved in testdata/Test1/Test1.val.phen.nps_score.  
    > ...   
-   > Data: 4729 controls < 271 cases.  
    > Area under the curve: 0.8776  
    > 95% CI: 0.8589-0.8963 (DeLong)  
-   > Nagelkerke's R2 = 0.3172322  
-   
+   > ...  
+   > Nagelkerke's R2 = 0.3176188  
+   > Tail OR (5%): 15.56794  
+   > Done  
+
+
    Note: If the risk prediction model was trained with the sex covariate at the step 6, NPS will incorporate the sex in the validation model as well. In this case, the .fam file of validation data is expected to include the sex information. 
 
 ## Running NPS on test set #2
