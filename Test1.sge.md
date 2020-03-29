@@ -1,6 +1,7 @@
-﻿## Running NPS on test set #1 using SGE or UGER scheduler
- 
-All steps have to run in the top-level NPS directory (nps-1.1.1/), and the jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. The job scripts are located in the [nps-1.1.1/sge/ directory](https://github.com/sgchun/nps/tree/master/sge). These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. Depending on the system, it may be necessary to modify the provided job scripts to load required modules, for example:
+## Running NPS on test set #1 using SGE or UGER scheduler
+
+### Before you run
+The cluster job scripts are located under [nps-1.1.1/sge/](https://github.com/sgchun/nps/tree/master/sge). These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. Depending on the system, it may be necessary to modify the provided job scripts to load required modules, for example:
 ```bash
 ###
 # ADD CODES TO LOAD MODULES HERE
@@ -11,8 +12,21 @@ module add R-mkl/3.3.2
 # -----------------------------------------------------------
 ...
 ```
-   
-We provide a command line tool (`nps_check.sh`) to verify the integrity of each job. We strongly recommend to check the completion of all jobs using this tool before moving onto the next step: If `nps_check.sh` detects an error, `FAIL` message will be printed. Otherwise, only `OK` messages will be reported. 
+
+### nps_check command
+We provide a command line tool (`nps_check.sh`) to verify the integrity of each job. We strongly recommend to check the completion of all jobs by running this tool before moving onto the next step. If nps_check detects an error, "FAIL" message will be printed. Otherwise, only "OK" messages will be reported. For example, running nps_check after nps_init reports the following checks:  
+> NPS data directory: testdata/Test1/npsdat/  
+> Verifying nps_init:  
+> Checking testdata/Test1/npsdat//args.RDS ...OK (version 1.1)  
+> Checking testdata/Test1/npsdat//log ...OK  
+> Verifying nps_stdgt:  
+> Checking testdata/Test1/chrom1.Test1.train ...OK  
+> Checking testdata/Test1/chrom2.Test1.train ...OK  
+> Checking testdata/Test1/chrom3.Test1.train ...OK  
+> ...  
+
+### Job scheduling commands for NPS
+All steps have to run in the top-level NPS directory (nps-1.1.1/), and the jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. Currently, the number of chromosomes in the genome is fixed to 22 and not modifiable.
 
 ```
 cd nps-1.1.1/
@@ -32,6 +46,9 @@ Rscript npsR/nps_init.R --gwas testdata/Test1/Test1.summstats.txt \
 
 # Separate GWAS-significant SNPs
 qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/
+
+# Check the results
+./nps_check.sh testdata/Test1/npsdat/
 
 # Set up the eigenlocus space 
 qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 0 
