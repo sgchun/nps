@@ -350,7 +350,7 @@ if (length(unique(vlphen$Outcome)) > 4) {
         outcome[vlphen$Outcome == 1] <- 0
         outcome[vlphen$Outcome == 0] <- -9
         outcome[vlphen$Outcome == -9] <- -9
-        vlphen$Outcome == outcome
+        vlphen$Outcome <- outcome
     }
     
     cat("    ", sum(vlphen$Outcome == -9), " samples with missing phenotype\n")
