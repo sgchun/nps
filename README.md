@@ -104,16 +104,22 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    ```
 
 2. **Configure an NPS run.** For test set #1, which has ~100,000 genomewide SNPs, we recommend a window size of 80 SNPs. In general, for ~5,000,000 genome-wide SNPs we recommend to use 4,000-SNP windows. The command arguments are:
-    * (1) GWAS summary statistics file: `testdata/Test1/Test1.summstats.txt`
-    * (2) directory where training genotype files are: `testdata/Test1`
-    * (3) sample information of training cohort: `testdata/Test1/Test1.train.fam`
-    * (4) phenotypes information of training samples: `testdata/Test1/Test1.train.phen`
-    * (5) *DatasetID* of training genotype files: `Test1.train`
-    * (6) analysis window size: `80`.
-    * (7) directory to store NPS data: `testdata/Test1/npsdat` (All NPS output files will be stored in this directory.)
+    * GWAS summary statistics file: `testdata/Test1/Test1.summstats.txt`
+    * directory where training genotype files are: `testdata/Test1`
+    * *DatasetID* of training genotype files: `Test1.train`
+    * genomic window size: `80`.
+    * directory to store NPS data: `testdata/Test1/npsdat` (All NPS output files will be stored in this directory.)
    ```bash
-   Rscript npsR/nps_init.R testdata/Test1/Test1.summstats.txt testdata/Test1 testdata/Test1/Test1.train.fam testdata/Test1/Test1.train.phen Test1.train 80 testdata/Test1/npsdat
+   Rscript npsR/nps_init.R --gwas testdata/Test1/Test1.summstats.txt \
+       --train-dir testdata/Test1 \
+       --train-dataset Test1.train \
+       --window-size 80 \
+       --out testdata/Test1/npsdat
    ```
+   
+   The above command assumes that the sample and phenotype information is in the follwoing .fam and .phen files: 
+    * sample information of training cohort: `testdata/Test1/Test1.train.fam`
+    * phenotypes information of training samples: `testdata/Test1/Test1.train.phen`
 
 3. **Set up a special partition for GWAS-significant SNPs.** The command argument is: 
     * (1) NPS data directory: `testdata/Test1/npsdat`
