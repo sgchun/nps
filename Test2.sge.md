@@ -50,9 +50,9 @@ Rscript npsR/nps_reweight.R testdata/Test2/npsdat/
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
 qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 0 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 20 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 40 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 60 
+qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 1000   
+qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 2000   
+qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test2/npsdat/ testdata/Test2/ Test2.val 3000   
 
 # Check the results 
 ./nps_check.sh testdata/Test2/npsdat/ 
