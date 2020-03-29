@@ -48,7 +48,7 @@ We provide two sets of simulated test cases. They are provided separately from t
 
 Test set | Total # of simulated SNPs | # of simulated causal SNPs | NPS disk space requirement | NPS run time
 --- | --- | --- | --- | --- 
-#1 | 100,449 | 522 (0.5%) | 5 GB | < 1 hour* 
+#1 | 100,449 | 522 (0.5%) | 5 GB | 30 mins* 
 #2 | 5,012,500 | 5,008 (0.1%) | XXX GB | 3-6 hours**
 
 [*] On a desktop computer, without parallelization  
