@@ -1,5 +1,5 @@
 ## Running NPS on test set #2 using SGE or UGER scheduler
-With most datasets, 4GB memory space per a task will be sufficient. On SGE and UGER, the memory requirement can be specified by `qsub -l h_vmem=4G`. For nps_decor_prune.job, the hard running time limit may need to be extended, for example, with `-l h_rt=06:00:00` argument if necessary. 
+In most cases, 4GB memory space per a task will be sufficient for running NPS jobs. On SGE and UGER, the memory requirement can be specified by `qsub -l h_vmem=4G`. For nps_decor_prune.job, the hard running time limit may need to be extended, for example, with `-l h_rt=06:00:00` argument if necessary. 
 
 ```bash
 cd nps-1.1.1/

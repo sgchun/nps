@@ -1,4 +1,4 @@
-## Running NPS on test set #1 using SGE or UGER schedulers
+﻿## Running NPS on test set #1 using LSF schedulers
 
 ### Before you run
 The cluster job scripts are located under [nps-1.1.1/sge/](https://github.com/sgchun/nps/tree/master/sge). These scripts run not only with SGE but also with UGER, LSF and Slurm schedulers. Depending on the system, it may be necessary to modify the provided job scripts to load required modules, for example:
@@ -26,13 +26,12 @@ We provide a command line tool (`nps_check.sh`) to verify the integrity of each 
 > ...  
 
 ### Step-by-step instructions
-All steps have to run in the top-level NPS directory (nps-1.1.1/), and the jobs should be launched with the `qsub -cwd` option. The option `-t 1-22` will run NPS jobs over all 22 chromosomes in parallel. Currently, the number of chromosomes in the genome is fixed to 22 and not modifiable.
-
+All steps have to run in the top-level NPS directory (nps-1.1.1/). The option `-J jobname[1-22]` will run NPS jobs over all 22 chromosomes in parallel. Currently, the number of chromosomes in the genome is fixed to 22 and not modifiable.
 ```
 cd nps-1.1.1/
 
 # Standardize genotypes
-qsub -cwd -t 1-22 sge/nps_stdgt.job testdata/Test1 Test1.train
+bsub -J stdgt[1-22] sge/nps_stdgt.job testdata/Test1 Test1.train
 
 # Configure
 Rscript npsR/nps_init.R --gwas testdata/Test1/Test1.summstats.txt \
@@ -45,16 +44,16 @@ Rscript npsR/nps_init.R --gwas testdata/Test1/Test1.summstats.txt \
 ./nps_check.sh testdata/Test1/npsdat/
 
 # Separate GWAS-significant SNPs
-qsub -cwd -t 1-22 sge/nps_gwassig.job testdata/Test1/npsdat/
+bsub -J gwassig[1-22] sge/nps_gwassig.job testdata/Test1/npsdat/
 
 # Check the results
 ./nps_check.sh testdata/Test1/npsdat/
 
 # Set up the eigenlocus space 
-qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 0 
-qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 20 
-qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 40 
-qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 60 
+bsub -J decor[1-22] sge/nps_decor_prune.job testdata/Test1/npsdat/ 0 
+bsub -J decor[1-22] sge/nps_decor_prune.job testdata/Test1/npsdat/ 20 
+bsub -J decor[1-22] sge/nps_decor_prune.job testdata/Test1/npsdat/ 40 
+bsub -J decor[1-22] sge/nps_decor_prune.job testdata/Test1/npsdat/ 60 
 
 # Check the results
 ./nps_check.sh testdata/Test1/npsdat/
@@ -63,10 +62,10 @@ qsub -cwd -t 1-22 sge/nps_decor_prune.job testdata/Test1/npsdat/ 60
 Rscript npsR/nps_prep_part.R testdata/Test1/npsdat/ 10 10
 
 # Calculate partitioned risk scores in the training cohort
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 0
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 20
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 40
-qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
+bsub -J part[1-22] sge/nps_part.job testdata/Test1/npsdat/ 0
+bsub -J part[1-22] sge/nps_part.job testdata/Test1/npsdat/ 20
+bsub -J part[1-22] sge/nps_part.job testdata/Test1/npsdat/ 40
+bsub -J part[1-22] sge/nps_part.job testdata/Test1/npsdat/ 60
 
 # Check the results
 ./nps_check.sh testdata/Test1/npsdat/
@@ -75,10 +74,10 @@ qsub -cwd -t 1-22 sge/nps_part.job testdata/Test1/npsdat/ 60
 Rscript npsR/nps_reweight.R testdata/Test1/npsdat/
 
 # Calculate polygenic scores for each chromosome and for each individual in the validation cohort
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40 
-qsub -cwd -t 1-22 sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60 
+bsub -J score[1-22] sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
+bsub -J score[1-22] sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20 
+bsub -J score[1-22] sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 40 
+bsub -J score[1-22] sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60 
 
 # Check the results 
 ./nps_check.sh testdata/Test1/npsdat/ 
