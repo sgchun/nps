@@ -113,8 +113,8 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    ```
    
    We provides the following optional arguments: 
-    * `--train-fam`: sample information file for training cohort in [FAM format](https://github.com/sgchun/nps/blob/master/FileFormats.md) (by default, <train dir>/*DatasetID*.fam, in this example, `testdata/Test1/Test1.train.fam`)
-    * `--train-phen`: phenotype information file for training cohort. See [phenotype file format](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details. If this argument is not specified, by default, NPS searches phenotype data in the provided fam file first. If phenotypes are missing in the fam file, NPS look up a default phenotype file (<train dir>/*DatasetID*.phen, in this example, `testdata/Test1/Test1.train.fam`).  
+    * `--train-fam`: sample file for training cohort in [FAM format](https://github.com/sgchun/nps/blob/master/FileFormats.md) (by default, {train dir}/{train dataset ID}.fam, e.g. `testdata/Test1/Test1.train.fam`)
+    * `--train-phen`: phenotype file for training cohort. See [phenotype file format](https://github.com/sgchun/nps/blob/master/FileFormats.md). If this is not specified, NPS searches phenotype data first in the provided fam file. If phenotypes are missing in the fam file, NPS looks up a default phenotype file ({train dir}/{train dataset ID}.phen, e.g. `testdata/Test1/Test1.train.fam`).  
 
 3. **Set up a special partition for GWAS-significant SNPs.** The command argument is: 
     * (1) NPS data directory: `testdata/Test1/npsdat`
@@ -157,12 +157,12 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    Rscript npsR/nps_reweight.R testdata/Test1/npsdat/ 
    ```
    
-7. **Evaluate the accuracy of trained prediction model in a validation cohort.** First, NPS calculates polygenic risk scores for each individual in validation cohort chromosome by chromosome. Use `nps_score.dosage.job` if validation genotype data are prepared in the dosage format. For Oxford bgen genotype files, use `nps_score.bgen.job`. The command arguments are:
+7. **Evaluate the accuracy of trained prediction model in a validation cohort.** First, NPS calculates polygenic risk scores for each individual in validation cohort chromosome by chromosome. Use `nps_score.dosage.job` if genotype files are prepared in the dosage format. For Oxford bgen genotype files, use `nps_score.bgen.job`. The command arguments are:
     * (1) NPS data directory: `testdata/Test1/npsdat`
-    * (2) directory where validation cohort genotype files are: `testdata/Test1/`
+    * (2) directory where validation cohort genotype files are: `testdata/Test1`
     * (3) *DatasetID* for validation genotypes files: `Test1.val`
     * (4) window shift: `0`, `20`, `40` or `60`
-   The genotype files should be named chrom*N*.*DatasetID*.dosage.gz for `nps_score.dosage.job` and chrom*N*.*DatasetID*.bgen for `nps_score.bgen.job`. 
+   NPS expects genotype file names of chrom*N*.*DatasetID*.dosage.gz for `nps_score.dosage.job` and chrom*N*.*DatasetID*.bgen for `nps_score.bgen.job`. 
    ```bash
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 0 
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 20
@@ -170,19 +170,18 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    ./run_all_chroms.sh sge/nps_score.dosage.job testdata/Test1/npsdat/ testdata/Test1/ Test1.val 60
    ```
    
-   Then, NPS combines polygenic scores across all chromosomes and shifted windows with `nps_val.R`. The command arguments are: 
-   * `--out`: NPS data directory (`testdata/Test1/npsdat/`)
+   Then, NPS combines polygenic scores across all chromosomes and shifted windows with `nps_val.R` and reports the overall prediction accuracies. The command arguments are: 
+   * `--out`: NPS data directory (`testdata/Test1/npsdat`)
    * `--val-dataset`: *DatasetID* for validation cohort: `Test1.val`
    ```  
-   Rscript npsR/nps_val.R --out testdata/Test1/npsdat \
-       --val-dataset Test1.val 
+   Rscript npsR/nps_val.R --out testdata/Test1/npsdat --val-dataset Test1.val 
    ```
    
    We provides the following optional arguments: 
     * `--val-dir`: directory of validation cohort data if it is different from training data dir
-    * `--val-fam`: sample information file for the validation cohort (by default, <val dir>/*DatasetID*.fam, in this example, `testdata/Test1/Test1.val.fam`)
-    * `--val-phen`: phenotype information file for training cohort. If this argument is not specified, by default, NPS searches phenotype data in the provided fam file first. If phenotypes are missing in the fam file, NPS look up a default phenotype file (<val dir>/*DatasetID*.phen, in this example, `testdata/Test1/Test1.val.fam`).
-  See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details. If the risk prediction model was trained with the sex covariate at the step (6), NPS will incorporate the sex in the validation model as well. In this case, the .fam file of validation data is expected to include the sex information.
+    * `--val-fam`: sample file for the validation cohort (by default, {val dir}/{val dataset ID}.fam, e.g. `testdata/Test1/Test1.val.fam`)
+    * `--val-phen`: phenotype file for training cohort. If this is not specified, NPS searches phenotype data first in the provided fam file. If phenotypes are also missing in the fam file, NPS look up a default phenotype file ({val dir}/{val dataset ID}.phen, e.g. `testdata/Test1/Test1.val.fam`).
+  See [File Formats](https://github.com/sgchun/nps/blob/master/FileFormats.md) for the details. If the risk prediction model was trained with the sex covariate at the step (6), NPS will incorporate the sex in the validation model as well using the sex in validation sample fam file.
    
   NPS stores the polygenic risk scores computed for the validation cohort in `testdata/Test1/Test1.val.phen.nps_score`. For test set #1, NPS will print out the following accuracy statistics: 
    > ...
