@@ -117,7 +117,7 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
        --out testdata/Test1/npsdat
    ```
    
-   The above command assumes that the sample and phenotype information is in the follwoing .fam and .phen files: 
+   The above command assumes that the sample and phenotype data are in the follwoing .fam and .phen files: 
     * sample information of training cohort: `testdata/Test1/Test1.train.fam`
     * phenotypes information of training samples: `testdata/Test1/Test1.train.phen`
 
