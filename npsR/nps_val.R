@@ -2,6 +2,22 @@ VERSION <- "1.1"
 
 cat("Non-Parametric Shrinkage", VERSION, "\n")
 
+print.usage <- function() {
+    cat("Usage:\n")
+    cat("Rscript nps_val.R <work dir> <val dataset ID> <val fam file> <val phen file> [<WINSHIFT> ...]")
+    cat("\nRscript [options] [<WINSHIFT> ...]\n")
+    cat("    --out <work dir>\n")
+    cat("    --val-dataset <val dataset ID>\n")
+    cat("    --val-dir <val dir>\n")
+    cat("          default value: <training dataset dir>\n")
+    cat("    --val-fam <val fam file>\n")
+    cat("          default value: <val dir>/<val dataset ID>.fam\n")
+    cat("    --val-phen <val phen file>\n")
+    cat("          default value: Use <val fam file> or\n")
+    cat("          <val dir>/<val dataset ID>.phen\n")
+    cat("\n\n")
+}
+
 ASSERT <- function(test) {
     if (length(test) == 0) {
         stop(paste("ASSERT fail for empty conditional:",
@@ -21,28 +37,145 @@ ASSERT <- function(test) {
 #########################################################################
 
 cargs <- commandArgs(trailingOnly=TRUE)
+    
+if (any(startsWith(cargs, "--"))) {
+    ## Parse long options
 
-if (length(cargs) < 4) {
-    stop("Usage: Rscript nps_val.R <work dir> <val dataset ID> <val fam file> <val pheno file> [<WINSHIFT> ...]")
+    valdir <- NULL
+    valfamfile <- NULL
+    valphenofile <- NULL
+    valtag <- NULL
+    tempprefix <- NULL
+    
+    arg.index <- 1
+
+    while (arg.index <= length(cargs)) {
+
+        if (!startsWith(cargs[arg.index], "--")) {
+            ## start of window shifts
+
+            if (any(startsWith(cargs[arg.index:length(cargs)], "--"))) {
+                cat("Invalid WINSHIFTs: ",
+                    paste(cargs[arg.index:length(cargs)], collapse=", "),
+                    "\n\n")
+                print.usage()
+                q()
+            }
+            
+            break
+        }
+
+        opt <- substr(cargs[arg.index], 3, nchar(cargs[arg.index]))
+
+        if (opt == "val-dir") {
+            arg.index <- arg.index + 1
+
+            if (arg.index > length(cargs)) {
+                stop("missing option value for ", paste("--", opt, sep=''))
+            }
+
+            valdir <- cargs[arg.index]
+
+        } else if (opt == "val-fam") {
+            arg.index <- arg.index + 1
+
+            if (arg.index > length(cargs)) {
+                stop("missing option value for ", paste("--", opt, sep=''))
+            }
+
+            valfamfile <- cargs[arg.index]
+
+        } else if (opt == "val-phen") {
+            arg.index <- arg.index + 1
+
+            if (arg.index > length(cargs)) {
+                stop("missing option value for ", paste("--", opt, sep=''))
+            }
+
+            valphenofile <- cargs[arg.index]
+
+        } else if (opt == "val-dataset") {
+            arg.index <- arg.index + 1
+
+            if (arg.index > length(cargs)) {
+                stop("missing option value for ", paste("--", opt, sep=''))
+            }
+
+            valtag <- cargs[arg.index]
+
+        } else if (opt == "out") {
+            arg.index <- arg.index + 1
+
+            if (arg.index > length(cargs)) {
+                stop("missing option value for ", paste("--", opt, sep=''))
+            }
+
+            tempprefix <- paste(cargs[arg.index], "/", sep='')
+
+        } else {
+            cat("Cannot recognize the option:", cargs[arg.index], "\n\n")
+            print.usage()
+            q()
+        }
+        
+        arg.index <- arg.index + 1
+    }
+    
+    if (arg.index < length(cargs)) {
+        ## window shifts specified
+        WINSHIFT.list <- as.numeric(cargs[arg.index:length(cargs)])
+
+        if (any(is.na(WINSHIFT.list))) {
+            stop("Invalid window shift (non-numeric): ", 
+                 paste(cargs[arg.index:length(cargs)], collapse=", "))
+        }
+    } else {
+        WINSHIFT.list <- NULL
+    }
+
+    ## Check required values
+    if (is.null(tempprefix)) {
+        stop("--out required")
+    }
+
+    if (is.null(valtag)) {
+        stop("--val-dataset required")
+    }
+        
+} else {
+    
+    if (length(cargs) < 4) {
+        print.usage()
+        q()
+    }
+    
+    tempprefix <- paste(cargs[1], "/", sep='')
+
+    valtag <- cargs[2]
+    valfamfile <- cargs[3]
+    valphenofile <- cargs[4]
+
+    if (length(cargs) > 4) {
+        
+        WINSHIFT.list <- as.numeric(cargs[5:length(cargs)])
+        
+        if (any(is.na(WINSHIFT.list))) {
+            stop("Invalid window shift (non-numeric): ", 
+                 paste(cargs[5:length(cargs)], collapse=", "))
+        }
+        
+    } else {
+        WINSHIFT.list <- NULL
+    }
 }
-
-tempprefix <- paste(cargs[1], "/", sep='')
 
 args <- readRDS(paste(tempprefix, "args.RDS", sep=''))
 
 traintag <- args[["traintag"]]
+traindir <- args[["traindir"]]
 WINSZ <- args[["WINSZ"]]
 
-valtag <- cargs[2]
-valfamfile <- cargs[3]
-valphenofile <- cargs[4]
-
-if (length(cargs) > 4) {
-
-    WINSHIFT.list <- as.numeric(cargs[5:length(cargs)])
-
-} else {
-
+if (is.null(WINSHIFT.list)) {
     cat("Detecting window shifts :")
 
     part.files <- list.files(tempprefix, pattern="*.part.RDS")
@@ -55,32 +188,40 @@ if (length(cargs) > 4) {
     WINSHIFT.list <-
         sapply(WINSHIFT.list,
                function (s) strsplit(s, "_", fixed=TRUE)[[1]][2],
-               simplify=TRUE)
+           simplify=TRUE)
 
     WINSHIFT.list <- sort(as.numeric(WINSHIFT.list))
+
+    if (length(WINSHIFT.list) == 0) {
+        cat("ERROR\n")
+        stop("No window shift found")
+    }
 
     cat(paste(WINSHIFT.list, collapse=" "), "\n")
 }
 
-if (any(is.nan(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
+## check if winshifts are valid
+if (any(is.na(WINSHIFT.list)) || any(WINSHIFT.list < 0) ||
     any(WINSHIFT.list >= WINSZ)) {
 
-    if (length(cargs) > 4) {
-        stop("Invalid shift (window size =", WINSZ, "):",
-             cargs[5:length(cargs)])
-    } else {
-        stop("Invalid shift (window size =", WINSZ, "):",
-             WINSHIFT.list)
-    }
+    stop("Invalid shift (window size =", WINSZ, "): ",
+         paste(WINSHIFT.list, collapse=", "))
+}
+
+## Set default parameters
+if (is.null(valdir)) {
+    valdir <- traindir
+}
+
+if (is.null(valfamfile)) {
+    valfamfile <- paste(valdir, "/", valtag, ".fam", sep='')
+    cat("Using the default validation fam file path:", valfamfile, "\n")
 }
 
 if (!file.exists(valfamfile)) {
-   stop("File does not exists:", valfamfile)
+    stop("File does not exists:", valfamfile)
 }
 
-if (!file.exists(valphenofile)) {
-   stop("File does not exists:", valphenofile)
-}
 
 #########################################################################
 ### validation
@@ -104,8 +245,32 @@ if (any(duplicated(paste(vlfam[, 1], vlfam[, 2], sep=":")))) {
     stop("Duplicated FID IID combinations:", valfamfile)
 }
 
-vlphen <- read.delim(valphenofile, sep="\t", header=TRUE,
-                     stringsAsFactors=FALSE)
+vlphen <- NULL
+
+if (is.null(valphenofile)) {
+    if (all(vlfam[, 6] == 0) || all(vlfam[, 6] == -9)) {
+        cat("Phenotype data are empty in", valfamfile, ".\n")
+
+        ## default phenotype file path
+        valphenofile <- paste(valdir, "/", valtag, ".phen", sep='')
+
+    } else {
+        cat("Use phenotypes in", valfamfile, ".\n")
+        vlphen <- vlfam[, c(1, 2, 6)]
+        colnames(vlphen) <- c("FID", "IID", "Outcome")
+    }
+}
+
+if (is.null(vlphen)) {
+    cat("Reading", valphenofile, "for phenotype data.\n")
+
+    if (!file.exists(valphenofile)) {
+        stop("File does not exists:", valphenofile)
+    }
+
+    vlphen <- read.delim(valphenofile, sep="\t", header=TRUE,
+                         stringsAsFactors=FALSE)
+}
 
 if (length(intersect(colnames(vlphen), c("FID", "IID", "Outcome"))) != 3) {
     stop(valphenofile, " does not include standard columns: FID IID Outcome (tab-delimited")
@@ -145,32 +310,54 @@ ASSERT(all(vlphen$IID == vlfam[, 2]))
 
 cat("Validation cohort:\n")
 cat("Total ", nrow(vlfam), "samples\n")
-cat(sum(vlphen$Outcome == -9), " samples with missing phenotype (-9)\n")
 
 binary.phen <- TRUE
 
-if (length(setdiff(vlphen$Outcome, c(0, 1, -9))) != 0) {
+if (length(unique(vlphen$Outcome)) > 4) {
+    cat(sum(vlphen$Outcome == -9), " samples with missing phenotype (-9)\n")
+    
     cat(sum(vlphen$Outcome != -9),
         " samples with non-missing QUANTITATIVE phenotype values\n")
 
     if (!is.numeric(vlphen$Outcome)) {
-        stop("phenotype values are not numeric: Outcome :", valphenofile)
+        stop("phenotype values are not numeric")
     }
 
     binary.phen <- FALSE
 
 } else {
-    cat(sum(vlphen$Outcome != -9),
-        " samples with non-missing BINARY phenotype values\n")
+    ## Binary phenotype
+
+    ## NPS v1.0 used 0/1/-9 encoding
     
+    if (!all(vlphen$Outcome == 0 | vlphen$Outcome == 1 |
+             vlphen$Outcome == -9)) {
+        ## 1/2/0/-9 encoding
+        ASSERT(any(vlphen$Outcome == 1))
+        ASSERT(any(vlphen$Outcome == 2))
+        ASSERT(all(vlphen$Outcome == 1 | vlphen$Outcome == 2 |
+                   vlphen$Outcome == -9 | vlphen$Outcome == 0))
+        
+        ## for backward compatibility
+        ## Outcome code 2 -> 1 (case)
+        ## Outcome code 1 -> 0 (control)
+        ## Outcome code 0 -> -9 (missing)
+        ## Outcome code -9 -> -9 (missing)
+        
+        ## recode to 0/1/-9
+        outcome <- rep(-9, nrow(vlphen))
+        outcome[vlphen$Outcome == 2] <- 1
+        outcome[vlphen$Outcome == 1] <- 0
+        outcome[vlphen$Outcome == 0] <- -9
+        outcome[vlphen$Outcome == -9] <- -9
+        vlphen$Outcome == outcome
+    }
+    
+    cat("    ", sum(vlphen$Outcome == -9), " samples with missing phenotype\n")
     cat("    ", sum(vlphen$Outcome == 1), " case samples\n")
     cat("    ", sum(vlphen$Outcome == 0), " control samples\n")
 
     binary.phen <- TRUE
-}
-
-if ("TotalLiability" %in% colnames(vlphen)) {
-    cat("Includes TotalLiability\n")
 }
 
 if ((nrow(vlphen) <= 1) || (sum(vlphen$Outcome != -9) <= 1)) {
@@ -187,7 +374,7 @@ if (binary.phen) {
     }
 }
 
-cat("Producing a combined prediction model...")
+cat("Producing a combined prediction model...\n")
 
 # Combined average 
 vlY <- vlphen$Outcome
@@ -359,7 +546,7 @@ for (WINSHIFT in WINSHIFT.list) {
     
 }
 
-cat("\n\n")
+cat("\n")
 
 sex.baseline <- 0
 
@@ -387,22 +574,17 @@ if (sex.baseline != 0) {
 prisk <- prisk[vlY != -9] 
 vlY <- vlY[vlY != -9]
 
-# DEPRECATED 
-# if ((cor(vlY, prisk) < 0) {
-#     cat("WARNING: auto-correct sign flip: ", cor(vlY, prisk), "\n")
-# 
-#     prisk <- - prisk
-# }
 
 filename <- paste(valphenofile, ".nps_score", sep='')
 df.out <- cbind(vlphen[vlphen$Outcome != -9, ], Score=prisk)
 write.table(df.out, file=filename,
             row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
-cat("OK ( saved in", filename, ")\n")
+cat("Done\nPolygenic scores are saved in", filename, ".\n")
 
 cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
 
 if ("TotalLiability" %in% colnames(vlphen)) {
+    ## For simulated phenotypes
     vlL <- vlphen$TotalLiability[vlY != -9]	
     cat("Liability-scale R2 =", cor(vlL, prisk)**2, "\n")
 }
@@ -428,7 +610,7 @@ if (binary.phen) {
     
         cat("Nagelkerke's R2 =", PseudoR2(mod, "Nagelkerke"), "\n")
         
-        print(mod)
+        ## print(mod)
         
     } else {
         cat("Skip Nagelkerke's R2 calculation\n")
