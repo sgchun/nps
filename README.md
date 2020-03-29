@@ -74,7 +74,7 @@ tar -xvf NPS.Test1.tar
 ```
 
 ## Running NPS
-Test set #1 is small enough to run on desktop computers (MacOS and Linux are supported) without parallel processing. We provide a wrapper script (`run_all_chroms.sh`) to drive cluster job scripts sequentially on a desktop, by processing one chromosome at a time. To run test set #1 on computer clusters, see the [SGE instruction](https://github.com/sgchun/nps/blob/master/Test1.sge.md) and [LSF instruction](https://github.com/sgchun/nps/blob/master/Test1.lsf.md). 
+Test set #1 is small enough to run on desktop computers (MacOS and Linux are supported) without parallel processing. We provide a wrapper script (`run_all_chroms.sh`) to drive cluster job scripts sequentially on a desktop, by processing one chromosome at a time. To run test set #1 on computer clusters, see the [SGE instruction](https://github.com/sgchun/nps/blob/master/SGE.md) and [LSF instruction](https://github.com/sgchun/nps/blob/master/LSF.md). 
 
 1. **Standardize genotypes.** This step standardizes the genotype data of training cohort to the mean of 0 and variance of 1. The training genotype files should be in the [dosage format](https://github.com/sgchun/nps/blob/master/FileFormats.md) and named as chrom*N*.*DatasetID*.dosage.gz. The command arguments are:
     * (1) directory where training genotype files are: `testdata/Test1`
@@ -182,7 +182,7 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    > Done  
 
 ### Running NPS on test set #2
-The steps to run NPS on test set #2 is simlar to that of test set #1. There are only a few small differences: With ~5 million genomewide SNPs, the genomic window size should be set to 4,000 (default value). And with the window size of 4,000, we recommend to run NPS on overlapping windows shifted by 0, 1,000, 2,000, and 3,000 SNPs. For step-by-step instructions, see [SGE](https://github.com/sgchun/nps/blob/master/Test2.sge.md) and [LSF](https://github.com/sgchun/nps/blob/master/Test2.lsf.md) sections. We do not recommend running NPS on genomewide datasets using desktop computers.
+The steps to run NPS on test set #2 is simlar to that of test set #1. There are only a few small differences: With ~5 million genomewide SNPs, the genomic window size should be set to 4,000 (default value). And with the window size of 4,000, we recommend to run NPS on overlapping windows shifted by 0, 1,000, 2,000, and 3,000 SNPs. For step-by-step instructions, see [SGE](https://github.com/sgchun/nps/blob/master/SGE.md) and [LSF](https://github.com/sgchun/nps/blob/master/LSF.md) sections. We do not recommend running NPS on genomewide datasets using desktop computers.
 
 NPS reports the following prediction accuracy with test set #2: 
 > ...  
