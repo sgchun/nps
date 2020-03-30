@@ -18,7 +18,7 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotype files.** Training genotype files should be in the qctool DOSAGE format and named as "chrom*N*.*DatasetID*.dosage.gz" for each chromosome. Genotype files in bgen format can be converted to the dosage files by running [qctool](https://www.well.ox.ac.uk/~gav/qctool_v2/documentation/examples/converting.html) with the `-ofiletype dosage` option.  
+2. **Training genotype files.** Training genotype files should be in the qctool DOSAGE format and named as "chrom*N*.*DatasetID*.dosage.gz" for each chromosome. Genotype files in bgen format can be converted to the dosage files by running [qctool](https://www.well.ox.ac.uk/~gav/qctool_v2/documentation/examples/converting.html) with the `-ofiletype dosage` option. NPS allows only *biallelic* variants. 
    
 3. **Training sample file (.fam).** Sample information of training cohort should be provided in [PLINK FAM format](https://www.cog-genomics.org/plink2/formats#fam). The samples in the .fam file should appear in the exactly same order as in the genotype dosage files. The sex (5-th column) is optional ("0" or "-9" for missing; "1" for male; "2" for female). If this is provided, NPS will incorporate the sex covariate in the PRS model. 
    ```
