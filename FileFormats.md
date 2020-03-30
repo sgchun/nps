@@ -1,5 +1,5 @@
 ﻿## Input files for NPS
-To run NPS, you need the following set of input files: 
+To run NPS, you need the following set of files: 
 
 1. **GWAS summary statistics.** This is a *tab-delimited* text file format with the following seven required columns: 
      - **chr**: chromosome name starting with "chr." Currently, NPS expects only chromosomes 1-22. Chromosome names should be designated by "chr1", ..., "chr22".
@@ -18,9 +18,9 @@ To run NPS, you need the following set of input files:
      ...
      ```
 
-2. **Training genotype files.** Training genotype files should be in the qctool DOSAGE format and named as "chrom*N*.*DatasetID*.dosage.gz" for each chromosome. Genotype files in bgen format can be converted to the dosage files by running [qctool](https://www.well.ox.ac.uk/~gav/qctool_v2/documentation/examples/converting.html) with the `-ofiletype dosage` option. NPS allows only *biallelic* variants. 
+2. **Training genotype files.** Training genotype files should be in the qctool dosage format and named as "chrom*N*.*DatasetID*.dosage.gz" for each chromosome. Genotype files in bgen format can be converted to the dosage files by running [qctool](https://www.well.ox.ac.uk/~gav/qctool_v2/documentation/examples/converting.html) with the `-ofiletype dosage` option. NPS allows only *biallelic* variants. 
    
-3. **Training sample file (.fam).** Sample information of training cohort should be provided in [PLINK FAM format](https://www.cog-genomics.org/plink2/formats#fam). The samples in the .fam file should appear in the exactly same order as in the genotype dosage files. The sex (5-th column) is optional ("0" or "-9" for missing; "1" for male; "2" for female). If this is provided, NPS will incorporate the sex covariate in the PRS model. 
+3. **Training sample file (.fam).** Sample information of training cohort should be provided in [PLINK FAM format](https://www.cog-genomics.org/plink2/formats#fam). The samples in the .fam file should appear in the exactly same order as in the genotype dosage files. The sex of sample (5-th column) is optional ("0" or "-9" for missing; "1" for male; "2" for female). If the sex is provided, NPS will incorporate the sex covariate in the PRS model. The 6-th column is for phenotype data and can be specified here or in a separeate phenotype file. 
    ```
    trainF2  trainI2  0  0  1 -9
    trainF3  trainI3  0  0  2 -9
@@ -28,7 +28,7 @@ To run NPS, you need the following set of input files:
    trainF41 trainI41 0  0  2 -9
    trainF58 trainI58 0  0  1 -9
    ```
-4. **Training phenotype file (.phen).** Phenotypes in the .fam file can be overridden by a separate .phen file if necessary (use `nps_init.R --train-phen` option). This is a tab-delimited file with three columns: "FID", "IID", and "Outcome". FID and IID correspond to the family and individual IDs of .fam file. The name of phenotype should be "Outcome". Binary phenotypes (case/control) are specified by "1" and "2", respectively. "-9" denoates missing phenotype. 
+4. **Training phenotype file (.phen).** Phenotypes of the .fam file can be overridden by a .phen file (use `nps_init.R --train-phen` option). This is a tab-delimited file with three columns: "FID", "IID", and "Outcome". FID and IID correspond to the family and individual IDs in the .fam file. The name of phenotype should be "Outcome". Binary phenotypes (case/control) are specified by "1" and "2", respectively; "0" and "-9" denote missing phenotype. For quantitative phenotypes, "-9" represents a missing phenotype value. 
    ```
    FID   IID    Outcome
    trainF2  trainI2  1
