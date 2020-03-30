@@ -103,9 +103,6 @@ for (WINSHIFT in WINSHIFT.list) {
 
 #########################################################################
 
-    cat("train fam file:", trainfamfile, "\n")
-    cat("Size of training cohort:", Nt, "\n")
-    
     ## phenotypes
     trfam <- read.delim(trainfamfile, sep=" ", header=FALSE,
                         stringsAsFactors=FALSE)
@@ -118,23 +115,34 @@ for (WINSHIFT in WINSHIFT.list) {
     }
 
     ASSERT(ncol(trfam) == 6)
-
-    ASSERT(all(!is.na(trphen$Outcome)))
+    ## ASSERT(all(!is.na(trphen$Outcome)))
     ASSERT(all(trphen$FID == trfam[, 1]))
     ASSERT(all(trphen$IID == trfam[, 2]))
 
     use.lda <- TRUE
-
-    if (length(unique(trphen$Outcome)) > 4) {
+    binary.phen <- TRUE
+    
+    if (length(unique(trphen$Outcome[!is.na(trphen$Outcome)])) > 4) {
         ## Quantitative phenotypes
-        cat("Quantitative phenotype detected\n")
-        
+        cat("Quantitative phenotype detected:\n")
+        cat("train fam file:", trainfamfile, "\n")
+        cat("Size of training cohort:", Nt, "\n")
+        cat("# of missing phenotypes:", sum(is.na(trphen$Outcome)), "\n")
+        cat("# of non-missing phenotypes:", sum(!is.na(trphen$Outcome)), "\n")
+
+        binary.phen <- FALSE
         use.lda <- FALSE
         
     } else {
         ## Binary phenotypes    
-        cat("Binary phenotype detected\n")
+        cat("Binary phenotype detected:\n")
+        cat("train fam file:", trainfamfile, "\n")
+        cat("Size of training cohort:", Nt, "\n")
+        cat("# of missing phenotypes:", sum(is.na(trphen$Outcome)), "\n")
+        cat("# of cases:", sum(trphen$Outcome == 1, na.rm=TRUE), "\n")
+        cat("# of controls:", sum(trphen$Outcome == 0, na.rm=TRUE), "\n")
 
+        binary.phen <- TRUE
         use.lda <- TRUE
     }
 
@@ -189,12 +197,12 @@ for (WINSHIFT in WINSHIFT.list) {
         
             if (use.lda) {
                 
-                trcaVAR <- var(trPT[trY == 1, I, J, K])
-                trctVAR <- var(trPT[trY == 0, I, J, K])
+                trcaVAR <- var(trPT[which(trY == 1), I, J, K])
+                trctVAR <- var(trPT[which(trY == 0), I, J, K])
                 trptVAR <- (trcaVAR + trctVAR) / 2
         
-                trcaMU <- mean(trPT[trY == 1, I, J, K])
-                trctMU <- mean(trPT[trY == 0, I, J, K])
+                trcaMU <- mean(trPT[which(trY == 1), I, J, K])
+                trctMU <- mean(trPT[which(trY == 0), I, J, K])
                 
                 PTwt[I, J, K] <- (trcaMU - trctMU) / trptVAR
 
@@ -269,36 +277,56 @@ for (WINSHIFT in WINSHIFT.list) {
     sex.baseline <- 0
 
     if (any(trPT.tail != 0)) {
-        
-        ## Use logistic regression
-        if (is.null(sex.covariate)) {
+
+        if (binary.phen) {
+            ## Use logistic regression
+            if (is.null(sex.covariate)) {
             
-            trlm <-
-                glm(trY ~ predY0 + trPT.tail,
-                    family=binomial(link="logit"))
+                trlm <-
+                    glm(trY ~ predY0 + trPT.tail,
+                        family=binomial(link="logit"))
             
+            } else {
+            
+                trlm <-
+                    glm(trY ~ predY0 + trPT.tail + sex.covariate,
+                        family=binomial(link="logit"))
+
+                sex.baseline <- trlm$coefficients[4] / trlm$coefficients[2]
+            }
+
         } else {
+            ## Use linear regression
+            if (is.null(sex.covariate)) {
             
-            trlm <-
-                glm(trY ~ predY0 + trPT.tail + sex.covariate,
-                    family=binomial(link="logit"))
-
-            sex.baseline <- trlm$coefficients[4] / trlm$coefficients[2]
+                trlm <- lm(trY ~ predY0 + trPT.tail)
+            
+            } else {
+            
+                trlm <- lm(trY ~ predY0 + trPT.tail + sex.covariate)
+                    
+                sex.baseline <- trlm$coefficients[4] / trlm$coefficients[2]
+            }
         }
-
-        tail.h2.ratio <-
-            (cor(trY, as.vector(trPT.tail * trlm$coefficients[3]))**2) /
-            (cor(trY, as.vector(predY0 * trlm$coefficients[2]))**2)
-
-        print(tail.h2.ratio)
-
+            
         PTwt.tail <- trlm$coefficients[3] / trlm$coefficients[2]
+        
+        ## tail.h2.ratio <-
+        ##    (cor(trY, as.vector(trPT.tail * trlm$coefficients[3]), use="pairwise")**2) /
+        ##    (cor(trY, as.vector(predY0 * trlm$coefficients[2]), use="pairwise")**2)
+        ## print(tail.h2.ratio)
 
     } else {
-
-        trlm <-
-            glm(trY ~ predY0 + sex.covariate,
-                family=binomial(link="logit"))
+        ## No S0 partition
+        if (binary.phen) {
+            ## Use logistic regression
+            trlm <-
+                glm(trY ~ predY0 + sex.covariate,
+                    family=binomial(link="logit"))
+        } else {
+            ## Use linear regression
+            trlm <- lm(trY ~ predY0 + sex.covariate)
+        }
         
         sex.baseline <- trlm$coefficients[3] / trlm$coefficients[2]
         
@@ -491,33 +519,35 @@ for (WINSHIFT in WINSHIFT.list) {
 
         ## Save
         filename.pg <- paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
-                          ".adjbetahat_pg.chrom", CHR, ".txt", sep='')
-        cat("Saving reweighted snpeffs:", filename.pg, "...")
+                             ".adjbetahat_pg.chrom", CHR, ".txt", sep='')
+        ## cat("Saving reweighted snpeffs:", filename.pg, "...")
         write.table(data.frame(betahat=wt.betahat),
                     file=filename.pg,
                     quote=FALSE, row.names=FALSE, col.names=FALSE)
-        cat("OK\n")
+        ## cat("OK\n")
 
         filename.tail <- paste(tempprefix, "/", traintag, ".win_", WINSHIFT,
                                ".adjbetahat_tail.chrom", CHR, ".txt", sep='')
-        cat("Saving reweighted snpeffs:", filename.tail, "...")
+        ## cat("Saving reweighted snpeffs:", filename.tail, "...")
         write.table(data.frame(betahat=wt.betahat.tail),
                     file=filename.tail,
                     quote=FALSE, row.names=FALSE, col.names=FALSE)
-        cat("OK\n")
+        ## cat("OK\n")
         
     }
 }
 
-cat("Observed scale R2 in training cohort =", cor(trY, predY)**2, "\n")
+cat("Observed scale R2 in training cohort =", cor(trY, predY, use="pairwise")**2, "\n")
 
-if (require(pROC) && (length(unique(trphen$Outcome)) == 2)) {
+if (require(pROC, quietly=TRUE) &&
+    (length(unique(trphen$Outcome[!is.na(trphen$Outcome)])) <= 4)) {
     ## Binary phenotypes
         
     library(pROC)
 
     cat("AUC in training cohort:\n")
-    print(roc(cases=predY[trY == 1], controls=predY[trY == 0], ci=TRUE))
+    print(roc(cases=predY[which(trY == 1)], controls=predY[which(trY == 0)], ci=TRUE))
+    
 }
 
 cat("Done\n")

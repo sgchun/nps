@@ -283,61 +283,71 @@ if (any(duplicated(paste(vlphen$FID, vlphen$IID, sep=":")))) {
 rownames(vlphen) <- paste(vlphen$FID, vlphen$IID, sep=":")
 
 # No sample IDs match 
-if (length(intersect(rownames(vlphen), paste(vlfam[, 1], vlfam[, 2], sep=":")))
-    == 0) {
-    stop("IID/FID does not match between .fam and phenotype files")
-}
+## if (length(intersect(rownames(vlphen), paste(vlfam[, 1], vlfam[, 2], sep=":")))
+##    == 0) {
+##    stop("IID/FID does not match between .fam and phenotype files")
+## }
 
 # samples in .fam but not phenotype file
-missing.entry <- setdiff(paste(vlfam[, 1], vlfam[, 2], sep=" "),
-                           paste(vlphen$FID, vlphen$IID, sep=" "))
+## missing.entry <- setdiff(paste(vlfam[, 1], vlfam[, 2], sep=" "),
+##                            paste(vlphen$FID, vlphen$IID, sep=" "))
 
-if (length(missing.entry) > 0) {
-    cat("FID IID\n")
-    cat(paste(missing.entry, collapse="\n"))
-    cat("\n")
-#    stop("The above samples declared in ", valfamfile,
-#         " are missing in the phenotype file: ",
-#         valphenofile)
-}
+## if (length(missing.entry) > 0) {
+##    cat("FID IID\n")
+##    cat(paste(missing.entry, collapse="\n"))
+##    cat("\n")
+## #    stop("The above samples declared in ", valfamfile,
+## #         " are missing in the phenotype file: ",
+## #         valphenofile)
+## }
 
 vlphen <- vlphen[paste(vlfam[, 1], vlfam[, 2], sep=":"), ]
+vlphen$FID <- vlfam[, 1]
+vlphen$IID <- vlfam[, 2]
 
-vlphen$Outcome[is.na(vlphen$Outcome)] <- -9
+## vlphen$Outcome[is.na(vlphen$Outcome)] <- -9
 
-ASSERT(all(vlphen$FID == vlfam[, 1]))
-ASSERT(all(vlphen$IID == vlfam[, 2]))
+## ASSERT(all(vlphen$FID == vlfam[, 1]))
+## ASSERT(all(vlphen$IID == vlfam[, 2]))
+
+if (!is.numeric(vlphen$Outcome)) {
+    stop("phenotype values are not numeric")
+}
 
 cat("Validation cohort:\n")
-cat("Total ", nrow(vlfam), "samples\n")
+cat("Size of validation cohort:", nrow(vlfam), "\n")
 
 binary.phen <- TRUE
 
-if (length(unique(vlphen$Outcome)) > 4) {
-    cat(sum(vlphen$Outcome == -9), " samples with missing phenotype (-9)\n")
-    
-    cat(sum(vlphen$Outcome != -9),
-        " samples with non-missing QUANTITATIVE phenotype values\n")
+if (length(unique(vlphen$Outcome[!is.na(vlphen$Outcome)])) > 4) {
 
-    if (!is.numeric(vlphen$Outcome)) {
-        stop("phenotype values are not numeric")
-    }
+    vlphen$Outcome[which(vlphen$Outcome == -9)] <- NA
 
+    cat("# of missing phenotypes:", sum(is.na(vlphen$Outcome)), "\n")
+    cat("# of non-missing phenotypes:", sum(!is.na(vlphen$Outcome)), "\n")
+ 
     binary.phen <- FALSE
 
 } else {
     ## Binary phenotype
 
-    ## NPS v1.0 used 0/1/-9 encoding
-    
-    if (!all(vlphen$Outcome == 0 | vlphen$Outcome == 1 |
-             vlphen$Outcome == -9)) {
+    if (all(vlphen$Outcome == 0 | vlphen$Outcome == 1 |
+             vlphen$Outcome == -9, na.rm=TRUE)) {
+        ## NPS v1.0 used 0/1/-9 encoding
+        outcome[which(vlphen$Outcome == -9)] <- NA 
+
+    } else {
         ## 1/2/0/-9 encoding
-        ASSERT(any(vlphen$Outcome == 1))
-        ASSERT(any(vlphen$Outcome == 2))
-        ASSERT(all(vlphen$Outcome == 1 | vlphen$Outcome == 2 |
-                   vlphen$Outcome == -9 | vlphen$Outcome == 0))
-        
+#        ASSERT(any(vlphen$Outcome == 1))
+#        ASSERT(any(vlphen$Outcome == 2))
+#        ASSERT(all(vlphen$Outcome == 1 | vlphen$Outcome == 2 |
+#                   vlphen$Outcome == -9 | vlphen$Outcome == 0, na.rm=TRUE))
+
+        if (!all(vlphen$Outcome == 1 | vlphen$Outcome == 2 |
+                 vlphen$Outcome == -9 | vlphen$Outcome == 0, na.rm=TRUE)) {
+            stop("Binary phenotype values can be only 1, 2, 0, or -9")
+        } 
+
         ## for backward compatibility
         ## Outcome code 2 -> 1 (case)
         ## Outcome code 1 -> 0 (control)
@@ -345,32 +355,32 @@ if (length(unique(vlphen$Outcome)) > 4) {
         ## Outcome code -9 -> -9 (missing)
         
         ## recode to 0/1/-9
-        outcome <- rep(-9, nrow(vlphen))
-        outcome[vlphen$Outcome == 2] <- 1
-        outcome[vlphen$Outcome == 1] <- 0
-        outcome[vlphen$Outcome == 0] <- -9
-        outcome[vlphen$Outcome == -9] <- -9
+        outcome <- rep(NA, nrow(vlphen))
+        outcome[which(vlphen$Outcome == 2)] <- 1
+        outcome[which(vlphen$Outcome == 1)] <- 0
+        outcome[which(vlphen$Outcome == 0)] <- NA
+        outcome[which(vlphen$Outcome == -9)] <- NA 
         vlphen$Outcome <- outcome
     }
     
-    cat("    ", sum(vlphen$Outcome == -9), " samples with missing phenotype\n")
-    cat("    ", sum(vlphen$Outcome == 1), " case samples\n")
-    cat("    ", sum(vlphen$Outcome == 0), " control samples\n")
+    cat("# of missing phenotypes:", sum(is.na(vlphen$Outcome)), "\n")
+    cat("# of cases:", sum(vlphen$Outcome == 1, na.rm=TRUE), "\n")
+    cat("# of controls:", sum(vlphen$Outcome == 0, na.rm=TRUE), "\n")
 
     binary.phen <- TRUE
 }
 
-if ((nrow(vlphen) <= 1) || (sum(vlphen$Outcome != -9) <= 1)) {
-    stop("Invalid validation cohort size: N=", sum(vlphen$Outcome != -9))
+if ((nrow(vlphen) <= 1) || (sum(!is.na(vlphen$Outcome)) <= 1)) {
+    stop("Invalid validation cohort size: N=", sum(!is.na(vlphen$Outcome)))
 }
 
 if (binary.phen) {
-    if (sum(vlphen$Outcome == 1) <= 1) {
-        stop("Too few cases: N_case=", sum(vlphen$Outcome == 1))
+    if (sum(vlphen$Outcome == 1, na.rm=TRUE) <= 1) {
+        stop("Too few cases: N_case=", sum(vlphen$Outcome == 1, na.rm=TRUE))
     }
 
-    if (sum(vlphen$Outcome == 0) <= 1) {
-        stop("Too few controls: N_control=", sum(vlphen$Outcome == 0))
+    if (sum(vlphen$Outcome == 0, na.rm=TRUE) <= 1) {
+        stop("Too few controls: N_control=", sum(vlphen$Outcome == 0, na.rm=TRUE))
     }
 }
 
@@ -571,38 +581,34 @@ if (sex.baseline != 0) {
 }
 
 
-prisk <- prisk[vlY != -9] 
-vlY <- vlY[vlY != -9]
-
-
 filename <- paste(valphenofile, ".nps_score", sep='')
-df.out <- cbind(vlphen[vlphen$Outcome != -9, ], Score=prisk)
+df.out <- cbind(vlphen, Score=prisk)
 write.table(df.out, file=filename,
             row.names=FALSE, col.names=TRUE, sep="\t", quote=FALSE)
 cat("Done\nPolygenic scores are saved in", filename, ".\n")
 
-cat("Observed-scale R2 =", cor(vlY, prisk)**2, "\n")
+cat("Observed-scale R2 =", cor(vlY, prisk, use="pairwise")**2, "\n")
 
 if ("TotalLiability" %in% colnames(vlphen)) {
     ## For simulated phenotypes
-    vlL <- vlphen$TotalLiability[vlY != -9]	
-    cat("Liability-scale R2 =", cor(vlL, prisk)**2, "\n")
+    vlL <- vlphen$TotalLiability
+    cat("Liability-scale R2 =", cor(vlL, prisk, use="pairwise")**2, "\n")
 }
 
 if (binary.phen) {
-    if (require(pROC)) {
+    if (require(pROC, quietly=TRUE)) {
         
         library(pROC)
 
         cat("AUC:\n")
-        print(roc(cases=prisk[vlY == 1], controls=prisk[vlY == 0], ci=TRUE))
+        print(roc(cases=prisk[which(vlY == 1)], controls=prisk[which(vlY == 0)], ci=TRUE))
         
     } else {
         cat("Skip AUC calculation\n")
         cat("Please install pROC package to enable this\n")
     }
     
-    if (require(DescTools)) {
+    if (require(DescTools, quietly=TRUE)) {
         
         library(DescTools)
     
@@ -618,6 +624,9 @@ if (binary.phen) {
     }
 
     ## Tail OR
+    prisk <- prisk[!is.na(vlY)]
+    vlY <- vlY[!is.na(vlY)]
+
     cutoff <- 0.05
     cutoff.at <- round(length(prisk) * as.numeric(cutoff))
     cutoff.prisk <- sort(prisk, decreasing=TRUE)[cutoff.at]

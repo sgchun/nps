@@ -226,6 +226,7 @@ if (nchar(summstat$chr[1]) < 4 || substr(summstat$chr[1], 1, 3) != "chr") {
     stop("Chromosome names are expected to be chr1, ..., chr22:", summstatfile)
 }
 
+## Sort
 summstat.chr <- substr(summstat$chr, 4, nchar(summstat$chr))
 
 if (length(setdiff(summstat.chr, as.character(1:22))) != 0) {
@@ -234,24 +235,28 @@ if (length(setdiff(summstat.chr, as.character(1:22))) != 0) {
 }
 
 summstat.chr <- as.numeric(summstat.chr)
+summstat <- cbind(summstat, chrnum=summstat.chr)
 
-if (is.unsorted(summstat.chr)) {
-    stop("Not sorted by chr:", summstatfile)
-}
+summstat <- summstat[order(summstat$chrnum, summstat$pos), ]
+summstat.chr <- summstat$chrnum
 
-for (CHR in 1:22) {
-    if (is.unsorted(summstat$pos[summstat.chr == CHR])) {
-        stop("chr", CHR, ": not sorted by pos:", summstatfile)
-    }
+## if (is.unsorted(summstat.chr)) {
+##     stop("Not sorted by chr:", summstatfile)
+## }
 
-    if (any(duplicated(summstat$pos[summstat.chr == CHR]))) {
-        summstat0 <- summstat[summstat.chr == CHR, ]
-        dup.pos <- duplicated(summstat0$pos)
-        print(head(summstat0[summstat0$pos %in% dup.pos, ]))
+## for (CHR in 1:22) {
+##     if (is.unsorted(summstat$pos[summstat.chr == CHR])) {
+##         stop("chr", CHR, ": not sorted by pos:", summstatfile)
+##     }
+
+##     if (any(duplicated(summstat$pos[summstat.chr == CHR]))) {
+##         summstat0 <- summstat[summstat.chr == CHR, ]
+##         dup.pos <- duplicated(summstat0$pos)
+##         print(head(summstat0[summstat0$pos %in% dup.pos, ]))
             
-        stop("chr", CHR, ": duplicated pos or tri-allelic:", summstatfile)
-    }
-}
+##         stop("chr", CHR, ": duplicated pos or tri-allelic:", summstatfile)
+##     }
+## }
 
 if (any(is.na(summstat$reffreq))) {
     stop("NA in reffreq:", summstatfile)
@@ -269,13 +274,18 @@ if (any(summstat$pval == 0)) {
     stop("pval underflow (pval == 0):", summstatfile)
 }
 
-if (any(nchar(summstat$ref) != 1) || any(nchar(summstat$alt) != 1)) {
-    stop("InDels are not allowed:", summstatfile)
-}
+## if (any(nchar(summstat$ref) != 1) || any(nchar(summstat$alt) != 1)) {
+##     stop("InDels are not allowed:", summstatfile)
+## }
 
 summstat.SNPID <- paste(summstat.chr, ":", summstat$pos,
                         "_", summstat$ref, "_", summstat$alt,
                         sep='')
+
+if (any(duplicated(summstat.SNPID))) {
+    cat(paste(summstat.SNPID[duplicated(summstat.SNPID)], collapse=", "), "\n")
+    stop("Duplicated SNPs in GWAS summary statistics file")
+}
 
 if (!dir.exists(tempprefix)) {
     dir.create(tempprefix)
@@ -336,6 +346,19 @@ for (CHR in 1:22) {
                          "_", snpinfo$alleleA, "_", snpinfo$alleleB,
                          sep='')
 
+    if (any(duplicated(trSNPID.chr))) {
+        cat(paste(trSNPID.chr[duplicated(trSNPID.chr)], collapse=", "), "\n")
+        stop("Duplicated SNPs in training genotype files")
+    }
+
+    if (any(duplicated(snpinfo$position))) {
+        cat("chr", CHR, ":\n")
+        cat(paste(snpinfo$position[duplicated(snpinfo$position)],
+                  collapse=", "), "\n")
+        stop("Only biallelic SNPs are allowed in training genotypes")
+             
+    }
+    
     if (any(!(trSNPID.chr %in% summstat.SNPID))) {
         cat(paste(setdiff(trSNPID.chr, summstat.SNPID), collapse="\n"), "\n")
         stop("Missing summary statistics for the above SNPs in training cohort")
@@ -390,7 +413,7 @@ if (Nt <= 1) {
 }
 
 if (Nt < 1000) {
-    cat("Warning: Training cohort may be too small: ", Nt)
+    cat("Warning: Training cohort may be too small: ", Nt, "\n")
 }
 
 trphen <- NULL
@@ -430,56 +453,61 @@ if (length(intersect(colnames(trphen),
 
 rownames(trphen) <- paste(trphen$FID, trphen$IID, sep=":")
 
-missing.famIDs <- 
-    setdiff(paste(trfam[, 1], trfam[, 2], sep="\t"),
-            paste(trphen$FID, trphen$IID, sep="\t"))
+## missing.famIDs <- 
+##     setdiff(paste(trfam[, 1], trfam[, 2], sep="\t"),
+##             paste(trphen$FID, trphen$IID, sep="\t"))
 
-if (length(missing.famIDs) > 0) {
-    cat(paste(missing.famIDs, collapse="\n"))
-    stop("Missing phenotypes for samples in ", trainfamfile, ":",
-         trainphenofile)
+## if (length(missing.famIDs) > 0) {
+##     cat(paste(missing.famIDs, collapse="\n"))
+##     stop("Missing phenotypes for samples in ", trainfamfile, ":",
+##          trainphenofile)
+## }
+
+## if (any(is.na(trphen$Outcome))) {
+##     stop("NA is not allowed for training phenotypes")
+## }
+
+if (!is.numeric(trphen$Outcome)) {
+    stop("phenotype values are not numeric")
 }
 
-if (any(is.na(trphen$Outcome))) {
-    stop("NA is not allowed for training phenotypes")
-}
 
-if (length(unique(trphen$Outcome)) > 4) {
+if (length(unique(trphen$Outcome[!is.na(trphen$Outcome)])) > 4) {
     # Quantitative phenotypes
     cat("Quantitative phenotype: Outcome\n")
 
-    if (!is.numeric(trphen$Outcome)) {
-        stop("phenotype values are not numeric")
+    if (any(trphen$Outcome == -9)) {
+        cat("WARNING: Phenotype value of \"-9\" will be interpreted as NA\n")
     }
 
-    if (any(trphen$Outcome == -9)) {
-        stop("NA (\"-9\") is not allowed for training phenotypes; use \"-9.00001\" instead if this is a quantitative trait value")
-    }
+    trphen$Outcome[which(trphen$Outcome == -9)] <- NA
 
 } else {
     # Binary phenotypes    
     cat("Binary phenotype: Outcome\n")
 
     if (all(trphen$Outcome == 0 | trphen$Outcome == 1 |
-            trphen$Outcome == -9)) {
+            trphen$Outcome == -9, na.rm=TRUE)) {
         ## NPS v1.0 used 0/1/-9 encoding
 
-        if (any(trphen$Outcome == -9)) {
-            stop("NA (\"-9\") is not allowed for training phenotypes")
-        }
+        ## if (any(trphen$Outcome == -9)) {
+        ##     stop("NA (\"-9\") is not allowed for training phenotypes")
+        ## }
+
+        trphen$Outcome[which(trphen$Outcome == -9)] <- NA
         
     } else {
         ## 1/2/0/-9 encoding
         if (!all(trphen$Outcome == 1 | trphen$Outcome == 2 |
-                 trphen$Outcome == -9 | trphen$Outcome == 0)) {
+                 trphen$Outcome == -9 | trphen$Outcome == 0, na.rm=TRUE)) {
             stop("Binary trait values should be 1, 2, 0 or -9")
         }
 
-        if (sum(trphen$Outcome == 1) == 0) {
+        if (sum(trphen$Outcome == 1, na.rm=TRUE) == 0) {
             stop("There is no control sample (\"1\") in the training data")
         }
         
-        if (sum(trphen$Outcome == 2) == 0) {
+        if (sum(trphen$Outcome == 2, na.rm=TRUE) == 0) {
             stop("There is no case sample (\"2\") in the training data")
         }        
         
@@ -489,31 +517,36 @@ if (length(unique(trphen$Outcome)) > 4) {
         ## Outcome code 0 -> -9 (missing)
         ## Outcome code -9 -> -9 (missing)
 
-        if (any(trphen$Outcome == -9)) {
-            stop("NA (\"-9\") is not allowed for training phenotypes")
-        }
-        if (any(trphen$Outcome == 0)) {
-            stop("NA (\"0\") is not allowed for training phenotypes")
-        }
+        ## if (any(trphen$Outcome == -9)) {
+        ##     stop("NA (\"-9\") is not allowed for training phenotypes")
+        ## }
+        ## if (any(trphen$Outcome == 0)) {
+        ##     stop("NA (\"0\") is not allowed for training phenotypes")
+        ## }
+
+        trphen$Outcome[which(trphen$Outcome == -9)] <- NA
+        trphen$Outcome[which(trphen$Outcome == 0)] <- NA
         
         ## recode to 0/1
         trphen$Outcome <- trphen$Outcome - 1
     }
 
-    if (sum(trphen$Outcome == 0) == 0) {
+    if (sum(trphen$Outcome == 0, na.rm=TRUE) == 0) {
         stop("There is no control sample in the training data")
     }
 
-    if (sum(trphen$Outcome == 1) == 0) {
+    if (sum(trphen$Outcome == 1, na.rm=TRUE) == 0) {
         stop("There is no case sample in the training data")
     }
 }
 
 trphen <- trphen[paste(trfam[, 1], trfam[, 2], sep=":"), ]
+trphen$FID <- trfam[, 1]
+trphen$IID <- trfam[, 2]
 
-ASSERT(all(!is.na(trphen$Outcome)))
-ASSERT(all(trphen$FID == trfam[, 1]))
-ASSERT(all(trphen$IID == trfam[, 2]))
+## ASSERT(all(!is.na(trphen$Outcome)))
+## ASSERT(all(trphen$FID == trfam[, 1]))
+## ASSERT(all(trphen$IID == trfam[, 2]))
 
 ##################################################################
 # SAVE
