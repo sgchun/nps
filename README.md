@@ -13,10 +13,6 @@ For inquiries on software, please contact:
 * Nathan Stitziel (nstitziel@wustl.edu) 
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
-For citation: 
-> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
-> BioRxiv 2020. doi: 10.1101/370064 (preprint).
-
 ## How to Install
 1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled using GNU C++ compiler (GCC-4.4 or higher). This will create two executable binaries, **stdgt** and **grs**, in the top-level directory. 
    ```bash
@@ -144,7 +140,9 @@ Test set #1 is small enough to run on desktop computers (MacOS and Linux are sup
    Rscript npsR/nps_reweight.R testdata/Test1/npsdat/ 
    ```
    
-7. **Evaluate the accuracy of trained prediction model in a validation cohort.** First, NPS calculates polygenic risk scores for each individual in validation cohort chromosome by chromosome. Use `nps_score.dosage.job` if genotype files are prepared in the dosage format. For Oxford bgen genotype files, use `nps_score.bgen.job`. The command arguments are:
+7. **Evaluate the accuracy of trained prediction model in a validation cohort.** First, NPS calculates polygenic risk scores for each individual in the validation cohort chromosome by chromosome. Use `nps_score.dosage.job` if genotype files are prepared in the dosage format (test set #1 and #2). If the validation cohort is prepared in Oxford bgen format, use `nps_score.bgen.job` instead. To use nps_score.bgen.job, [qctool version 2](https://www.well.ox.ac.uk/~gav/qctool_v2/) is required. nps_score.bgen.job calculates polygenic scores by running `qctool -risk-score`, and this requires that the SNP IDs are identical between training and validation genotype files. If needed, the SNP IDs of bgen files can be updated by running the `qctool -map-id-data` command. 
+
+The command arguments for nps_score.dosage.job and nps_score.bgen.job are:
     * (1) NPS data directory: `testdata/Test1/npsdat`
     * (2) directory where validation cohort genotype files are: `testdata/Test1`
     * (3) *DatasetID* for validation genotypes files: `Test1.val`
@@ -195,3 +193,6 @@ NPS reports the following prediction accuracy with test set #2:
 > Tail OR (5%): 7.163156  
 > Done  
 
+## Citation
+> Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
+> BioRxiv 2020. doi: 10.1101/370064 (preprint).
