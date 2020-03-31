@@ -14,7 +14,7 @@ For inquiries on software, please contact:
 * Shamil Sunyaev (ssunyaev@rics.bwh.harvard.edu). 
 
 ## How to Install
-1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled using GNU C++ compiler (GCC-4.4 or higher). This will create two executable binaries, **stdgt** and **grs**, in the top-level directory. 
+1. Download and unpack NPS package ([version 1.1.1](https://github.com/sgchun/nps/archive/1.1.1.tar.gz)). Part of NPS codes are optimized in C++ and have to be compiled using GNU C++ compiler (GCC-4.4 or higher). On Mac OS X, [Command Line Tools for Xcode](https://developer.apple.com/download/more/) has to be installed to gcc and make. This will create two executable binaries, **stdgt** and **grs**, in the top-level directory. 
    ```bash
    tar -zxvf nps-1.1.1.tar.gz
    cd nps-1.1.1/
