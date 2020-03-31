@@ -30,6 +30,11 @@ if [ $? != 0 ]; then
    exit 2
 fi
 
+if [ -z "$Rver" ]; then 
+   echo "ERROR: cannot run Rscript"
+   exit 2;
+fi
+
 if [ $Rver -lt 3 ]; then 
    echo "ERROR: R-3.0 or later is required: $Rver_string"
    exit 2
