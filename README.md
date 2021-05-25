@@ -1,5 +1,5 @@
 # Non-Parametric Shrinkage (NPS)
-NPS implements a non-parametric polygenic risk prediction algorithm described in [Chun et al. 2020 (preprint)](https://doi.org/10.1101/370064). NPS transforms genetic data into an orthogonal domain called "eigenlocus space". Then, it re-weights GWAS effect sizes by partitioning genetic variations into trenches and measuring the predictive power of each trench in an independent training cohort. To run NPS, two sets of data are required: GWAS summary statistics and small individual-level training cohort with both genotype and phenotype data. 
+NPS implements a non-parametric polygenic risk prediction algorithm described in [Chun et al. 2020 Am J of Hum Genet](https://doi.org/10.1016/j.ajhg.2020.05.004). NPS transforms genetic data into an orthogonal domain called "eigenlocus space". Then, it re-weights GWAS effect sizes by partitioning genetic variations into trenches and measuring the predictive power of each trench in an independent training cohort. To run NPS, two sets of data are required: GWAS summary statistics and small individual-level training cohort with both genotype and phenotype data. 
 
 We recommend running NPS in computer clusters. The following platforms are supported: 
 * SGE/UGER
@@ -195,4 +195,4 @@ NPS reports the following prediction accuracy with test set #2:
 
 ## Citation
 > Chun et al. Non-parametric polygenic risk prediction using partitioned GWAS summary statistics.  
-> BioRxiv 2020. doi: 10.1101/370064 (preprint).
+> Am J Hum Genet. 2020 Jul 2;107(1):46-59. doi: 10.1016/j.ajhg.2020.05.004. Epub 2020 May 28.
