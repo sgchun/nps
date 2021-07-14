@@ -40,7 +40,7 @@ For inquiries on software, please contact:
    ```
 
 ## NPS Test datsets
-We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from Sunyaev Lab FTP server (**ftp://genetics.bwh.harvard.edu/download/schun/**). Test set #1 is relatively small and can be easily run on desktop whereas test set #2 is a more realistic dataset but requires serious computational resource to run NPS.
+We provide two sets of simulated test cases. They are provided separately from the software distribution and can be downloaded from [HERE](https://www.dropbox.com/sh/qq2vmeapkktq9xa/AAAUz88snBjq1hDnKgXNmFWIa?dl=0). Test set #1 is relatively small and can be easily run on desktop whereas test set #2 is a more realistic dataset but requires serious computational resource to run NPS.
 
 Test set | Total # of simulated SNPs | # of simulated causal SNPs | NPS disk space requirement | NPS run time
 --- | --- | --- | --- | --- 
