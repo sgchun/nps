@@ -334,7 +334,7 @@ if (length(unique(vlphen$Outcome[!is.na(vlphen$Outcome)])) > 4) {
     if (all(vlphen$Outcome == 0 | vlphen$Outcome == 1 |
              vlphen$Outcome == -9, na.rm=TRUE)) {
         ## NPS v1.0 used 0/1/-9 encoding
-        outcome[which(vlphen$Outcome == -9)] <- NA 
+        vlphen$Outcome[which(vlphen$Outcome == -9)] <- NA 
 
     } else {
         ## 1/2/0/-9 encoding
