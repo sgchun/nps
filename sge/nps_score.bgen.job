@@ -55,7 +55,7 @@ else
     # auto-detect window shifts
     echo -n "Detecting window shifts..."
 
-    numwinshifts=`find $moddir -name "*.win_*.adjbetahat_pg.chrom*.txt" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//' | wc -l`
+    numwinshifts=`find $moddir -name "*.win_*.adjbetahat_pg.chrom*.txt" -exec basename '{}' \; | grep -o "win_[0-9]*" | sort -u | sed 's/win_//' | wc -l`
 
     if [ $numwinshifts -eq 0 ]; then
 	echo " ERROR: autodetect failed"
@@ -64,7 +64,7 @@ else
 	echo -n ": $numwinshifts shifts detected"
     fi
 
-    winshifts=`find $moddir -name "*.win_*.adjbetahat_pg.chrom*.txt" -exec basename '{}' \; | grep -o "^win_[0-9]*" | sort -u | sed 's/win_//'`
+    winshifts=`find $moddir -name "*.win_*.adjbetahat_pg.chrom*.txt" -exec basename '{}' \; | grep -o "win_[0-9]*" | sort -u | sed 's/win_//'`
 
     echo -n " ("
     echo -n $winshifts
